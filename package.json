@@ -51,6 +51,7 @@
     "mindmap",
     "uml",
     "architecture diagram",
+    "zenuml",
     "visualization",
     "svg export",
     "documentation",
@@ -137,6 +138,9 @@
     "vscode:prepublish": "npm run build:production"
   },
   "dependencies": {
+    "@iconify-json/logos": "1.2.11",
+    "@iconify-json/material-icon-theme": "1.2.69",
+    "@mermaid-js/mermaid-zenuml": "0.2.3",
     "mermaid": "11.16.0"
   },
   "devDependencies": {
