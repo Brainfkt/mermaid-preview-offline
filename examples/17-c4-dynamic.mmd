@@ -1,0 +1,13 @@
+C4Dynamic
+  title Création dynamique d'une commande
+
+  Container(web, "Application web", "TypeScript", "Interface utilisateur")
+  Container(api, "API", "Node.js", "Logique métier")
+  ContainerDb(db, "Base de données", "PostgreSQL", "Commandes")
+  System_Ext(payment, "Prestataire de paiement", "Paiements")
+
+  RelIndex(1, web, api, "Crée une commande", "HTTPS/JSON")
+  RelIndex(2, api, payment, "Autorise le paiement", "HTTPS/JSON")
+  RelIndex(3, payment, api, "Confirme l'autorisation", "HTTPS/JSON")
+  RelIndex(4, api, db, "Enregistre la commande", "SQL")
+  RelIndex(5, api, web, "Retourne la confirmation", "JSON")

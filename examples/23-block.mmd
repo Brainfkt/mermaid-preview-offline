@@ -1,0 +1,22 @@
+block-beta
+  columns 3
+  client["Client"] space gateway["Passerelle API"]
+
+  block:services:3
+    catalog["Catalogue"]
+    orders["Commandes"]
+    billing["Facturation"]
+  end
+
+  cache[("Cache")] database[("Base de données")] queue[["File de messages"]]
+
+  client --> gateway
+  gateway --> catalog
+  gateway --> orders
+  orders --> billing
+  catalog --> cache
+  orders --> database
+  billing --> queue
+
+  style gateway fill:#dbeafe,stroke:#2563eb
+  style database fill:#dcfce7,stroke:#16a34a

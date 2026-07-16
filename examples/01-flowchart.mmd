@@ -1,0 +1,19 @@
+flowchart LR
+  start([Nouvelle commande]) --> validate{Paiement valide ?}
+  validate -->|Non| reject[Refuser la commande]
+  validate -->|Oui| reserve[Réserver le stock]
+
+  subgraph fulfillment [Traitement logistique]
+    reserve --> pick[Préparer les articles]
+    pick --> pack[/Emballer le colis/]
+    pack --> ship[[Expédier]]
+  end
+
+  ship ==> notify[Notifier le client]
+  reject -.-> notify
+  notify --> finish((Fin))
+
+  classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d;
+  classDef danger fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+  class ship,finish success;
+  class reject danger;

@@ -1,0 +1,18 @@
+C4Component
+  title Composants du conteneur API
+
+  Container_Boundary(api, "API") {
+    Component(controller, "Contrôleur commandes", "HTTP", "Valide les requêtes")
+    Component(service, "Service commandes", "Application", "Orchestre le métier")
+    Component(repository, "Dépôt commandes", "Persistence", "Persiste les agrégats")
+    Component(eventbus, "Bus d'événements", "Messaging", "Publie les événements")
+  }
+
+  ContainerDb_Ext(db, "Base de données", "PostgreSQL", "Stocke les commandes")
+  ContainerQueue_Ext(queue, "File de messages", "AMQP", "Distribue les événements")
+
+  Rel(controller, service, "Appelle")
+  Rel(service, repository, "Utilise")
+  Rel(repository, db, "Lit et écrit", "SQL")
+  Rel(service, eventbus, "Publie")
+  Rel(eventbus, queue, "Envoie", "AMQP")

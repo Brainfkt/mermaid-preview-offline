@@ -1,0 +1,20 @@
+C4Container
+  title Conteneurs de la plateforme e-commerce
+
+  Person(customer, "Client", "Passe une commande")
+  System_Ext(payment, "Prestataire de paiement", "Autorise les paiements")
+
+  System_Boundary(shop, "Plateforme e-commerce") {
+    Container(web, "Application web", "TypeScript", "Interface utilisateur")
+    Container(api, "API", "Node.js", "Expose les fonctions métier")
+    Container(worker, "Worker", "Node.js", "Traite les tâches asynchrones")
+    ContainerDb(db, "Base de données", "PostgreSQL", "Stocke les commandes")
+    ContainerQueue(queue, "File de messages", "AMQP", "Distribue les événements")
+  }
+
+  Rel(customer, web, "Utilise", "HTTPS")
+  Rel(web, api, "Appelle", "HTTPS/JSON")
+  Rel(api, db, "Lit et écrit", "SQL")
+  Rel(api, payment, "Autorise le paiement", "HTTPS")
+  Rel(api, queue, "Publie", "AMQP")
+  Rel(queue, worker, "Distribue", "AMQP")

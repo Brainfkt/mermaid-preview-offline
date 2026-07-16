@@ -1,0 +1,11 @@
+C4Context
+  title Contexte du système de commande
+
+  Person(customer, "Client", "Achète et suit ses commandes")
+  System(shop, "Plateforme e-commerce", "Gère le catalogue et les commandes")
+  System_Ext(payment, "Prestataire de paiement", "Autorise les paiements")
+  System_Ext(carrier, "Transporteur", "Livre les colis")
+
+  Rel(customer, shop, "Utilise", "HTTPS")
+  Rel(shop, payment, "Demande une autorisation", "HTTPS/JSON")
+  Rel(shop, carrier, "Crée une expédition", "HTTPS/JSON")

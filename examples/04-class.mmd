@@ -1,0 +1,42 @@
+classDiagram
+  direction LR
+
+  class Commande {
+    +String numero
+    +Statut statut
+    +ajouterArticle(article, quantite)
+    +total() Decimal
+  }
+
+  class LigneCommande {
+    +int quantite
+    +prix() Decimal
+  }
+
+  class Produit {
+    <<entity>>
+    +String sku
+    +String nom
+    +Decimal prix
+  }
+
+  class Paiement {
+    <<interface>>
+    +autoriser(montant) bool
+    +rembourser(montant)
+  }
+
+  class PaiementCarte
+  class Statut {
+    <<enumeration>>
+    BROUILLON
+    PAYEE
+    EXPEDIEE
+  }
+
+  Commande "1" *-- "1..*" LigneCommande : contient
+  LigneCommande "*" --> "1" Produit : référence
+  Commande --> Statut
+  Commande ..> Paiement : utilise
+  Paiement <|.. PaiementCarte : implémente
+  note for Commande "Racine de l'agrégat métier"

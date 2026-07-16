@@ -1,0 +1,18 @@
+gantt
+  title Livraison de la version 1.0
+  dateFormat YYYY-MM-DD
+  axisFormat %d/%m
+  excludes weekends
+
+  section Cadrage
+  Spécifications              :done, spec, 2026-07-01, 5d
+  Validation                  :milestone, validation, after spec, 0d
+
+  section Développement
+  API                         :active, api, after validation, 8d
+  Interface                   :ui, after validation, 6d
+  Intégration                 :crit, integration, after api, 4d
+
+  section Livraison
+  Tests de recette            :crit, tests, after integration, 3d
+  Mise en production          :milestone, prod, after tests, 0d

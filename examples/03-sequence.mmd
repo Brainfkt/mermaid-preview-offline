@@ -1,0 +1,27 @@
+sequenceDiagram
+  autonumber
+  actor U as Utilisateur
+  participant W as Application web
+  participant A as API
+  participant D as Base de données
+
+  U->>W: Valider le panier
+  W->>+A: POST /commandes
+  A->>D: Démarrer une transaction
+
+  alt Stock disponible
+    A->>D: Créer la commande
+    D-->>A: Commande créée
+    par Actions parallèles
+      A-)W: Confirmer la commande
+    and
+      A-)D: Planifier l'expédition
+    end
+    W-->>U: Afficher la confirmation
+  else Stock insuffisant
+    A-->>W: Erreur 409
+    W-->>U: Proposer une alternative
+  end
+
+  A->>-D: Terminer la transaction
+  Note over U,D: Les messages asynchrones utilisent une flèche ouverte

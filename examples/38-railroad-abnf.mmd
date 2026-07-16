@@ -1,0 +1,6 @@
+railroad-abnf-beta
+  title Grammaire ABNF d'une requête
+  request = method SP path;
+  method = "GET" / "POST" / "PUT";
+  path = "/" 1*( ALPHA / DIGIT / "-" );
+  SP = %x20;

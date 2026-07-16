@@ -1,0 +1,6 @@
+railroad-ebnf-beta
+  title Grammaire EBNF d'une liste
+  list = item, { ",", item };
+  item = identifier, [ ":", value ];
+  identifier = letter, { letter | digit | "_" };
+  value = number | string;

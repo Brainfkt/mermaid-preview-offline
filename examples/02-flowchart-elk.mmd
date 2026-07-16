@@ -1,0 +1,23 @@
+flowchart-elk TB
+  client[Application cliente]
+
+  subgraph edge [Couche périphérique]
+    gateway[Passerelle API]
+    auth[Authentification]
+  end
+
+  subgraph services [Microservices]
+    catalog[Catalogue]
+    orders[Commandes]
+    billing[Facturation]
+    notifications[Notifications]
+  end
+
+  client --> gateway
+  gateway --> auth
+  gateway --> catalog
+  gateway --> orders
+  orders --> billing
+  orders --> notifications
+  catalog --> orders
+  billing --> notifications

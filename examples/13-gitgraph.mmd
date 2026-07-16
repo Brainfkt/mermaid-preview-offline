@@ -1,0 +1,17 @@
+gitGraph LR:
+  commit id: "Initialisation"
+  commit id: "Socle"
+  branch feature/paiement
+  checkout feature/paiement
+  commit id: "Formulaire"
+  commit id: "API paiement" tag: "beta"
+  checkout main
+  branch hotfix
+  commit id: "Correctif urgent" type: HIGHLIGHT
+  checkout main
+  merge hotfix
+  checkout feature/paiement
+  commit id: "Tests"
+  checkout main
+  merge feature/paiement tag: "v1.0"
+  commit id: "Publication" type: REVERSE

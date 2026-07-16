@@ -1,0 +1,28 @@
+requirementDiagram
+  requirement disponibilite {
+    id: REQ001
+    text: Le service doit rester disponible 99.9 pour cent du temps
+    risk: high
+    verifymethod: test
+  }
+
+  functionalRequirement export_pdf {
+    id: REQ002
+    text: L'utilisateur doit pouvoir exporter un rapport en PDF
+    risk: medium
+    verifymethod: demonstration
+  }
+
+  element api_redondante {
+    type: service
+    docRef: ADR004
+  }
+
+  element tests_charge {
+    type: test_suite
+    docRef: TESTPLAN01
+  }
+
+  api_redondante - satisfies -> disponibilite
+  tests_charge - verifies -> disponibilite
+  tests_charge - verifies -> export_pdf

@@ -1,0 +1,15 @@
+venn-beta
+  title "Compétences d'une équipe produit"
+  set Produit["Produit"]:20
+    text P1["Recherche"]
+  set Design["Design"]:18
+    text D1["Prototypage"]
+  set Tech["Technologie"]:22
+    text T1["Architecture"]
+  union Produit,Design["Expérience utilisateur"]:8
+  union Produit,Tech["Faisabilité"]:7
+  union Design,Tech["Design system"]:6
+  union Produit,Design,Tech["Innovation"]:3
+  style Produit fill:#60a5fa,fill-opacity:0.35
+  style Design fill:#f472b6,fill-opacity:0.35
+  style Tech fill:#34d399,fill-opacity:0.35

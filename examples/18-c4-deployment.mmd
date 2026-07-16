@@ -1,0 +1,18 @@
+C4Deployment
+  title Déploiement de la plateforme e-commerce
+
+  Deployment_Node(device, "Appareil du client", "Navigateur") {
+    Container(spa, "Application web", "TypeScript", "Interface utilisateur")
+  }
+
+  Deployment_Node(cloud, "Cloud", "Production") {
+    Deployment_Node(app_cluster, "Cluster applicatif", "Kubernetes") {
+      Container(api, "API", "Node.js", "Logique métier")
+    }
+    Deployment_Node(data_cluster, "Cluster de données", "Service managé") {
+      ContainerDb(db, "Base de données", "PostgreSQL", "Commandes")
+    }
+  }
+
+  Rel(spa, api, "Appelle", "HTTPS/JSON")
+  Rel(api, db, "Lit et écrit", "TLS/SQL")

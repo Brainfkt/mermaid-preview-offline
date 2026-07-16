@@ -1,0 +1,25 @@
+cynefin-beta
+  title Décisions de livraison logicielle
+
+  complex
+    "Découvrir un nouveau marché"
+    "Tester une expérience produit"
+
+  complicated
+    "Optimiser la base de données"
+    "Concevoir l'architecture"
+
+  clear
+    "Déployer un correctif standard"
+    "Créer un compte utilisateur"
+
+  chaotic
+    "Répondre à une panne majeure"
+
+  confusion
+    "Incident sans diagnostic"
+
+  complex --> complicated : "Un motif émerge"
+  complicated --> clear : "La pratique est codifiée"
+  clear --> chaotic : "Excès de confiance"
+  chaotic --> complex : "La situation est stabilisée"

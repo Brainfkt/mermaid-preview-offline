@@ -1,0 +1,22 @@
+eventmodeling
+  tf 01 ui Cart.CartUI
+  tf 02 cmd Cart.AddItem [[AddItem]]
+  tf 03 evt Cart.ItemAdded [[ItemAdded]]
+  tf 04 rmo Cart.CartItems
+  tf 05 ui Cart.CartUI
+
+  rf 06 evt Payment.PaymentAuthorized
+  tf 07 pcr Shipping.ShippingProcessor
+  tf 08 cmd Shipping.PrepareShipment
+  tf 09 evt Shipping.ShipmentPrepared
+
+data AddItem {
+  productId: string
+  quantity: number
+}
+
+data ItemAdded {
+  productId: string
+  quantity: number
+  unitPrice: number
+}

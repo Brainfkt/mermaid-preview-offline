@@ -1,0 +1,31 @@
+stateDiagram-v2
+  [*] --> Brouillon
+  Brouillon --> EnValidation : soumettre
+
+  state EnValidation {
+    [*] --> ControleStock
+    ControleStock --> ControlePaiement
+    ControlePaiement --> [*]
+  }
+
+  state choix <<choice>>
+  EnValidation --> choix
+  choix --> Confirmee : contrôles réussis
+  choix --> Refusee : contrôle échoué
+
+  state Confirmee {
+    [*] --> Preparation
+    state fork_state <<fork>>
+    Preparation --> fork_state
+    fork_state --> Emballage
+    fork_state --> Facturation
+    state join_state <<join>>
+    Emballage --> join_state
+    Facturation --> join_state
+    join_state --> Expediee
+  }
+
+  Confirmee --> Livree : réception
+  Refusee --> [*]
+  Livree --> [*]
+  note right of Confirmee : Le traitement interne est parallèle

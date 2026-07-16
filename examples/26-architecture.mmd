@@ -1,0 +1,14 @@
+architecture-beta
+  group edge(cloud)[Edge]
+  group platform(cloud)[Platform]
+
+  service client(internet)[Client] in edge
+  service gateway(server)[Passerelle API] in edge
+  service api(server)[Business service] in platform
+  service database(database)[Database] in platform
+  service storage(disk)[Stockage objet] in platform
+
+  client:R --> L:gateway
+  gateway:R --> L:api
+  api:B --> T:database
+  api:R --> L:storage

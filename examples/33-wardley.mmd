@@ -1,0 +1,21 @@
+wardley-beta
+  title Stratégie d'une plateforme logicielle
+  size [1100, 700]
+
+  evolution Genesis@0.25 -> Sur mesure@0.50 -> Produit@0.75 -> Commodite@1.0
+
+  anchor Client [0.95, 0.90]
+  component "Application web" [0.82, 0.74] (build)
+  component "API métier" [0.68, 0.58] (build)
+  component "Moteur de recommandation" [0.55, 0.28] (build) (inertia)
+  component "Base de données" [0.45, 0.80] (buy)
+  component "Cloud" [0.22, 0.96] (market)
+
+  Client -> "Application web"
+  "Application web" -> "API métier"
+  "API métier" -> "Moteur de recommandation"
+  "API métier" -> "Base de données"
+  "Base de données" -> "Cloud"
+
+  evolve "Moteur de recommandation" 0.55
+  note "Industrialiser la recommandation" [0.58, 0.42]

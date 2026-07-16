@@ -1,0 +1,38 @@
+erDiagram
+  CLIENT ||--o{ COMMANDE : passe
+  COMMANDE ||--|{ LIGNE_COMMANDE : contient
+  PRODUIT ||--o{ LIGNE_COMMANDE : apparaît_dans
+  COMMANDE ||--o| PAIEMENT : est_réglée_par
+
+  CLIENT {
+    uuid id PK
+    string email UK
+    string nom
+    datetime cree_le
+  }
+
+  COMMANDE {
+    uuid id PK
+    uuid client_id FK
+    string statut
+    decimal total
+  }
+
+  LIGNE_COMMANDE {
+    uuid commande_id PK, FK
+    uuid produit_id PK, FK
+    int quantite
+    decimal prix_unitaire
+  }
+
+  PRODUIT {
+    uuid id PK
+    string sku UK
+    string libelle
+  }
+
+  PAIEMENT {
+    uuid id PK
+    uuid commande_id FK
+    string fournisseur
+  }
