@@ -1,18 +1,6 @@
----
-config:
-  treeView:
-    showIcons: true
-    defaultIconPack: material-icon-theme
-    filenameIcons:
-      Dockerfile: docker
-    extensionIcons:
-      .ts: typescript
-      .tsx: react-ts
----
-treeView-beta
-  application/
-    src/
-      App.tsx icon(logos:react) ## interface React
-      server.ts ## serveur TypeScript
-    Dockerfile
-    package.json icon(material-icon-theme:nodejs)
+flowchart LR
+  react@{ icon: "logos:react", form: "square", label: "React", pos: "b", h: 96 }
+  node@{ icon: "logos:nodejs-icon", form: "square", label: "Node.js", pos: "b", h: 96 }
+  database@{ icon: "material-icon-theme:database", form: "square", label: "Base de données", pos: "b", h: 96 }
+
+  react --> node --> database
