@@ -1,0 +1,16 @@
+zenuml
+  title Création d'une commande
+  @Actor Client
+  @Boundary Web
+  @Database Database
+
+  Client->Web: Valider le panier
+  Web.createOrder() {
+    Database.save()
+    if(stockAvailable) {
+      return confirmation
+    } else {
+      return outOfStock
+    }
+  }
+  Web->Client: Afficher le résultat

@@ -1,0 +1,18 @@
+---
+config:
+  treeView:
+    showIcons: true
+    defaultIconPack: material-icon-theme
+    filenameIcons:
+      Dockerfile: docker
+    extensionIcons:
+      .ts: typescript
+      .tsx: react-ts
+---
+treeView-beta
+  application/
+    src/
+      App.tsx icon(logos:react) ## interface React
+      server.ts ## serveur TypeScript
+    Dockerfile
+    package.json icon(material-icon-theme:nodejs)
