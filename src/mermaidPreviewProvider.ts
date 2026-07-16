@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 
+import { imageMimeType, inlineLocalImages, type LoadedLocalImage } from './localImages';
 import type { WebviewToExtensionMessage } from './protocol';
 import { createNonce, createWebviewHtml } from './webviewHtml';
 
@@ -33,11 +34,18 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     });
 
     const sendDocument = async (): Promise<void> => {
+      const version = document.version;
+      const source = await inlineLocalImages(document.getText(), (reference) =>
+        this.loadLocalImage(document.uri, reference),
+      );
+      if (document.version !== version) {
+        return;
+      }
       await webview.postMessage({
         type: 'document',
-        source: document.getText(),
+        source,
         fileName: fileNameOf(document.uri),
-        version: document.version,
+        version,
       });
     };
 
@@ -97,10 +105,50 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     await vscode.workspace.fs.writeFile(target, new TextEncoder().encode(svg));
     void vscode.window.showInformationMessage(`Diagram saved to ${target.fsPath}.`);
   }
+
+  private async loadLocalImage(
+    documentUri: vscode.Uri,
+    reference: string,
+  ): Promise<LoadedLocalImage | undefined> {
+    const mimeType = imageMimeType(reference);
+    const relativePath = reference.split(/[?#]/u, 1)[0];
+    if (!mimeType || !relativePath) {
+      return undefined;
+    }
+
+    try {
+      const segments = relativePath
+        .replaceAll('\\', '/')
+        .split('/')
+        .map((segment) => decodeURIComponent(segment));
+      const documentDirectory = vscode.Uri.joinPath(documentUri, '..');
+      const resourceUri = vscode.Uri.joinPath(documentDirectory, ...segments);
+      const workspaceRoot =
+        vscode.workspace.getWorkspaceFolder(documentUri)?.uri ?? documentDirectory;
+      if (!isUriWithin(workspaceRoot, resourceUri)) {
+        return undefined;
+      }
+
+      return {
+        bytes: await vscode.workspace.fs.readFile(resourceUri),
+        mimeType,
+      };
+    } catch {
+      return undefined;
+    }
+  }
 }
 
 function fileNameOf(uri: vscode.Uri): string {
   return decodeURIComponent(uri.path.split('/').pop() ?? uri.path);
+}
+
+function isUriWithin(root: vscode.Uri, candidate: vscode.Uri): boolean {
+  if (root.scheme !== candidate.scheme || root.authority !== candidate.authority) {
+    return false;
+  }
+  const rootPath = root.path.replace(/\/$/u, '');
+  return candidate.path === rootPath || candidate.path.startsWith(`${rootPath}/`);
 }
 
 function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {

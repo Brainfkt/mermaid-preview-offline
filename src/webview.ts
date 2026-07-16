@@ -1,3 +1,6 @@
+import { icons as logosIcons } from '@iconify-json/logos';
+import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-theme';
+import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
 import type { ExtensionToWebviewMessage, WebviewToExtensionMessage } from './protocol';
@@ -14,6 +17,12 @@ interface PersistedState {
 }
 
 declare function acquireVsCodeApi(): VsCodeApi;
+
+mermaid.registerIconPacks([
+  { name: logosIcons.prefix, icons: logosIcons },
+  { name: materialIconThemeIcons.prefix, icons: materialIconThemeIcons },
+]);
+const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
 
 const vscode = acquireVsCodeApi();
 const viewport = element<HTMLElement>('viewport');
@@ -145,6 +154,7 @@ async function renderLatest(): Promise<void> {
   const renderId = `mermaid-preview-${request}`;
 
   try {
+    await mermaidExtensionsReady;
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'strict',
