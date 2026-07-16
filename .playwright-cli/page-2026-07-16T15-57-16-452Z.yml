@@ -1,0 +1,16 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - button "Source" [ref=e4]
+      - button "−" [ref=e5]
+      - button "Fit" [ref=e6]
+      - button "+" [ref=e7]
+    - generic [ref=e8]:
+      - button "Copy SVG" [disabled] [ref=e9]
+      - button "Save SVG" [disabled] [ref=e10]
+  - main [ref=e11]:
+    - button "Open source" [ref=e13]
+  - contentinfo [ref=e14]:
+    - generic [ref=e15]: case-41.mmd
+    - generic [ref=e16]: Ready
+    - generic [ref=e17]: 100 %
