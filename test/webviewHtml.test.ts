@@ -8,7 +8,7 @@ const html = createWebviewHtml({
   nonce: 'fixed-nonce',
   scriptUri: 'vscode-webview://test-source/dist/webview.js',
   styleUri: 'vscode-webview://test-source/media/preview.css',
-  title: 'Aperçu <dangereux>',
+  title: 'Preview <unsafe>',
 });
 
 void test('la webview interdit les connexions et les contenus exécutables distants', () => {
@@ -23,6 +23,6 @@ void test('la webview interdit les connexions et les contenus exécutables dista
 void test('la webview ne charge que ses ressources locales et échappe le titre', () => {
   assert.match(html, /vscode-webview:\/\/test-source\/dist\/webview\.js/u);
   assert.match(html, /vscode-webview:\/\/test-source\/media\/preview\.css/u);
-  assert.match(html, /Aperçu &lt;dangereux&gt;/u);
-  assert.doesNotMatch(html, /<title>Aperçu <dangereux><\/title>/u);
+  assert.match(html, /Preview &lt;unsafe&gt;/u);
+  assert.doesNotMatch(html, /<title>Preview <unsafe><\/title>/u);
 });

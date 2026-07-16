@@ -1,16 +1,16 @@
-# Politique de sécurité
+# Security Policy
 
-## Signaler une vulnérabilité
+## Reporting a vulnerability
 
-Ne publiez pas de vulnérabilité exploitable dans une issue publique. Utilisez la
-fonction **Private vulnerability reporting** du dépôt GitHub lorsqu’elle est
-activée, ou contactez le mainteneur par un canal privé indiqué sur son profil.
+Do not disclose an exploitable vulnerability in a public issue. Use GitHub's
+**Private vulnerability reporting** feature when it is enabled, or contact the
+maintainer through a private channel listed on their profile.
 
-Incluez la version, un diagramme minimal non confidentiel, l’impact et les étapes
-de reproduction.
+Include the affected extension version, a minimal non-confidential diagram, the
+impact, and reproducible steps.
 
-## Modèle de sécurité
+## Security model
 
-Mermaid est embarqué dans le VSIX. La webview utilise une Content Security
-Policy avec `connect-src 'none'`, des scripts sous nonce et Mermaid avec
-`securityLevel: strict`. L’extension ne collecte aucune télémétrie.
+Mermaid is bundled inside the VSIX. The preview webview uses a Content Security
+Policy with `connect-src 'none'`, nonce-protected scripts, and Mermaid's
+`securityLevel: strict`. The extension does not collect telemetry.

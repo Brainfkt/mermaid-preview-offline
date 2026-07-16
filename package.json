@@ -1,13 +1,14 @@
 {
   "name": "mermaid-preview-offline",
-  "displayName": "Mermaid Preview Offline",
-  "description": "Aperçu Mermaid instantané dans VS Code, entièrement local et sans compte.",
-  "version": "0.1.0",
+  "displayName": "Mermaid Preview — 100% Offline",
+  "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
+  "version": "0.1.1",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
   },
   "license": "MIT",
+  "pricing": "Free",
   "homepage": "https://github.com/Brainfkt/mermaid-preview-offline#readme",
   "bugs": {
     "url": "https://github.com/Brainfkt/mermaid-preview-offline/issues"
@@ -16,8 +17,9 @@
     "type": "git",
     "url": "https://github.com/Brainfkt/mermaid-preview-offline.git"
   },
+  "icon": "media/icon.png",
   "galleryBanner": {
-    "color": "#0f172a",
+    "color": "#ff3670",
     "theme": "dark"
   },
   "engines": {
@@ -25,17 +27,38 @@
   },
   "categories": [
     "Visualization",
-    "Other"
+    "Programming Languages"
   ],
   "keywords": [
     "mermaid",
+    "mermaid preview",
     "diagram",
+    "diagram preview",
+    "diagrams",
+    "diagram as code",
     "preview",
-    "offline"
+    "live preview",
+    "offline",
+    "local",
+    "privacy",
+    "no telemetry",
+    "flowchart",
+    "sequence diagram",
+    "class diagram",
+    "state diagram",
+    "entity relationship diagram",
+    "gantt chart",
+    "mindmap",
+    "uml",
+    "architecture diagram",
+    "visualization",
+    "svg export",
+    "documentation",
+    "mmd"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onCustomEditor:stokage-tools.mermaidPreview",
+    "onCustomEditor:brainfkt.mermaidPreviewOffline",
     "onCommand:mermaidPreviewOffline.openPreview"
   ],
   "contributes": {
@@ -62,8 +85,8 @@
     ],
     "customEditors": [
       {
-        "viewType": "stokage-tools.mermaidPreview",
-        "displayName": "Aperçu Mermaid hors ligne",
+        "viewType": "brainfkt.mermaidPreviewOffline",
+        "displayName": "Mermaid Preview (Offline)",
         "selector": [
           {
             "filenamePattern": "*.mmd"
@@ -78,7 +101,7 @@
     "commands": [
       {
         "command": "mermaidPreviewOffline.openPreview",
-        "title": "Mermaid : ouvrir l’aperçu hors ligne",
+        "title": "Mermaid Preview: Open Offline Preview",
         "icon": "$(preview)"
       }
     ],

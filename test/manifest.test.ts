@@ -21,7 +21,7 @@ void test('le clic sur les deux extensions Mermaid utilise l’aperçu par défa
   const editor = manifest.contributes.customEditors[0];
   assert.ok(editor);
   assert.equal(editor.priority, 'default');
-  assert.equal(editor.viewType, 'stokage-tools.mermaidPreview');
+  assert.equal(editor.viewType, 'brainfkt.mermaidPreviewOffline');
   assert.deepEqual(
     editor.selector.map((entry) => entry.filenamePattern),
     ['*.mmd', '*.mermaid'],

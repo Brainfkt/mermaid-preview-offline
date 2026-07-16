@@ -1,22 +1,22 @@
-# Contribuer
+# Contributing
 
-Merci de contribuer à Mermaid Preview Offline.
+Thank you for contributing to Mermaid Preview Offline.
 
-## Développement
+## Development
 
 ```bash
 npm ci
 npm run verify
 ```
 
-Pour déboguer l’extension, ouvrir le dépôt dans VS Code et lancer la
-configuration **Run Mermaid Preview Offline** avec `F5`.
+To debug the extension, open the repository in VS Code and launch
+**Run Mermaid Preview Offline** with `F5`.
 
 ## Pull requests
 
-- limiter chaque PR à un sujet cohérent ;
-- ajouter ou mettre à jour les tests ;
-- conserver le rendu entièrement local ;
-- ne pas assouplir `securityLevel: strict` ni `connect-src 'none'` sans revue de
-  sécurité explicite ;
-- exécuter `npm run verify` avant l’envoi.
+- Keep each pull request focused on one coherent change.
+- Add or update tests for behavior changes.
+- Keep rendering fully local.
+- Do not relax `securityLevel: strict` or `connect-src 'none'` without an
+  explicit security review.
+- Run `npm run verify` before submitting the pull request.

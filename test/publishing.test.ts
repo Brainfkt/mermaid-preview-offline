@@ -4,8 +4,20 @@ import { resolve } from 'node:path';
 import { test } from 'node:test';
 
 interface PublishingManifest {
+  activationEvents: string[];
   bugs: { url: string };
+  categories: string[];
+  contributes: {
+    commands: Array<{ title: string }>;
+    customEditors: Array<{ displayName: string; viewType: string }>;
+  };
+  description: string;
+  displayName: string;
+  galleryBanner: { color: string; theme: string };
   homepage: string;
+  icon: string;
+  keywords: string[];
+  pricing: string;
   publisher: string;
   repository: { type: string; url: string };
   scripts: Record<string, string>;
@@ -28,6 +40,34 @@ void test('le publisher et les commandes de publication sont configurés', () =>
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
+});
+
+void test('Marketplace metadata is complete, searchable, and written in English', () => {
+  assert.equal(manifest.displayName, 'Mermaid Preview — 100% Offline');
+  assert.match(manifest.description, /Mermaid diagram preview/iu);
+  assert.match(manifest.description, /offline/iu);
+  assert.equal(manifest.pricing, 'Free');
+  assert.deepEqual(manifest.categories, ['Visualization', 'Programming Languages']);
+  assert.ok(manifest.keywords.length <= 30);
+  assert.equal(new Set(manifest.keywords).size, manifest.keywords.length);
+  for (const keyword of ['mermaid', 'diagram as code', 'flowchart', 'sequence diagram', 'offline']) {
+    assert.ok(manifest.keywords.includes(keyword), `missing Marketplace keyword: ${keyword}`);
+  }
+  assert.equal(manifest.galleryBanner.color, '#ff3670');
+  assert.equal(manifest.galleryBanner.theme, 'dark');
+
+  const editor = manifest.contributes.customEditors[0];
+  assert.ok(editor);
+  assert.equal(manifest.activationEvents[0], `onCustomEditor:${editor.viewType}`);
+  assert.equal(editor.displayName, 'Mermaid Preview (Offline)');
+  assert.equal(manifest.contributes.commands[0]?.title, 'Mermaid Preview: Open Offline Preview');
+});
+
+void test('the Marketplace icon is a high-resolution PNG', () => {
+  const icon = readFileSync(resolve(root, manifest.icon));
+  assert.deepEqual([...icon.subarray(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10]);
+  assert.ok(icon.readUInt32BE(16) >= 256);
+  assert.ok(icon.readUInt32BE(20) >= 256);
 });
 
 void test('les workflows CI, release et Marketplace sont présents', () => {

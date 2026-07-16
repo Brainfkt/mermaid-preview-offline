@@ -1,5 +1,5 @@
 name: Bug report
-description: Signaler un problème reproductible dans Mermaid Preview Offline
+description: Report a reproducible problem in Mermaid Preview Offline
 title: "[Bug]: "
 labels:
   - bug
@@ -7,34 +7,34 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: Problème observé
-      description: Décrivez ce que vous voyez et ce que vous attendiez.
+      label: What happened?
+      description: Describe what you observed and what you expected instead.
     validations:
       required: true
   - type: textarea
     id: diagram
     attributes:
-      label: Diagramme minimal
-      description: Ajoutez un exemple Mermaid minimal sans donnée confidentielle.
+      label: Minimal diagram
+      description: Add a minimal Mermaid example with no confidential data.
       render: mermaid
     validations:
       required: true
   - type: input
     id: vscode
     attributes:
-      label: Version de VS Code
+      label: VS Code version
     validations:
       required: true
   - type: input
     id: extension
     attributes:
-      label: Version de l’extension
+      label: Extension version
     validations:
       required: true
   - type: dropdown
     id: os
     attributes:
-      label: Système
+      label: Operating system
       options:
         - macOS
         - Windows

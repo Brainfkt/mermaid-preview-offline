@@ -1,6 +1,5 @@
 # Support
 
-- problème reproductible : ouvrir une issue avec le modèle **Bug report** ;
-- question d’usage : ouvrir une discussion GitHub si les Discussions sont
-  activées ;
-- vulnérabilité : suivre `SECURITY.md` et ne pas ouvrir d’issue publique.
+- For a reproducible problem, open an issue using the **Bug report** template.
+- For a usage question, open a GitHub Discussion when Discussions are enabled.
+- For a security vulnerability, follow `SECURITY.md` and do not open a public issue.
