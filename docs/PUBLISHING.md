@@ -10,8 +10,8 @@
 - secret GitHub `VSCE_PAT` avec le scope Marketplace `Manage` si la publication
   automatisée par PAT est utilisée.
 
-Le publisher actuellement inscrit dans le manifeste, `stokage-tools`, est
-provisoire tant que sa propriété n’est pas confirmée. Pour le remplacer :
+Le publisher confirmé et inscrit dans le manifeste est `brainfkt`. Pour le
+remplacer dans un fork ou une nouvelle distribution :
 
 ```bash
 npm run configure:publisher -- mon-publisher

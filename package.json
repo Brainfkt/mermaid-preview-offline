@@ -3,7 +3,7 @@
   "displayName": "Mermaid Preview Offline",
   "description": "Aperçu Mermaid instantané dans VS Code, entièrement local et sans compte.",
   "version": "0.1.0",
-  "publisher": "stokage-tools",
+  "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
   },
