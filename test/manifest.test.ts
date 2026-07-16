@@ -30,4 +30,7 @@ void test('le clic sur les deux extensions Mermaid utilise l’aperçu par défa
 
 void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies.mermaid, '11.16.0');
+  assert.equal(manifest.dependencies['@mermaid-js/mermaid-zenuml'], '0.2.3');
+  assert.match(manifest.dependencies['@iconify-json/logos'] ?? '', /^1\./u);
+  assert.match(manifest.dependencies['@iconify-json/material-icon-theme'] ?? '', /^1\./u);
 });
