@@ -51,6 +51,9 @@ ce qui est actuellement pris en charge ou non par l'extension.
 | 38 | Railroad ABNF | [`38-railroad-abnf.mmd`](38-railroad-abnf.mmd) | `railroad-abnf-beta` |
 | 39 | Railroad PEG | [`39-railroad-peg.mmd`](39-railroad-peg.mmd) | `railroad-peg-beta` |
 | 40 | Informations moteur | [`40-info.mmd`](40-info.mmd) | `info` |
+| 41 | ZenUML | [`41-zenuml.mmd`](41-zenuml.mmd) | `zenuml` |
+| 42 | Packs d'icônes hors ligne | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon(...)` |
+| 43 | Image locale incorporée | [`43-local-image.mmd`](43-local-image.mmd) | `img: "..."` |
 
 ## Périmètre
 
@@ -59,9 +62,9 @@ ce qui est actuellement pris en charge ou non par l'extension.
   ci-dessus ; elles ne sont donc pas dupliquées.
 - `info` est un diagnostic du moteur, pas un graphique métier, mais il est inclus
   car il possède son propre détecteur Mermaid.
-- ZenUML n'est pas inclus : ce n'est pas un diagramme intégré au paquet
-  `mermaid`. Il nécessite l'enregistrement du module externe
-  `@mermaid-js/mermaid-zenuml`, volontairement absent de cette extension 100 %
-  hors ligne.
+- ZenUML et les packs d'icônes `logos` et `material-icon-theme` sont embarqués
+  dans le bundle et ne nécessitent aucune connexion.
+- Les images relatives sont lues dans l'espace de travail puis incorporées en
+  `data:` dans le SVG. Les chemins sortant de l'espace de travail sont refusés.
 - Les syntaxes suffixées par `-beta` sont expérimentales et peuvent évoluer lors
   d'une future mise à jour de Mermaid.
