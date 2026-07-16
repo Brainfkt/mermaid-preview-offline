@@ -31,3 +31,20 @@ SOFTWARE.
 Mermaid and the Mermaid logo may be trademarks of their respective owners. This
 extension is an independent community project and is not affiliated with or
 endorsed by Mermaid Chart.
+
+## Mermaid ZenUML
+
+`@mermaid-js/mermaid-zenuml` is bundled under the MIT License. Its source is
+available from the [Mermaid repository](https://github.com/mermaid-js/mermaid/tree/develop/packages/mermaid-zenuml).
+
+## Iconify Logos
+
+The `@iconify-json/logos` collection is bundled under the CC0 1.0 license. Its
+source and license information are available from the
+[Logos icon set page](https://icon-sets.iconify.design/logos/).
+
+## Material Icon Theme
+
+The `@iconify-json/material-icon-theme` collection is bundled under the MIT
+License. Its source and license information are available from the
+[Material Icon Theme repository](https://github.com/material-extensions/vscode-material-icon-theme).
