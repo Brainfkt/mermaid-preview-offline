@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import type { WebviewToExtensionMessage } from './protocol';
 import { createNonce, createWebviewHtml } from './webviewHtml';
 
-export const MERMAID_PREVIEW_VIEW_TYPE = 'stokage-tools.mermaidPreview';
+export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 
 export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   public constructor(private readonly extensionUri: vscode.Uri) {}
@@ -29,7 +29,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       nonce,
       scriptUri: scriptUri.toString(),
       styleUri: styleUri.toString(),
-      title: `Aperçu — ${fileNameOf(document.uri)}`,
+      title: `Preview — ${fileNameOf(document.uri)}`,
     });
 
     const sendDocument = async (): Promise<void> => {
@@ -65,7 +65,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           break;
         case 'copySvg':
           await vscode.env.clipboard.writeText(message.svg);
-          void vscode.window.showInformationMessage('SVG Mermaid copié dans le presse-papiers.');
+          void vscode.window.showInformationMessage('Mermaid SVG copied to the clipboard.');
           break;
         case 'saveSvg':
           await this.saveSvg(document.uri, message.svg);
@@ -86,8 +86,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     const target = await vscode.window.showSaveDialog({
       defaultUri,
       filters: { SVG: ['svg'] },
-      saveLabel: 'Enregistrer le SVG',
-      title: 'Enregistrer le diagramme rendu',
+      saveLabel: 'Save SVG',
+      title: 'Save rendered Mermaid diagram',
     });
 
     if (!target) {
@@ -95,7 +95,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     }
 
     await vscode.workspace.fs.writeFile(target, new TextEncoder().encode(svg));
-    void vscode.window.showInformationMessage(`Diagramme enregistré dans ${target.fsPath}.`);
+    void vscode.window.showInformationMessage(`Diagram saved to ${target.fsPath}.`);
   }
 }
 

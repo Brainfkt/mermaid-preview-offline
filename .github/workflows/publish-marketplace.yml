@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Saisir PUBLISH pour confirmer la publication'
+        description: 'Enter PUBLISH to confirm the Marketplace release'
         required: true
         type: string
 

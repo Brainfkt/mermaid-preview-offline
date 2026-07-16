@@ -135,7 +135,7 @@ async function renderLatest(): Promise<void> {
     copyButton.disabled = true;
     saveButton.disabled = true;
     showState('empty');
-    renderStatus.textContent = 'Fichier vide';
+    renderStatus.textContent = 'Empty file';
     rendering = false;
     return;
   }
@@ -164,7 +164,7 @@ async function renderLatest(): Promise<void> {
     lastSvg = svg;
     const svgElement = diagram.querySelector('svg');
     if (!svgElement) {
-      throw new Error('Mermaid n’a produit aucun élément SVG.');
+      throw new Error('Mermaid did not produce an SVG element.');
     }
 
     readNaturalSize(svgElement);
@@ -176,7 +176,7 @@ async function renderLatest(): Promise<void> {
     } else {
       applyZoom();
     }
-    renderStatus.textContent = `Rendu local • ${Math.round(performance.now() - startedAt)} ms`;
+    renderStatus.textContent = `Rendered locally • ${Math.round(performance.now() - startedAt)} ms`;
   } catch (error: unknown) {
     cleanupFailedRender(renderId);
     if (request === latestRequest) {
@@ -184,7 +184,7 @@ async function renderLatest(): Promise<void> {
       copyButton.disabled = true;
       saveButton.disabled = true;
       errorMessage.textContent = readableError(error);
-      renderStatus.textContent = 'Erreur de syntaxe';
+      renderStatus.textContent = 'Syntax error';
       showState('error');
     }
   } finally {
@@ -262,7 +262,7 @@ function bindButton(id: string, listener: () => void): void {
 function element<T extends HTMLElement>(id: string): T {
   const match = document.getElementById(id);
   if (!match) {
-    throw new Error(`Élément de webview manquant : ${id}`);
+    throw new Error(`Missing webview element: ${id}`);
   }
   return match as T;
 }

@@ -18,7 +18,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(OPEN_PREVIEW_COMMAND, async (resource?: vscode.Uri) => {
       const uri = resource ?? vscode.window.activeTextEditor?.document.uri;
       if (!uri || !isMermaidDocument(uri)) {
-        void vscode.window.showWarningMessage('Ouvrez d’abord un fichier .mmd ou .mermaid.');
+        void vscode.window.showWarningMessage('Open a .mmd or .mermaid file first.');
         return;
       }
 
