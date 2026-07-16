@@ -53,19 +53,30 @@ Légende :
 | Railroad ABNF | `railroad-abnf-beta` | ✅ | 🧪 | [`38-railroad-abnf.mmd`](38-railroad-abnf.mmd) |
 | Railroad PEG | `railroad-peg-beta` | ✅ | 🧪 | [`39-railroad-peg.mmd`](39-railroad-peg.mmd) |
 | Informations moteur | `info` | ✅ | Diagnostic | [`40-info.mmd`](40-info.mmd) |
+| ZenUML | `zenuml` | ✅ | 🧪 | [`41-zenuml.mmd`](41-zenuml.mmd) |
 
-## Éléments non pris en charge
+## Capacités hors ligne supplémentaires
 
-| Élément | Prise en charge | Motif | Solution nécessaire |
+| Élément | Prise en charge | Mise en œuvre | Exemple validé |
 |---|:---:|---|---|
-| ZenUML | ❌ | Diagramme externe absent du paquet `mermaid` principal | Embarquer et enregistrer `@mermaid-js/mermaid-zenuml` |
-| Autres plug-ins de diagrammes externes | ❌ | L'extension n'enregistre que les diagrammes intégrés à Mermaid 11.16.0 | Ajouter explicitement le module externe au bundle |
-| Packs d'icônes Iconify externes | ❌ | Aucun pack d'icônes tiers n'est enregistré hors ligne | Embarquer le pack et l'enregistrer avec Mermaid |
-| Images ou ressources distantes | ❌ | La politique de sécurité de la webview bloque le réseau | Embarquer la ressource localement |
+| Plug-in officiel ZenUML | ✅ | `@mermaid-js/mermaid-zenuml` est inclus et enregistré au démarrage | [`41-zenuml.mmd`](41-zenuml.mmd) |
+| Pack Iconify `logos` | ✅ | 2 091 icônes sont incluses dans le bundle | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
+| Pack Iconify `material-icon-theme` | ✅ | 1 174 icônes et les associations TreeView sont incluses | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
+| Images locales relatives | ✅ | Le fichier est lu dans l'espace de travail et incorporé en `data:` | [`43-local-image.mmd`](43-local-image.mmd) |
+| Images déjà incorporées | ✅ | Les URI `data:` restent inchangées | Syntaxe Mermaid standard |
+
+## Limitations intentionnelles
+
+| Élément | Prise en charge | Motif |
+|---|:---:|---|
+| Ressources `http://` ou `https://` | ❌ | Le réseau reste bloqué pour garantir confidentialité et reproductibilité |
+| Chemins locaux absolus ou hors espace de travail | ❌ | Ils sont refusés pour éviter la lecture de fichiers arbitraires |
+| Autres plug-ins tiers non identifiés | ❌ | Il n'existe pas de liste finie à embarquer ; chaque module doit être audité et nommé explicitement |
+| Autres packs parmi les milliers de packs Iconify | ❌ | Ils augmenteraient fortement la taille ; `logos` et `material-icon-theme` couvrent les usages documentés ici |
 
 ## Remarques
 
-- Les 40 exemples indiqués comme pris en charge ont été analysés et rendus en
+- Les 43 exemples indiqués comme pris en charge ont été analysés et rendus en
   SVG avec le bundle réellement utilisé par l'extension.
 - Le symbole 🧪 ne signifie pas que le rendu est incomplet : il indique que
   Mermaid considère encore la syntaxe comme expérimentale.
