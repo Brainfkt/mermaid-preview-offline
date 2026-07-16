@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Aperçu Mermaid hors ligne</title>
+  <desc id="desc">Un cadenas blanc et un M stylisé sur un fond rose.</desc>
+  <rect width="256" height="256" rx="56" fill="#ff3670"/>
+  <path d="M69 184V96l59 48 59-48v88" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M99 84V67c0-16 13-29 29-29s29 13 29 29v17" fill="none" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="128" cy="181" r="13" fill="#fff"/>
+</svg>
