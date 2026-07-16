@@ -1,0 +1,43 @@
+name: Bug report
+description: Signaler un problème reproductible dans Mermaid Preview Offline
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Problème observé
+      description: Décrivez ce que vous voyez et ce que vous attendiez.
+    validations:
+      required: true
+  - type: textarea
+    id: diagram
+    attributes:
+      label: Diagramme minimal
+      description: Ajoutez un exemple Mermaid minimal sans donnée confidentielle.
+      render: mermaid
+    validations:
+      required: true
+  - type: input
+    id: vscode
+    attributes:
+      label: Version de VS Code
+    validations:
+      required: true
+  - type: input
+    id: extension
+    attributes:
+      label: Version de l’extension
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Système
+      options:
+        - macOS
+        - Windows
+        - Linux
+    validations:
+      required: true

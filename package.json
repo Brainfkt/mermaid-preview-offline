@@ -1,0 +1,129 @@
+{
+  "name": "mermaid-preview-offline",
+  "displayName": "Mermaid Preview Offline",
+  "description": "Aperçu Mermaid instantané dans VS Code, entièrement local et sans compte.",
+  "version": "0.1.0",
+  "publisher": "stokage-tools",
+  "author": {
+    "name": "Brainfkt"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/Brainfkt/mermaid-preview-offline#readme",
+  "bugs": {
+    "url": "https://github.com/Brainfkt/mermaid-preview-offline/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Brainfkt/mermaid-preview-offline.git"
+  },
+  "galleryBanner": {
+    "color": "#0f172a",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "mermaid",
+    "diagram",
+    "preview",
+    "offline"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCustomEditor:stokage-tools.mermaidPreview",
+    "onCommand:mermaidPreviewOffline.openPreview"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "mermaid",
+        "aliases": [
+          "Mermaid",
+          "mermaid"
+        ],
+        "extensions": [
+          ".mmd",
+          ".mermaid"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "mermaid",
+        "scopeName": "source.mermaid",
+        "path": "./syntaxes/mermaid.tmLanguage.json"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "stokage-tools.mermaidPreview",
+        "displayName": "Aperçu Mermaid hors ligne",
+        "selector": [
+          {
+            "filenamePattern": "*.mmd"
+          },
+          {
+            "filenamePattern": "*.mermaid"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "commands": [
+      {
+        "command": "mermaidPreviewOffline.openPreview",
+        "title": "Mermaid : ouvrir l’aperçu hors ligne",
+        "icon": "$(preview)"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "mermaidPreviewOffline.openPreview",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "navigation@8"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "mermaidPreviewOffline.openPreview",
+          "when": "editorLangId == mermaid",
+          "group": "navigation@8"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true});require('node:fs').rmSync('.test-dist',{recursive:true,force:true})\"",
+    "lint": "eslint src test scripts esbuild.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:compile": "tsc -p tsconfig.test.json",
+    "test": "npm run test:compile && node --test .test-dist/test/*.test.js",
+    "build": "node esbuild.mjs",
+    "build:production": "node esbuild.mjs --production",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run build",
+    "package:vsix": "npm run verify && node scripts/package-vsix.mjs",
+    "publish:marketplace": "npm run verify && vsce publish --no-dependencies --skip-duplicate",
+    "configure:publisher": "node scripts/configure-publisher.mjs",
+    "vscode:prepublish": "npm run build:production"
+  },
+  "dependencies": {
+    "mermaid": "11.16.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.35.0",
+    "@types/node": "^22.18.0",
+    "@types/vscode": "^1.96.0",
+    "@vscode/vsce": "^3.6.2",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.35.0",
+    "typescript": "^5.9.2",
+    "typescript-eslint": "^8.42.0"
+  }
+}
