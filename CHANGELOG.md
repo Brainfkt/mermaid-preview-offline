@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- bundled the official ZenUML diagram plug-in for offline rendering;
+- bundled the Iconify `logos` and `material-icon-theme` icon collections;
+- embedded relative workspace images as data URIs in rendered and exported SVGs;
+- added validated examples and an updated compatibility matrix for the new
+  offline capabilities.
+- made the local-image example self-contained and the icon-pack example visually
+  explicit.
+
 ## 0.1.1
 
 - added the official Mermaid logo and a matching Marketplace banner;

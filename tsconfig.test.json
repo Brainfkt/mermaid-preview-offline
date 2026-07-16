@@ -9,6 +9,7 @@
     "sourceMap": false
   },
   "include": [
+    "src/localImages.ts",
     "src/webviewHtml.ts",
     "test/**/*.ts"
   ]

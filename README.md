@@ -29,6 +29,10 @@ your diagrams stay private and remain available without an internet connection.
 - **SVG workflow** — copy the rendered SVG or save it as a file.
 - **Native VS Code experience** — light, dark, and high-contrast themes included.
 - **Mermaid language support** — syntax highlighting for `.mmd` and `.mermaid` files.
+- **Bundled ZenUML and icons** — ZenUML plus the `logos` and
+  `material-icon-theme` Iconify packs work without a network connection.
+- **Local images** — relative image files are embedded directly into the
+  rendered SVG while paths outside the workspace remain blocked.
 
 ## Supported Mermaid diagrams
 
@@ -36,6 +40,7 @@ The bundled Mermaid 11 renderer supports flowcharts, sequence diagrams, class
 diagrams, state diagrams, entity relationship diagrams, Gantt charts, mindmaps,
 timelines, pie charts, Git graphs, user journeys, requirement diagrams,
 architecture diagrams, and more.
+ZenUML and registered Iconify icons are also bundled locally.
 
 ## Get started
 
