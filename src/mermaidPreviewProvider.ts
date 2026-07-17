@@ -187,11 +187,14 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           await vscode.window.showTextDocument(document, {
             preview: false,
             preserveFocus: message.preserveFocus ?? false,
-            viewColumn: vscode.ViewColumn.Beside,
+            viewColumn: webviewPanel.viewColumn,
           });
           break;
         case 'requestDocument':
           queueDocument(0);
+          break;
+        case 'setDiagramTheme':
+          await updateDiagramTheme(message.theme);
           break;
         case 'viewState':
           persistViewState(message.state);
@@ -272,7 +275,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
 function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline', resource);
-  const configuredTheme = configuration.get<unknown>('diagramTheme', 'adaptive');
+  const configuredTheme = vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .get<unknown>('diagramTheme', 'adaptive');
   const refreshMode = configuration.get<unknown>('refreshMode', 'automatic');
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
@@ -283,6 +288,16 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
     refreshDelay: clampInteger(refreshDelay, 0, 2_000),
     refreshMode: refreshMode === 'manual' ? 'manual' : 'automatic',
   };
+}
+
+async function updateDiagramTheme(theme: PreviewConfiguration['diagramTheme']): Promise<void> {
+  const target =
+    vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders
+      ? vscode.ConfigurationTarget.Workspace
+      : vscode.ConfigurationTarget.Global;
+  await vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .update('diagramTheme', theme, target);
 }
 
 function clampInteger(value: number, minimum: number, maximum: number): number {
@@ -303,6 +318,7 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     preserveFocus?: unknown;
     state?: unknown;
     svg?: unknown;
+    theme?: unknown;
     type?: unknown;
   };
   if (candidate.type === 'requestDocument') {
@@ -316,6 +332,9 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   }
   if (candidate.type === 'viewState') {
     return typeof candidate.state === 'object' && candidate.state !== null;
+  }
+  if (candidate.type === 'setDiagramTheme') {
+    return isDiagramTheme(candidate.theme);
   }
   return (
     (candidate.type === 'copySvg' || candidate.type === 'saveSvg') &&

@@ -31,8 +31,8 @@
 <p align="center"><em>Edit the source and see the locally rendered preview update beside it.</em></p>
 
 Open any `.mmd` or `.mermaid` file and the diagram appears immediately in a
-native VS Code editor. Select **Source** to keep the Mermaid code beside the
-preview while you work. The renderer, plug-ins, icons, and supported local
+native VS Code editor. Select the Source icon to open the Mermaid code as a tab
+in the same editor group. The renderer, plug-ins, icons, and supported local
 assets all ship inside the extension.
 
 ## Why use it?
@@ -50,14 +50,15 @@ assets all ship inside the extension.
 
 Keep several Mermaid previews open in normal VS Code editor groups. Each view
 has its own zoom level and exposes rendering time and zoom percentage in the
-footer. Zoom, scroll position, selected theme, and Source mode are restored for
-each preview after VS Code restarts.
+footer. Zoom and scroll position are restored per preview after VS Code
+restarts, while the selected diagram theme stays synchronized across files.
 
 ![Sankey and block diagrams open in two VS Code editor groups](media/screenshots/split-view.png)
 
 Large diagrams remain easy to inspect with fit-to-window, incremental zoom, and
-drag-to-pan navigation. Select **Source** whenever you want the document and its
-preview visible at the same time.
+drag-to-pan navigation. Use **Mermaid Preview: Open Preview to the Side** from a
+Mermaid file's context menu whenever you want the document and its preview
+visible at the same time.
 
 ![A zoomed Mermaid mindmap beside its source in VS Code](media/screenshots/mindmap-zoomed.png)
 
@@ -75,7 +76,7 @@ portable and do not depend on local file paths.
 1. Install **Mermaid Preview — 100% Offline** from the
    [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=brainfkt.mermaid-preview-offline).
 2. Open a `.mmd` or `.mermaid` file from the Explorer.
-3. Select **Source** or press `E` to edit beside the live preview.
+3. Select the Source icon or press `E` to edit in the current editor group.
 4. Use **Copy SVG** or **Save SVG** when the diagram is ready.
 
 No configuration is required. To temporarily open a Mermaid file as plain text,
@@ -88,7 +89,7 @@ use **Reopen Editor With...** → **Text Editor**.
 - Readable syntax errors with a direct path back to the source.
 - Error locations with line, column, source excerpt, and a Retry action.
 - Fit-to-window, incremental zoom, and drag-to-pan navigation.
-- Six diagram themes selectable directly from the preview.
+- Six workspace-wide diagram themes selectable directly from the preview.
 - A modern glass interface that remains native to VS Code themes.
 - SVG copy and file export.
 - Dark, light, and high-contrast VS Code theme support.
@@ -126,7 +127,7 @@ and current limitations.
 
 | Control | Action |
 |---|---|
-| `E` | Open the source beside the preview |
+| `E` | Open the source in the current editor group |
 | `R` | Refresh the diagram |
 | `Ctrl/Cmd + 0` | Fit the diagram to the viewport |
 | `+` / `-` | Zoom in or out |
@@ -142,7 +143,7 @@ and current limitations.
 | `mermaidPreviewOffline.refreshMode` | `automatic` | Switch between live and manual rendering. |
 | `mermaidPreviewOffline.refreshDelay` | `140` | Set the automatic refresh delay in milliseconds. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
-| `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose Adaptive, Default, Dark, Forest, Neutral, or Base. |
+| `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose a theme shared by every preview in the workspace. |
 
 Use **Mermaid Preview: Open Preview to the Side** to preserve your current
 editor layout. **Mermaid Preview: Configure Default Editor** switches `.mmd`

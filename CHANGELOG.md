@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.2
+
+- compacted the preview toolbar and aligned its controls to the left in the
+  Source, zoom, refresh, theme, and SVG action order;
+- replaced the Source, Refresh, and Theme labels with accessible icons;
+- simplified the footer to unframed monospace status text;
+- changed Source so it opens as a text tab in the current editor group instead
+  of splitting the editor;
+- kept **Open Preview to the Side** available from the Mermaid file context
+  menu for an explicit split-view workflow;
+- made the selected diagram theme persistent and synchronized across every
+  Mermaid preview in the workspace.
+
 ## 0.2.1
 
 - refreshed the extension package with the same transparent icon displayed in

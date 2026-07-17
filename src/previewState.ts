@@ -6,10 +6,8 @@ import {
 
 export const DEFAULT_PREVIEW_STATE: PersistedPreviewState = {
   autoFit: true,
-  diagramTheme: 'adaptive',
   scrollLeft: 0,
   scrollTop: 0,
-  sourceVisible: false,
   zoom: 1,
 };
 
@@ -20,10 +18,8 @@ export function normalizePreviewState(value: unknown): PersistedPreviewState {
 
   return {
     autoFit: typeof value.autoFit === 'boolean' ? value.autoFit : true,
-    diagramTheme: isDiagramTheme(value.diagramTheme) ? value.diagramTheme : 'adaptive',
     scrollLeft: finiteNonNegative(value.scrollLeft),
     scrollTop: finiteNonNegative(value.scrollTop),
-    sourceVisible: typeof value.sourceVisible === 'boolean' ? value.sourceVisible : false,
     zoom: clamp(finiteNumber(value.zoom, 1), 0.15, 4),
   };
 }

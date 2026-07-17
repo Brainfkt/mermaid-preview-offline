@@ -10,7 +10,13 @@ interface ExtensionManifest {
     configuration: {
       properties: Record<
         string,
-        { default?: unknown; enum?: unknown[]; maximum?: number; minimum?: number }
+        {
+          default?: unknown;
+          enum?: unknown[];
+          maximum?: number;
+          minimum?: number;
+          scope?: string;
+        }
       >;
     };
     customEditors: Array<{
@@ -80,6 +86,7 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
     'neutral',
     'base',
   ]);
+  assert.equal(properties['mermaidPreviewOffline.diagramTheme']?.scope, 'window');
 });
 
 void test('the extension can run in local and remote VS Code extension hosts', () => {

@@ -35,20 +35,20 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
 </head>
 <body>
   <header class="toolbar glass-surface" aria-label="Mermaid preview controls">
-    <div class="toolbar__group toolbar__group--primary">
-      <button class="button button--source" id="open-source" type="button" title="Open source to the side (E)" aria-pressed="false">
-        <span aria-hidden="true">&lt;/&gt;</span>
-        <span>Source</span>
+    <div class="toolbar__group">
+      <button class="button button--icon button--source" id="open-source" type="button" title="Open source in this editor group (E)" aria-label="Open source in this editor group" aria-pressed="false">
+        ${icon('code')}
       </button>
       <span class="divider" aria-hidden="true"></span>
-      <button class="button button--icon" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
+      <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
       <button class="button button--zoom" id="fit" type="button" title="Fit diagram (0)">Fit</button>
-      <button class="button button--icon" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
-    </div>
-    <div class="toolbar__group">
-      <span class="metadata-chip" id="large-file-label" hidden></span>
-      <label class="theme-picker" title="Diagram color theme">
-        <span class="theme-picker__label">Theme</span>
+      <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      <span class="divider" aria-hidden="true"></span>
+      <button class="button button--icon button--refresh" id="refresh" type="button" title="Refresh diagram (R)" aria-label="Refresh diagram">
+        ${icon('refresh')}
+      </button>
+      <label class="button button--icon theme-picker" id="theme-picker" title="Diagram theme: Adaptive" aria-label="Diagram theme: Adaptive">
+        ${icon('palette')}
         <select id="diagram-theme" aria-label="Diagram color theme">
           <option value="adaptive">Adaptive</option>
           <option value="default">Default</option>
@@ -58,12 +58,10 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
           <option value="base">Base</option>
         </select>
       </label>
-      <button class="button button--quiet button--refresh" id="refresh" type="button" title="Refresh diagram (R)">
-        <span aria-hidden="true">↻</span>
-        <span>Refresh</span>
-      </button>
+      <span class="divider" aria-hidden="true"></span>
       <button class="button button--quiet" id="copy-svg" type="button" disabled>Copy SVG</button>
       <button class="button button--quiet" id="save-svg" type="button" disabled>Save SVG</button>
+      <span class="metadata-chip" id="large-file-label" hidden></span>
     </div>
   </header>
 
@@ -103,7 +101,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     <div id="diagram" class="diagram" hidden></div>
   </main>
 
-  <footer class="statusbar glass-surface">
+  <footer class="statusbar">
     <span id="file-name">Mermaid</span>
     <span class="statusbar__spacer"></span>
     <span id="render-status" role="status" aria-live="polite">Ready</span>
@@ -113,6 +111,16 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
   <script nonce="${options.nonce}" src="${options.scriptUri}"></script>
 </body>
 </html>`;
+}
+
+function icon(name: 'code' | 'palette' | 'refresh'): string {
+  const paths: Record<typeof name, string> = {
+    code: '<path d="m8 9-3 3 3 3M16 9l3 3-3 3M14 5l-4 14"/>',
+    palette:
+      '<path d="M12 3a9 9 0 0 0 0 18h1.5a1.5 1.5 0 0 0 0-3H12a2 2 0 0 1 0-4h2.5A6.5 6.5 0 0 0 21 7.5C21 5 17 3 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="6.5" r="1"/><circle cx="17.2" cy="9" r="1"/>',
+    refresh: '<path d="M20 6v5h-5M4 18v-5h5M6.1 9a7 7 0 0 1 11.4-2.6L20 9M4 15l2.5 2.6A7 7 0 0 0 17.9 15"/>',
+  };
+  return `<svg class="button__icon" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">${paths[name]}</g></svg>`;
 }
 
 function escapeHtml(value: string): string {

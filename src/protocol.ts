@@ -19,10 +19,8 @@ export interface PreviewConfiguration {
 
 export interface PersistedPreviewState {
   autoFit: boolean;
-  diagramTheme: DiagramTheme;
   scrollLeft: number;
   scrollTop: number;
-  sourceVisible: boolean;
   zoom: number;
 }
 
@@ -57,6 +55,7 @@ export type WebviewToExtensionMessage =
   | { type: 'ready'; hasPersistedState: boolean }
   | { type: 'openSource'; preserveFocus?: boolean }
   | { type: 'requestDocument' }
+  | { type: 'setDiagramTheme'; theme: DiagramTheme }
   | { type: 'viewState'; state: PersistedPreviewState }
   | { type: 'copySvg'; svg: string }
   | { type: 'saveSvg'; svg: string };

@@ -54,10 +54,11 @@ let html = createWebviewHtml({
 
 const stub = `<script nonce="${nonce}">
   let persistedState;
+  const postedMessages = [];
   globalThis.acquireVsCodeApi = () => ({
     getState: () => persistedState,
     setState: (state) => { persistedState = state; },
-    postMessage: () => undefined,
+    postMessage: (message) => { postedMessages.push(message); },
   });
 </script>`;
 const runner = `<script nonce="${nonce}">
@@ -170,6 +171,35 @@ const runner = `<script nonce="${nonce}">
         entries.push({ fileName: example.fileName, scheme: scheme.name, ...signature(svg) });
       }
     }
+
+    const sourceButton = document.querySelector('#open-source');
+    sourceButton.click();
+    if (!sourceButton.classList.contains('button--active') ||
+        postedMessages.at(-1)?.type !== 'openSource') {
+      throw new Error('The Source control did not request the text editor.');
+    }
+
+    const themeSelect = document.querySelector('#diagram-theme');
+    const svgBeforeTheme = document.querySelector('#diagram svg');
+    themeSelect.value = 'forest';
+    themeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(
+      () => postedMessages.some((message) =>
+        message.type === 'setDiagramTheme' && message.theme === 'forest'),
+      'theme selection',
+    );
+    await waitFor(
+      () => document.querySelector('#diagram svg') !== svgBeforeTheme,
+      'theme rerender',
+    );
+
+    const svgBeforeRefresh = document.querySelector('#diagram svg');
+    document.querySelector('#refresh').click();
+    await waitFor(
+      () => document.querySelector('#diagram svg') !== svgBeforeRefresh,
+      'manual refresh',
+    );
+
     const output = document.createElement('script');
     output.id = 'visual-results';
     output.type = 'application/json';

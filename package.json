@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -199,8 +199,8 @@
             "Use Mermaid's customizable base theme."
           ],
           "default": "adaptive",
-          "scope": "resource",
-          "description": "Default Mermaid color theme. It can also be overridden from an individual preview."
+          "scope": "window",
+          "description": "Mermaid color theme shared by every preview in the current workspace."
         }
       }
     }

@@ -58,15 +58,15 @@ const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
 const saveButton = element<HTMLButtonElement>('save-svg');
 const themeSelect = element<HTMLSelectElement>('diagram-theme');
+const themePicker = element<HTMLElement>('theme-picker');
 
 let configuration = DEFAULT_CONFIGURATION;
 let zoom = initialState.zoom;
 let autoFit = initialState.autoFit;
 let savedScrollLeft = initialState.scrollLeft;
 let savedScrollTop = initialState.scrollTop;
-let sourceVisible = initialState.sourceVisible;
-let diagramTheme = initialState.diagramTheme;
-let themeSelectedInView = hadPersistedState;
+let sourceVisible = false;
+let diagramTheme: DiagramTheme = DEFAULT_CONFIGURATION.diagramTheme;
 let naturalWidth = 800;
 let naturalHeight = 600;
 let lastSvg = '';
@@ -81,6 +81,7 @@ let persistTimer: number | undefined;
 let activeRenderController: AbortController | undefined;
 
 themeSelect.value = diagramTheme;
+updateThemePicker();
 zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
 updateSourceButton();
 
@@ -90,10 +91,9 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     case 'configuration': {
       const previousTheme = resolvedDiagramTheme();
       configuration = message.configuration;
-      if (!themeSelectedInView) {
-        diagramTheme = configuration.diagramTheme;
-        themeSelect.value = diagramTheme;
-      }
+      diagramTheme = configuration.diagramTheme;
+      themeSelect.value = diagramTheme;
+      updateThemePicker();
       updateRefreshControls();
       if (latestSource && previousTheme !== resolvedDiagramTheme()) {
         scheduleRender(latestSource, 0);
@@ -122,7 +122,6 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     case 'sourceVisibility':
       sourceVisible = message.visible;
       updateSourceButton();
-      schedulePersistState();
       break;
   }
 });
@@ -151,8 +150,8 @@ themeSelect.addEventListener('change', () => {
     return;
   }
   diagramTheme = themeSelect.value;
-  themeSelectedInView = true;
-  persistState();
+  updateThemePicker();
+  vscode.postMessage({ type: 'setDiagramTheme', theme: diagramTheme });
   if (latestSource) {
     scheduleRender(latestSource, 0);
   }
@@ -220,9 +219,6 @@ new MutationObserver(() => {
 window.addEventListener('pagehide', persistState);
 
 vscode.postMessage({ type: 'ready', hasPersistedState: hadPersistedState });
-if (sourceVisible) {
-  window.setTimeout(() => openSource(true), 0);
-}
 
 function scheduleRender(source: string, delay: number): void {
   latestSource = source;
@@ -379,15 +375,7 @@ function restoreViewState(value: PersistedPreviewState): void {
   autoFit = state.autoFit;
   savedScrollLeft = state.scrollLeft;
   savedScrollTop = state.scrollTop;
-  sourceVisible = state.sourceVisible;
-  diagramTheme = state.diagramTheme;
-  themeSelectedInView = true;
-  themeSelect.value = diagramTheme;
-  updateSourceButton();
   applyZoom();
-  if (sourceVisible) {
-    openSource(true);
-  }
   persistState();
 }
 
@@ -398,10 +386,8 @@ function persistState(): void {
   }
   const state: PersistedPreviewState = {
     autoFit,
-    diagramTheme,
     scrollLeft: savedScrollLeft,
     scrollTop: savedScrollTop,
-    sourceVisible,
     zoom,
   };
   vscode.setState(state);
@@ -473,6 +459,13 @@ function updateSourceButton(): void {
   sourceButton.classList.toggle('button--active', sourceVisible);
 }
 
+function updateThemePicker(): void {
+  const selectedOption = themeSelect.selectedOptions[0];
+  const label = selectedOption?.textContent?.trim() || diagramTheme;
+  themePicker.title = `Diagram theme: ${label}`;
+  themePicker.setAttribute('aria-label', `Diagram theme: ${label}`);
+}
+
 function refreshDocument(): void {
   if (pendingDocument || configuration.refreshMode === 'manual') {
     renderStatus.textContent = 'Refreshing…';
@@ -498,7 +491,6 @@ function cleanupFailedRender(renderId: string): void {
 function openSource(preserveFocus: boolean): void {
   sourceVisible = true;
   updateSourceButton();
-  persistState();
   vscode.postMessage({ type: 'openSource', preserveFocus });
 }
 
