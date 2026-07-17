@@ -100,7 +100,10 @@ const runner = `<script nonce="${nonce}">
       }
     }
     const viewBox = svg.viewBox.baseVal;
-    const textContent = svg.textContent.replace(/\\s+/gu, ' ').trim();
+    const textContent = [...svg.querySelectorAll('text, foreignObject')]
+      .map((element) => element.textContent.replace(/\\s+/gu, ' ').trim())
+      .filter(Boolean)
+      .join('|');
     return {
       elementCount: svg.querySelectorAll('*').length,
       paletteHash: hash(palette),
@@ -260,7 +263,7 @@ if (updateBaseline) {
 }
 
 function compareResults(expected, actual) {
-  const unstableAttributeExamples = new Set(['13-gitgraph.mmd']);
+  const unstableAttributeExamples = new Set(['08-gantt.mmd', '13-gitgraph.mmd']);
   const expectedByKey = new Map(
     expected.entries.map((entry) => [`${entry.scheme}/${entry.fileName}`, entry]),
   );

@@ -7,7 +7,7 @@
       "paletteHash": "ea84b80e",
       "ratio": 7.3745,
       "structureHash": "1f8ff345",
-      "textHash": "078ff33a"
+      "textHash": "9be70fd5"
     },
     {
       "fileName": "02-flowchart-elk.mmd",
@@ -16,7 +16,7 @@
       "paletteHash": "02ad13d0",
       "ratio": 0.8901,
       "structureHash": "24e08dda",
-      "textHash": "fa4222a3"
+      "textHash": "d5e169e2"
     },
     {
       "fileName": "03-sequence.mmd",
@@ -25,7 +25,7 @@
       "paletteHash": "9b230db6",
       "ratio": 1.0337,
       "structureHash": "2f2593c1",
-      "textHash": "3c9e4a31"
+      "textHash": "7f1c906a"
     },
     {
       "fileName": "04-class.mmd",
@@ -34,7 +34,7 @@
       "paletteHash": "27160b4d",
       "ratio": 1.7287,
       "structureHash": "a9fccfcb",
-      "textHash": "be80386a"
+      "textHash": "8d2dcd65"
     },
     {
       "fileName": "05-state.mmd",
@@ -43,7 +43,7 @@
       "paletteHash": "e2c21529",
       "ratio": 0.3731,
       "structureHash": "67c29070",
-      "textHash": "7f567e7a"
+      "textHash": "9c5e000f"
     },
     {
       "fileName": "06-entity-relationship.mmd",
@@ -52,7 +52,7 @@
       "paletteHash": "1e7b9499",
       "ratio": 0.7721,
       "structureHash": "deb49e35",
-      "textHash": "f50ba455"
+      "textHash": "6e8c8a68"
     },
     {
       "fileName": "07-user-journey.mmd",
@@ -61,7 +61,7 @@
       "paletteHash": "0ef086b8",
       "ratio": 3.8227,
       "structureHash": "e0deafed",
-      "textHash": "979621a0"
+      "textHash": "a46ec419"
     },
     {
       "fileName": "08-gantt.mmd",
@@ -70,7 +70,7 @@
       "paletteHash": "e2465341",
       "ratio": 2.8209,
       "structureHash": "6548fba1",
-      "textHash": "c9604bf7"
+      "textHash": "9d3ca563"
     },
     {
       "fileName": "09-pie.mmd",
@@ -79,7 +79,7 @@
       "paletteHash": "8353693f",
       "ratio": 1.4788,
       "structureHash": "2e6fea4a",
-      "textHash": "216bd74d"
+      "textHash": "520a743e"
     },
     {
       "fileName": "10-donut.mmd",
@@ -88,7 +88,7 @@
       "paletteHash": "8353693f",
       "ratio": 1.4157,
       "structureHash": "2e6fea4a",
-      "textHash": "6bba94c4"
+      "textHash": "aa2d8503"
     },
     {
       "fileName": "11-quadrant.mmd",
@@ -97,7 +97,7 @@
       "paletteHash": "0d8a67bb",
       "ratio": 1,
       "structureHash": "bb1078a8",
-      "textHash": "f5dc7eae"
+      "textHash": "6be1eb29"
     },
     {
       "fileName": "12-requirement.mmd",
@@ -106,16 +106,16 @@
       "paletteHash": "9d5859f9",
       "ratio": 2.1618,
       "structureHash": "0402db5a",
-      "textHash": "94e8c2d0"
+      "textHash": "b85c9b34"
     },
     {
       "fileName": "13-gitgraph.mmd",
       "scheme": "light",
       "elementCount": 76,
-      "paletteHash": "c70a18fd",
+      "paletteHash": "ddc35805",
       "ratio": 2.1311,
-      "structureHash": "c8bcdf10",
-      "textHash": "63bb6739"
+      "structureHash": "77c7b574",
+      "textHash": "938c54e6"
     },
     {
       "fileName": "14-c4-context.mmd",
@@ -124,7 +124,7 @@
       "paletteHash": "940734bf",
       "ratio": 1.3111,
       "structureHash": "27cb69a6",
-      "textHash": "0c44af29"
+      "textHash": "dd5ecaad"
     },
     {
       "fileName": "15-c4-container.mmd",
@@ -133,7 +133,7 @@
       "paletteHash": "a5a3ec48",
       "ratio": 0.7474,
       "structureHash": "caa086c9",
-      "textHash": "25040b8f"
+      "textHash": "2b545a8e"
     },
     {
       "fileName": "16-c4-component.mmd",
@@ -142,7 +142,7 @@
       "paletteHash": "ffd7b887",
       "ratio": 0.9209,
       "structureHash": "66951857",
-      "textHash": "a83b8aa5"
+      "textHash": "08796feb"
     },
     {
       "fileName": "17-c4-dynamic.mmd",
@@ -151,7 +151,7 @@
       "paletteHash": "be49a58a",
       "ratio": 1.282,
       "structureHash": "0f07c92e",
-      "textHash": "a5cdccc4"
+      "textHash": "d490a0eb"
     },
     {
       "fileName": "18-c4-deployment.mmd",
@@ -160,7 +160,7 @@
       "paletteHash": "2c6984be",
       "ratio": 2.204,
       "structureHash": "dc9bc8c7",
-      "textHash": "fd820086"
+      "textHash": "c4f7ab2a"
     },
     {
       "fileName": "19-mindmap.mmd",
@@ -169,7 +169,7 @@
       "paletteHash": "2956ef1a",
       "ratio": 1.8905,
       "structureHash": "7c3bff73",
-      "textHash": "12670765"
+      "textHash": "c28abee4"
     },
     {
       "fileName": "20-timeline.mmd",
@@ -178,7 +178,7 @@
       "paletteHash": "db5bfe9e",
       "ratio": 2.038,
       "structureHash": "619e6727",
-      "textHash": "beb2c0d4"
+      "textHash": "9775f018"
     },
     {
       "fileName": "21-sankey.mmd",
@@ -187,7 +187,7 @@
       "paletteHash": "b93db297",
       "ratio": 1.5,
       "structureHash": "9b454caf",
-      "textHash": "4325a591"
+      "textHash": "5a1d25ed"
     },
     {
       "fileName": "22-xy-chart.mmd",
@@ -196,7 +196,7 @@
       "paletteHash": "561845ec",
       "ratio": 1.4,
       "structureHash": "03e1571b",
-      "textHash": "dd853beb"
+      "textHash": "e676affa"
     },
     {
       "fileName": "23-block.mmd",
@@ -205,7 +205,7 @@
       "paletteHash": "63ce68b9",
       "ratio": 2.2075,
       "structureHash": "fc24be50",
-      "textHash": "8e02fba0"
+      "textHash": "b7a99751"
     },
     {
       "fileName": "24-packet.mmd",
@@ -214,7 +214,7 @@
       "paletteHash": "d6a65bcc",
       "ratio": 7.2766,
       "structureHash": "7d07b372",
-      "textHash": "769c846e"
+      "textHash": "1302b4b3"
     },
     {
       "fileName": "25-kanban.mmd",
@@ -223,7 +223,7 @@
       "paletteHash": "01f0d1db",
       "ratio": 5.0301,
       "structureHash": "921ebe3f",
-      "textHash": "a307eabd"
+      "textHash": "c12b92fd"
     },
     {
       "fileName": "26-architecture.mmd",
@@ -232,7 +232,7 @@
       "paletteHash": "731675fa",
       "ratio": 2.0356,
       "structureHash": "a7935a9c",
-      "textHash": "7c084afb"
+      "textHash": "8628a2b5"
     },
     {
       "fileName": "27-radar.mmd",
@@ -241,7 +241,7 @@
       "paletteHash": "78b667ef",
       "ratio": 1,
       "structureHash": "37076e35",
-      "textHash": "5736d62f"
+      "textHash": "b0355311"
     },
     {
       "fileName": "28-treemap.mmd",
@@ -250,7 +250,7 @@
       "paletteHash": "320d3dd3",
       "ratio": 2.6846,
       "structureHash": "7cbe0f35",
-      "textHash": "f041fddc"
+      "textHash": "a0789310"
     },
     {
       "fileName": "29-swimlanes.mmd",
@@ -259,7 +259,7 @@
       "paletteHash": "b4dcfe39",
       "ratio": 2.3778,
       "structureHash": "3814799b",
-      "textHash": "6cd5e884"
+      "textHash": "e14dbb38"
     },
     {
       "fileName": "30-event-modeling.mmd",
@@ -268,7 +268,7 @@
       "paletteHash": "ae8df534",
       "ratio": 1.459,
       "structureHash": "46fee3d5",
-      "textHash": "79091ac9"
+      "textHash": "2f6a46be"
     },
     {
       "fileName": "31-venn.mmd",
@@ -277,7 +277,7 @@
       "paletteHash": "9aaaaa9d",
       "ratio": 1.7778,
       "structureHash": "5424cffa",
-      "textHash": "26329245"
+      "textHash": "ea06fbfe"
     },
     {
       "fileName": "32-ishikawa.mmd",
@@ -286,7 +286,7 @@
       "paletteHash": "f3f0f15d",
       "ratio": 1.0178,
       "structureHash": "9ec15448",
-      "textHash": "c6b40342"
+      "textHash": "fe051a53"
     },
     {
       "fileName": "33-wardley.mmd",
@@ -295,7 +295,7 @@
       "paletteHash": "8af0558d",
       "ratio": 1.5714,
       "structureHash": "7d03f125",
-      "textHash": "ecd21756"
+      "textHash": "f3f43280"
     },
     {
       "fileName": "34-cynefin.mmd",
@@ -304,7 +304,7 @@
       "paletteHash": "76aebda0",
       "ratio": 1.2941,
       "structureHash": "8ff02926",
-      "textHash": "21bd9db6"
+      "textHash": "3518c400"
     },
     {
       "fileName": "35-tree-view.mmd",
@@ -313,7 +313,7 @@
       "paletteHash": "ebfaab11",
       "ratio": 1.1264,
       "structureHash": "46061999",
-      "textHash": "25cb603a"
+      "textHash": "429c2ead"
     },
     {
       "fileName": "36-railroad.mmd",
@@ -322,7 +322,7 @@
       "paletteHash": "fe3b06d7",
       "ratio": 0.6623,
       "structureHash": "8528918a",
-      "textHash": "c8884df6"
+      "textHash": "96cc3491"
     },
     {
       "fileName": "37-railroad-ebnf.mmd",
@@ -331,7 +331,7 @@
       "paletteHash": "9147cae5",
       "ratio": 0.6545,
       "structureHash": "9f3002c7",
-      "textHash": "40c8e6ec"
+      "textHash": "9498e8a4"
     },
     {
       "fileName": "38-railroad-abnf.mmd",
@@ -340,7 +340,7 @@
       "paletteHash": "67528573",
       "ratio": 0.6277,
       "structureHash": "f11ca29c",
-      "textHash": "e1465766"
+      "textHash": "dada8dd5"
     },
     {
       "fileName": "39-railroad-peg.mmd",
@@ -349,7 +349,7 @@
       "paletteHash": "8a1df6e3",
       "ratio": 0.383,
       "structureHash": "36afcfe5",
-      "textHash": "5b09bd78"
+      "textHash": "f06436c4"
     },
     {
       "fileName": "40-info.mmd",
@@ -358,7 +358,7 @@
       "paletteHash": "691044ea",
       "ratio": 0,
       "structureHash": "e6d66c71",
-      "textHash": "573e03e9"
+      "textHash": "5e03738a"
     },
     {
       "fileName": "41-zenuml.mmd",
@@ -367,7 +367,7 @@
       "paletteHash": "00be10ad",
       "ratio": 1.1112,
       "structureHash": "be61e534",
-      "textHash": "2b3e720e"
+      "textHash": "42ffeb7f"
     },
     {
       "fileName": "42-icon-packs.mmd",
@@ -376,7 +376,7 @@
       "paletteHash": "9e7506f9",
       "ratio": 2.7546,
       "structureHash": "a0e0e7f1",
-      "textHash": "82b31a70"
+      "textHash": "5502e4f1"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -385,7 +385,7 @@
       "paletteHash": "c7e7dd1e",
       "ratio": 3.6686,
       "structureHash": "d67d4995",
-      "textHash": "81f6148d"
+      "textHash": "9e5583d1"
     },
     {
       "fileName": "01-flowchart.mmd",
@@ -394,7 +394,7 @@
       "paletteHash": "aca808d7",
       "ratio": 7.3745,
       "structureHash": "fd5b983c",
-      "textHash": "747fa073"
+      "textHash": "9be70fd5"
     },
     {
       "fileName": "02-flowchart-elk.mmd",
@@ -403,7 +403,7 @@
       "paletteHash": "02ad13d0",
       "ratio": 0.8901,
       "structureHash": "bf1d2f3b",
-      "textHash": "38528867"
+      "textHash": "d5e169e2"
     },
     {
       "fileName": "03-sequence.mmd",
@@ -412,7 +412,7 @@
       "paletteHash": "9b230db6",
       "ratio": 1.0337,
       "structureHash": "2f2593c1",
-      "textHash": "e6d2303a"
+      "textHash": "7f1c906a"
     },
     {
       "fileName": "04-class.mmd",
@@ -421,7 +421,7 @@
       "paletteHash": "acba4826",
       "ratio": 1.7287,
       "structureHash": "3e3fbab2",
-      "textHash": "696555cf"
+      "textHash": "8d2dcd65"
     },
     {
       "fileName": "05-state.mmd",
@@ -430,7 +430,7 @@
       "paletteHash": "12d46cd9",
       "ratio": 0.3731,
       "structureHash": "f07d0ac9",
-      "textHash": "8a687c39"
+      "textHash": "9c5e000f"
     },
     {
       "fileName": "06-entity-relationship.mmd",
@@ -439,7 +439,7 @@
       "paletteHash": "f6402570",
       "ratio": 0.7721,
       "structureHash": "a765cfcc",
-      "textHash": "1b407c05"
+      "textHash": "6e8c8a68"
     },
     {
       "fileName": "07-user-journey.mmd",
@@ -448,7 +448,7 @@
       "paletteHash": "0ef086b8",
       "ratio": 3.8227,
       "structureHash": "e0deafed",
-      "textHash": "1f491f0a"
+      "textHash": "a46ec419"
     },
     {
       "fileName": "08-gantt.mmd",
@@ -457,7 +457,7 @@
       "paletteHash": "e2465341",
       "ratio": 2.8209,
       "structureHash": "6548fba1",
-      "textHash": "6691869f"
+      "textHash": "9d3ca563"
     },
     {
       "fileName": "09-pie.mmd",
@@ -466,7 +466,7 @@
       "paletteHash": "5dc31644",
       "ratio": 1.4788,
       "structureHash": "2e6fea4a",
-      "textHash": "eeb5ea08"
+      "textHash": "520a743e"
     },
     {
       "fileName": "10-donut.mmd",
@@ -475,7 +475,7 @@
       "paletteHash": "5dc31644",
       "ratio": 1.4157,
       "structureHash": "2e6fea4a",
-      "textHash": "25b6b055"
+      "textHash": "aa2d8503"
     },
     {
       "fileName": "11-quadrant.mmd",
@@ -484,7 +484,7 @@
       "paletteHash": "094a0178",
       "ratio": 1,
       "structureHash": "bb1078a8",
-      "textHash": "27f8f2aa"
+      "textHash": "6be1eb29"
     },
     {
       "fileName": "12-requirement.mmd",
@@ -493,16 +493,16 @@
       "paletteHash": "03977dc9",
       "ratio": 2.1618,
       "structureHash": "f7b664bb",
-      "textHash": "d3caac9e"
+      "textHash": "b85c9b34"
     },
     {
       "fileName": "13-gitgraph.mmd",
       "scheme": "dark",
       "elementCount": 80,
-      "paletteHash": "ab961d33",
+      "paletteHash": "6629a139",
       "ratio": 2.1311,
-      "structureHash": "17579861",
-      "textHash": "8f5a70b2"
+      "structureHash": "5bc486e3",
+      "textHash": "938c54e6"
     },
     {
       "fileName": "14-c4-context.mmd",
@@ -511,7 +511,7 @@
       "paletteHash": "940734bf",
       "ratio": 1.3111,
       "structureHash": "27cb69a6",
-      "textHash": "428b16d7"
+      "textHash": "dd5ecaad"
     },
     {
       "fileName": "15-c4-container.mmd",
@@ -520,7 +520,7 @@
       "paletteHash": "a5a3ec48",
       "ratio": 0.7474,
       "structureHash": "caa086c9",
-      "textHash": "564d8b40"
+      "textHash": "2b545a8e"
     },
     {
       "fileName": "16-c4-component.mmd",
@@ -529,7 +529,7 @@
       "paletteHash": "ffd7b887",
       "ratio": 0.9209,
       "structureHash": "66951857",
-      "textHash": "cb721e8b"
+      "textHash": "08796feb"
     },
     {
       "fileName": "17-c4-dynamic.mmd",
@@ -538,7 +538,7 @@
       "paletteHash": "be49a58a",
       "ratio": 1.282,
       "structureHash": "0f07c92e",
-      "textHash": "9b7c1c95"
+      "textHash": "d490a0eb"
     },
     {
       "fileName": "18-c4-deployment.mmd",
@@ -547,7 +547,7 @@
       "paletteHash": "2c6984be",
       "ratio": 2.204,
       "structureHash": "dc9bc8c7",
-      "textHash": "3a20d4be"
+      "textHash": "c4f7ab2a"
     },
     {
       "fileName": "19-mindmap.mmd",
@@ -556,7 +556,7 @@
       "paletteHash": "2956ef1a",
       "ratio": 1.8905,
       "structureHash": "8491ee29",
-      "textHash": "c3a7595c"
+      "textHash": "c28abee4"
     },
     {
       "fileName": "20-timeline.mmd",
@@ -565,7 +565,7 @@
       "paletteHash": "db5bfe9e",
       "ratio": 2.038,
       "structureHash": "619e6727",
-      "textHash": "797b0448"
+      "textHash": "9775f018"
     },
     {
       "fileName": "21-sankey.mmd",
@@ -574,7 +574,7 @@
       "paletteHash": "674ced65",
       "ratio": 1.5,
       "structureHash": "9b454caf",
-      "textHash": "050bc1e7"
+      "textHash": "5a1d25ed"
     },
     {
       "fileName": "22-xy-chart.mmd",
@@ -583,7 +583,7 @@
       "paletteHash": "59e8f3cb",
       "ratio": 1.4,
       "structureHash": "03e1571b",
-      "textHash": "c0c86449"
+      "textHash": "e676affa"
     },
     {
       "fileName": "23-block.mmd",
@@ -592,7 +592,7 @@
       "paletteHash": "63ce68b9",
       "ratio": 2.2075,
       "structureHash": "fc24be50",
-      "textHash": "89f0f7f0"
+      "textHash": "b7a99751"
     },
     {
       "fileName": "24-packet.mmd",
@@ -601,7 +601,7 @@
       "paletteHash": "d6a65bcc",
       "ratio": 7.2766,
       "structureHash": "7d07b372",
-      "textHash": "7daa0a73"
+      "textHash": "1302b4b3"
     },
     {
       "fileName": "25-kanban.mmd",
@@ -610,7 +610,7 @@
       "paletteHash": "01f0d1db",
       "ratio": 5.0301,
       "structureHash": "921ebe3f",
-      "textHash": "3d5ea7cd"
+      "textHash": "c12b92fd"
     },
     {
       "fileName": "26-architecture.mmd",
@@ -619,7 +619,7 @@
       "paletteHash": "731675fa",
       "ratio": 2.0356,
       "structureHash": "a7935a9c",
-      "textHash": "3eb075f9"
+      "textHash": "8628a2b5"
     },
     {
       "fileName": "27-radar.mmd",
@@ -628,7 +628,7 @@
       "paletteHash": "78b667ef",
       "ratio": 1,
       "structureHash": "37076e35",
-      "textHash": "d6502e38"
+      "textHash": "b0355311"
     },
     {
       "fileName": "28-treemap.mmd",
@@ -637,7 +637,7 @@
       "paletteHash": "2f12eac4",
       "ratio": 2.6846,
       "structureHash": "7cbe0f35",
-      "textHash": "53aea733"
+      "textHash": "a0789310"
     },
     {
       "fileName": "29-swimlanes.mmd",
@@ -646,7 +646,7 @@
       "paletteHash": "8cebdaae",
       "ratio": 2.3778,
       "structureHash": "9738d222",
-      "textHash": "9f01b25e"
+      "textHash": "e14dbb38"
     },
     {
       "fileName": "30-event-modeling.mmd",
@@ -655,7 +655,7 @@
       "paletteHash": "fd2dd51c",
       "ratio": 1.459,
       "structureHash": "46fee3d5",
-      "textHash": "4597146a"
+      "textHash": "2f6a46be"
     },
     {
       "fileName": "31-venn.mmd",
@@ -664,7 +664,7 @@
       "paletteHash": "9aaaaa9d",
       "ratio": 1.7778,
       "structureHash": "5424cffa",
-      "textHash": "34e3c72a"
+      "textHash": "ea06fbfe"
     },
     {
       "fileName": "32-ishikawa.mmd",
@@ -673,7 +673,7 @@
       "paletteHash": "f3f0f15d",
       "ratio": 1.0178,
       "structureHash": "9ec15448",
-      "textHash": "24581527"
+      "textHash": "fe051a53"
     },
     {
       "fileName": "33-wardley.mmd",
@@ -682,7 +682,7 @@
       "paletteHash": "41ff0515",
       "ratio": 1.5714,
       "structureHash": "7d03f125",
-      "textHash": "ecd21756"
+      "textHash": "f3f43280"
     },
     {
       "fileName": "34-cynefin.mmd",
@@ -691,7 +691,7 @@
       "paletteHash": "709ddc56",
       "ratio": 1.2941,
       "structureHash": "8ff02926",
-      "textHash": "8e025cbb"
+      "textHash": "3518c400"
     },
     {
       "fileName": "35-tree-view.mmd",
@@ -700,7 +700,7 @@
       "paletteHash": "ebfaab11",
       "ratio": 1.1264,
       "structureHash": "46061999",
-      "textHash": "482dc782"
+      "textHash": "429c2ead"
     },
     {
       "fileName": "36-railroad.mmd",
@@ -709,7 +709,7 @@
       "paletteHash": "fe3b06d7",
       "ratio": 0.6623,
       "structureHash": "8528918a",
-      "textHash": "143d2069"
+      "textHash": "96cc3491"
     },
     {
       "fileName": "37-railroad-ebnf.mmd",
@@ -718,7 +718,7 @@
       "paletteHash": "9147cae5",
       "ratio": 0.6545,
       "structureHash": "9f3002c7",
-      "textHash": "7f50c72e"
+      "textHash": "9498e8a4"
     },
     {
       "fileName": "38-railroad-abnf.mmd",
@@ -727,7 +727,7 @@
       "paletteHash": "67528573",
       "ratio": 0.6277,
       "structureHash": "f11ca29c",
-      "textHash": "9ca2fc57"
+      "textHash": "dada8dd5"
     },
     {
       "fileName": "39-railroad-peg.mmd",
@@ -736,7 +736,7 @@
       "paletteHash": "8a1df6e3",
       "ratio": 0.383,
       "structureHash": "36afcfe5",
-      "textHash": "e0be6100"
+      "textHash": "f06436c4"
     },
     {
       "fileName": "40-info.mmd",
@@ -745,7 +745,7 @@
       "paletteHash": "691044ea",
       "ratio": 0,
       "structureHash": "e6d66c71",
-      "textHash": "90ca6bd3"
+      "textHash": "5e03738a"
     },
     {
       "fileName": "41-zenuml.mmd",
@@ -754,7 +754,7 @@
       "paletteHash": "00be10ad",
       "ratio": 1.1112,
       "structureHash": "be61e534",
-      "textHash": "2b3e720e"
+      "textHash": "42ffeb7f"
     },
     {
       "fileName": "42-icon-packs.mmd",
@@ -763,7 +763,7 @@
       "paletteHash": "c041d321",
       "ratio": 2.7546,
       "structureHash": "f2f14af8",
-      "textHash": "f0dc1168"
+      "textHash": "5502e4f1"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -772,7 +772,7 @@
       "paletteHash": "9559855d",
       "ratio": 3.6686,
       "structureHash": "abe2ccac",
-      "textHash": "4d364446"
+      "textHash": "9e5583d1"
     },
     {
       "fileName": "01-flowchart.mmd",
@@ -781,7 +781,7 @@
       "paletteHash": "aca808d7",
       "ratio": 7.3745,
       "structureHash": "fd5b983c",
-      "textHash": "97aebaeb"
+      "textHash": "9be70fd5"
     },
     {
       "fileName": "02-flowchart-elk.mmd",
@@ -790,7 +790,7 @@
       "paletteHash": "02ad13d0",
       "ratio": 0.8901,
       "structureHash": "bf1d2f3b",
-      "textHash": "2f985d4d"
+      "textHash": "d5e169e2"
     },
     {
       "fileName": "03-sequence.mmd",
@@ -799,7 +799,7 @@
       "paletteHash": "9b230db6",
       "ratio": 1.0337,
       "structureHash": "2f2593c1",
-      "textHash": "63ea8dcb"
+      "textHash": "7f1c906a"
     },
     {
       "fileName": "04-class.mmd",
@@ -808,7 +808,7 @@
       "paletteHash": "acba4826",
       "ratio": 1.7287,
       "structureHash": "3e3fbab2",
-      "textHash": "34d2e1ee"
+      "textHash": "8d2dcd65"
     },
     {
       "fileName": "05-state.mmd",
@@ -817,7 +817,7 @@
       "paletteHash": "12d46cd9",
       "ratio": 0.3731,
       "structureHash": "f07d0ac9",
-      "textHash": "63b2de81"
+      "textHash": "9c5e000f"
     },
     {
       "fileName": "06-entity-relationship.mmd",
@@ -826,7 +826,7 @@
       "paletteHash": "f6402570",
       "ratio": 0.7721,
       "structureHash": "a765cfcc",
-      "textHash": "10e8766d"
+      "textHash": "6e8c8a68"
     },
     {
       "fileName": "07-user-journey.mmd",
@@ -835,7 +835,7 @@
       "paletteHash": "0ef086b8",
       "ratio": 3.8227,
       "structureHash": "e0deafed",
-      "textHash": "95fa3fb2"
+      "textHash": "a46ec419"
     },
     {
       "fileName": "08-gantt.mmd",
@@ -844,7 +844,7 @@
       "paletteHash": "e2465341",
       "ratio": 2.8209,
       "structureHash": "6548fba1",
-      "textHash": "b00ccb27"
+      "textHash": "9d3ca563"
     },
     {
       "fileName": "09-pie.mmd",
@@ -853,7 +853,7 @@
       "paletteHash": "5dc31644",
       "ratio": 1.4788,
       "structureHash": "2e6fea4a",
-      "textHash": "be2df4e0"
+      "textHash": "520a743e"
     },
     {
       "fileName": "10-donut.mmd",
@@ -862,7 +862,7 @@
       "paletteHash": "5dc31644",
       "ratio": 1.4157,
       "structureHash": "2e6fea4a",
-      "textHash": "056951ed"
+      "textHash": "aa2d8503"
     },
     {
       "fileName": "11-quadrant.mmd",
@@ -871,7 +871,7 @@
       "paletteHash": "094a0178",
       "ratio": 1,
       "structureHash": "bb1078a8",
-      "textHash": "c4f58eca"
+      "textHash": "6be1eb29"
     },
     {
       "fileName": "12-requirement.mmd",
@@ -880,16 +880,16 @@
       "paletteHash": "03977dc9",
       "ratio": 2.1618,
       "structureHash": "f7b664bb",
-      "textHash": "78e5ee56"
+      "textHash": "b85c9b34"
     },
     {
       "fileName": "13-gitgraph.mmd",
       "scheme": "high-contrast",
       "elementCount": 80,
-      "paletteHash": "2a0aee0d",
+      "paletteHash": "bdbcec65",
       "ratio": 2.1311,
-      "structureHash": "6c2766df",
-      "textHash": "a3ca8626"
+      "structureHash": "bbd7620f",
+      "textHash": "938c54e6"
     },
     {
       "fileName": "14-c4-context.mmd",
@@ -898,7 +898,7 @@
       "paletteHash": "940734bf",
       "ratio": 1.3111,
       "structureHash": "27cb69a6",
-      "textHash": "f1c75f3f"
+      "textHash": "dd5ecaad"
     },
     {
       "fileName": "15-c4-container.mmd",
@@ -907,7 +907,7 @@
       "paletteHash": "a5a3ec48",
       "ratio": 0.7474,
       "structureHash": "caa086c9",
-      "textHash": "11165426"
+      "textHash": "2b545a8e"
     },
     {
       "fileName": "16-c4-component.mmd",
@@ -916,7 +916,7 @@
       "paletteHash": "ffd7b887",
       "ratio": 0.9209,
       "structureHash": "66951857",
-      "textHash": "cab87769"
+      "textHash": "08796feb"
     },
     {
       "fileName": "17-c4-dynamic.mmd",
@@ -925,7 +925,7 @@
       "paletteHash": "be49a58a",
       "ratio": 1.282,
       "structureHash": "0f07c92e",
-      "textHash": "09934f85"
+      "textHash": "d490a0eb"
     },
     {
       "fileName": "18-c4-deployment.mmd",
@@ -934,7 +934,7 @@
       "paletteHash": "2c6984be",
       "ratio": 2.204,
       "structureHash": "dc9bc8c7",
-      "textHash": "70eef6ac"
+      "textHash": "c4f7ab2a"
     },
     {
       "fileName": "19-mindmap.mmd",
@@ -943,7 +943,7 @@
       "paletteHash": "2956ef1a",
       "ratio": 1.8905,
       "structureHash": "8491ee29",
-      "textHash": "05a63c27"
+      "textHash": "c28abee4"
     },
     {
       "fileName": "20-timeline.mmd",
@@ -952,7 +952,7 @@
       "paletteHash": "db5bfe9e",
       "ratio": 2.038,
       "structureHash": "619e6727",
-      "textHash": "7f9dd3d5"
+      "textHash": "9775f018"
     },
     {
       "fileName": "21-sankey.mmd",
@@ -961,7 +961,7 @@
       "paletteHash": "970900a7",
       "ratio": 1.5,
       "structureHash": "9b454caf",
-      "textHash": "dafe224a"
+      "textHash": "5a1d25ed"
     },
     {
       "fileName": "22-xy-chart.mmd",
@@ -970,7 +970,7 @@
       "paletteHash": "59e8f3cb",
       "ratio": 1.4,
       "structureHash": "03e1571b",
-      "textHash": "deac1747"
+      "textHash": "e676affa"
     },
     {
       "fileName": "23-block.mmd",
@@ -979,7 +979,7 @@
       "paletteHash": "63ce68b9",
       "ratio": 2.2075,
       "structureHash": "fc24be50",
-      "textHash": "b3e5604a"
+      "textHash": "b7a99751"
     },
     {
       "fileName": "24-packet.mmd",
@@ -988,7 +988,7 @@
       "paletteHash": "d6a65bcc",
       "ratio": 7.2766,
       "structureHash": "7d07b372",
-      "textHash": "15ee5763"
+      "textHash": "1302b4b3"
     },
     {
       "fileName": "25-kanban.mmd",
@@ -997,7 +997,7 @@
       "paletteHash": "01f0d1db",
       "ratio": 5.0301,
       "structureHash": "921ebe3f",
-      "textHash": "b6ee1d8d"
+      "textHash": "c12b92fd"
     },
     {
       "fileName": "26-architecture.mmd",
@@ -1006,7 +1006,7 @@
       "paletteHash": "731675fa",
       "ratio": 2.0356,
       "structureHash": "a7935a9c",
-      "textHash": "24503509"
+      "textHash": "8628a2b5"
     },
     {
       "fileName": "27-radar.mmd",
@@ -1015,7 +1015,7 @@
       "paletteHash": "78b667ef",
       "ratio": 1,
       "structureHash": "37076e35",
-      "textHash": "5e87526a"
+      "textHash": "b0355311"
     },
     {
       "fileName": "28-treemap.mmd",
@@ -1024,7 +1024,7 @@
       "paletteHash": "2f12eac4",
       "ratio": 2.6846,
       "structureHash": "7cbe0f35",
-      "textHash": "9b9433ad"
+      "textHash": "a0789310"
     },
     {
       "fileName": "29-swimlanes.mmd",
@@ -1033,7 +1033,7 @@
       "paletteHash": "8cebdaae",
       "ratio": 2.3778,
       "structureHash": "9738d222",
-      "textHash": "2ef037c2"
+      "textHash": "e14dbb38"
     },
     {
       "fileName": "30-event-modeling.mmd",
@@ -1042,7 +1042,7 @@
       "paletteHash": "fd2dd51c",
       "ratio": 1.459,
       "structureHash": "46fee3d5",
-      "textHash": "98730c39"
+      "textHash": "2f6a46be"
     },
     {
       "fileName": "31-venn.mmd",
@@ -1051,7 +1051,7 @@
       "paletteHash": "9aaaaa9d",
       "ratio": 1.7778,
       "structureHash": "5424cffa",
-      "textHash": "c75f2ad3"
+      "textHash": "ea06fbfe"
     },
     {
       "fileName": "32-ishikawa.mmd",
@@ -1060,7 +1060,7 @@
       "paletteHash": "f3f0f15d",
       "ratio": 1.0178,
       "structureHash": "9ec15448",
-      "textHash": "cff49239"
+      "textHash": "fe051a53"
     },
     {
       "fileName": "33-wardley.mmd",
@@ -1069,7 +1069,7 @@
       "paletteHash": "41ff0515",
       "ratio": 1.5714,
       "structureHash": "7d03f125",
-      "textHash": "ecd21756"
+      "textHash": "f3f43280"
     },
     {
       "fileName": "34-cynefin.mmd",
@@ -1078,7 +1078,7 @@
       "paletteHash": "709ddc56",
       "ratio": 1.2941,
       "structureHash": "8ff02926",
-      "textHash": "507151f9"
+      "textHash": "3518c400"
     },
     {
       "fileName": "35-tree-view.mmd",
@@ -1087,7 +1087,7 @@
       "paletteHash": "ebfaab11",
       "ratio": 1.1264,
       "structureHash": "46061999",
-      "textHash": "cff0bba2"
+      "textHash": "429c2ead"
     },
     {
       "fileName": "36-railroad.mmd",
@@ -1096,7 +1096,7 @@
       "paletteHash": "fe3b06d7",
       "ratio": 0.6623,
       "structureHash": "8528918a",
-      "textHash": "9365573f"
+      "textHash": "96cc3491"
     },
     {
       "fileName": "37-railroad-ebnf.mmd",
@@ -1105,7 +1105,7 @@
       "paletteHash": "9147cae5",
       "ratio": 0.6545,
       "structureHash": "9f3002c7",
-      "textHash": "13494176"
+      "textHash": "9498e8a4"
     },
     {
       "fileName": "38-railroad-abnf.mmd",
@@ -1114,7 +1114,7 @@
       "paletteHash": "67528573",
       "ratio": 0.6277,
       "structureHash": "f11ca29c",
-      "textHash": "4f0a8ae1"
+      "textHash": "dada8dd5"
     },
     {
       "fileName": "39-railroad-peg.mmd",
@@ -1123,7 +1123,7 @@
       "paletteHash": "8a1df6e3",
       "ratio": 0.383,
       "structureHash": "36afcfe5",
-      "textHash": "ce5c8ffc"
+      "textHash": "f06436c4"
     },
     {
       "fileName": "40-info.mmd",
@@ -1132,7 +1132,7 @@
       "paletteHash": "691044ea",
       "ratio": 0,
       "structureHash": "e6d66c71",
-      "textHash": "564ce78a"
+      "textHash": "5e03738a"
     },
     {
       "fileName": "41-zenuml.mmd",
@@ -1141,7 +1141,7 @@
       "paletteHash": "00be10ad",
       "ratio": 1.1112,
       "structureHash": "be61e534",
-      "textHash": "2b3e720e"
+      "textHash": "42ffeb7f"
     },
     {
       "fileName": "42-icon-packs.mmd",
@@ -1150,7 +1150,7 @@
       "paletteHash": "c041d321",
       "ratio": 2.7546,
       "structureHash": "f2f14af8",
-      "textHash": "3e8a3dec"
+      "textHash": "5502e4f1"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -1159,7 +1159,7 @@
       "paletteHash": "9559855d",
       "ratio": 3.6686,
       "structureHash": "abe2ccac",
-      "textHash": "c30201ca"
+      "textHash": "9e5583d1"
     }
   ],
   "interfaceThemes": [
