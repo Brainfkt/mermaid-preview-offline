@@ -76,6 +76,17 @@ void test('les workflows CI, release et Marketplace sont présents', () => {
   }
 });
 
+void test('Marketplace publishing validates its environment secret and publisher', () => {
+  const workflow = readFileSync(
+    resolve(root, '.github', 'workflows', 'publish-marketplace.yml'),
+    'utf8',
+  );
+  assert.match(workflow, /environment: marketplace/u);
+  assert.match(workflow, /secrets\.VSCE_PAT/u);
+  assert.match(workflow, /Missing VSCE_PAT/u);
+  assert.match(workflow, /vsce verify-pat/u);
+});
+
 void test('CI verifies supported platforms and all visual fixtures', () => {
   const workflow = readFileSync(resolve(root, '.github', 'workflows', 'ci.yml'), 'utf8');
   for (const operatingSystem of ['ubuntu-latest', 'windows-latest', 'macos-latest']) {

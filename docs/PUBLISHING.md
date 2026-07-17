@@ -36,12 +36,22 @@ l’identité et la fiche Marketplace soient validées.
 
 1. Dans GitHub, créer l’environnement `marketplace` et activer une approbation
    requise si le plan GitHub le permet.
-2. Ajouter le secret d’environnement `VSCE_PAT`.
+2. Dans cet environnement, ouvrir **Environment secrets** puis ajouter un
+   secret nommé exactement `VSCE_PAT`. Une variable GitHub, un secret enregistré
+   uniquement sur la machine locale ou un secret portant un autre nom ne sera
+   pas transmis au workflow.
 3. Ouvrir **Actions** → **Publish to VS Code Marketplace** → **Run workflow**.
 4. Saisir `PUBLISH` dans le champ de confirmation.
 
-Le workflow exécute toutes les validations avant `vsce publish` et utilise
-`--skip-duplicate` pour rendre une relance sans effet destructeur.
+Le workflow vérifie d’abord que `VSCE_PAT` existe et possède les droits de
+publication sur le publisher du manifeste. Il exécute ensuite toutes les
+validations avant `vsce publish` et utilise `--skip-duplicate` pour rendre une
+relance sans effet destructeur.
+
+Le jeton utilisé par une publication manuelle n’est pas automatiquement partagé
+avec GitHub Actions. Il faut copier ce PAT dans le secret d’environnement ou en
+créer un nouveau avec le scope Marketplace `Manage` si sa valeur n’est plus
+disponible.
 
 ## Publier une GitHub Release
 

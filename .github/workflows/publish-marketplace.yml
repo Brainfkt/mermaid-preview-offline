@@ -20,6 +20,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate Marketplace secret
+        shell: bash
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [[ -z "${VSCE_PAT:-}" ]]; then
+            echo "::error title=Missing VSCE_PAT::Add VSCE_PAT as an environment secret in Settings > Environments > marketplace. A GitHub variable or a token stored only on your computer is not available to this workflow."
+            exit 1
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -28,6 +38,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify Marketplace credentials
+        shell: bash
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          publisher="$(node -p "require('./package.json').publisher")"
+          npx --no-install vsce verify-pat "$publisher"
 
       - name: Run visual regression suite
         run: npm run test:visual
