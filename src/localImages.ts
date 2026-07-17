@@ -16,10 +16,25 @@ export async function inlineLocalImages(
   source: string,
   loadImage: LocalImageLoader,
 ): Promise<string> {
+  const matches = [...source.matchAll(IMAGE_REFERENCE)];
+  const references = [
+    ...new Set(
+      matches
+        .map((match) => match[3])
+        .filter((reference): reference is string =>
+          reference !== undefined && isRelativeLocalImage(reference),
+        ),
+    ),
+  ];
+  const loadedImages = new Map(
+    await Promise.all(
+      references.map(async (reference) => [reference, await loadImage(reference)] as const),
+    ),
+  );
   let cursor = 0;
   let result = '';
 
-  for (const match of source.matchAll(IMAGE_REFERENCE)) {
+  for (const match of matches) {
     const index = match.index;
     const fullMatch = match[0];
     const prefix = match[1];
@@ -37,7 +52,7 @@ export async function inlineLocalImages(
     result += source.slice(cursor, index);
     let replacement = fullMatch;
     if (isRelativeLocalImage(reference)) {
-      const image = await loadImage(reference);
+      const image = loadedImages.get(reference);
       if (image) {
         const base64 = Buffer.from(image.bytes).toString('base64');
         replacement = `${prefix}${quote}data:${image.mimeType};base64,${base64}${quote}`;

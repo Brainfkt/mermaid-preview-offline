@@ -3,20 +3,32 @@ import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-the
 import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
-import type { ExtensionToWebviewMessage, WebviewToExtensionMessage } from './protocol';
+import { describeMermaidError } from './mermaidError';
+import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
+import type {
+  DiagramTheme,
+  ExtensionToWebviewMessage,
+  PersistedPreviewState,
+  PreviewConfiguration,
+  WebviewToExtensionMessage,
+} from './protocol';
+import { formatByteLength } from './renderPolicy';
+import { resolveDiagramTheme, type PreviewColorScheme } from './theme';
 
 interface VsCodeApi {
-  getState(): PersistedState | undefined;
+  getState(): unknown;
   postMessage(message: WebviewToExtensionMessage): void;
-  setState(state: PersistedState): void;
-}
-
-interface PersistedState {
-  autoFit: boolean;
-  zoom: number;
+  setState(state: PersistedPreviewState): void;
 }
 
 declare function acquireVsCodeApi(): VsCodeApi;
+
+const DEFAULT_CONFIGURATION: PreviewConfiguration = {
+  diagramTheme: 'adaptive',
+  largeFileThresholdBytes: 512 * 1024,
+  refreshDelay: 140,
+  refreshMode: 'automatic',
+};
 
 mermaid.registerIconPacks([
   { name: logosIcons.prefix, icons: logosIcons },
@@ -25,40 +37,101 @@ mermaid.registerIconPacks([
 const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
 
 const vscode = acquireVsCodeApi();
+const rawPreviousState = vscode.getState();
+const hadPersistedState = rawPreviousState !== undefined;
+const initialState = normalizePreviewState(rawPreviousState);
 const viewport = element<HTMLElement>('viewport');
 const diagram = element<HTMLElement>('diagram');
 const emptyState = element<HTMLElement>('empty-state');
 const loadingState = element<HTMLElement>('loading-state');
 const errorState = element<HTMLElement>('error-state');
 const errorMessage = element<HTMLElement>('error-message');
+const errorLocation = element<HTMLElement>('error-location');
+const errorExcerpt = element<HTMLElement>('error-excerpt');
+const errorHelp = element<HTMLElement>('error-help');
 const fileName = element<HTMLElement>('file-name');
 const renderStatus = element<HTMLElement>('render-status');
 const zoomStatus = element<HTMLElement>('zoom-status');
+const largeFileLabel = element<HTMLElement>('large-file-label');
+const sourceButton = element<HTMLButtonElement>('open-source');
+const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
 const saveButton = element<HTMLButtonElement>('save-svg');
+const themeSelect = element<HTMLSelectElement>('diagram-theme');
 
-const previousState = vscode.getState();
-let zoom = previousState?.zoom ?? 1;
-let autoFit = previousState?.autoFit ?? true;
+let configuration = DEFAULT_CONFIGURATION;
+let zoom = initialState.zoom;
+let autoFit = initialState.autoFit;
+let savedScrollLeft = initialState.scrollLeft;
+let savedScrollTop = initialState.scrollTop;
+let sourceVisible = initialState.sourceVisible;
+let diagramTheme = initialState.diagramTheme;
+let themeSelectedInView = hadPersistedState;
 let naturalWidth = 800;
 let naturalHeight = 600;
 let lastSvg = '';
 let latestRequest = 0;
 let latestSource = '';
+let latestVersion = -1;
+let latestByteLength = 0;
+let pendingDocument = false;
 let rendering = false;
 let renderTimer: number | undefined;
+let persistTimer: number | undefined;
+let activeRenderController: AbortController | undefined;
+
+themeSelect.value = diagramTheme;
+zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
+updateSourceButton();
 
 window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessage>) => {
-  if (event.data.type !== 'document') {
-    return;
+  const message = event.data;
+  switch (message.type) {
+    case 'configuration': {
+      const previousTheme = resolvedDiagramTheme();
+      configuration = message.configuration;
+      if (!themeSelectedInView) {
+        diagramTheme = configuration.diagramTheme;
+        themeSelect.value = diagramTheme;
+      }
+      updateRefreshControls();
+      if (latestSource && previousTheme !== resolvedDiagramTheme()) {
+        scheduleRender(latestSource, 0);
+      }
+      break;
+    }
+    case 'document':
+      fileName.textContent = message.fileName;
+      latestVersion = message.version;
+      latestByteLength = message.byteLength;
+      pendingDocument = false;
+      updateLargeFileLabel(message.isLargeFile, message.byteLength);
+      updateRefreshControls();
+      scheduleRender(message.source, 0);
+      break;
+    case 'documentChanged':
+      fileName.textContent = message.fileName;
+      latestVersion = message.version;
+      pendingDocument = true;
+      renderStatus.textContent = 'Changes pending';
+      updateRefreshControls();
+      break;
+    case 'restoreViewState':
+      restoreViewState(message.state);
+      break;
+    case 'sourceVisibility':
+      sourceVisible = message.visible;
+      updateSourceButton();
+      schedulePersistState();
+      break;
   }
-  fileName.textContent = event.data.fileName;
-  scheduleRender(event.data.source);
 });
 
-bindButton('open-source', openSource);
-bindButton('empty-open-source', openSource);
-bindButton('error-open-source', openSource);
+bindButton('open-source', () => openSource(false));
+bindButton('empty-open-source', () => openSource(false));
+bindButton('error-open-source', () => openSource(false));
+bindButton('error-retry', retryRender);
+bindButton('refresh', refreshDocument);
 bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
 bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
 bindButton('fit', fitDiagram);
@@ -73,9 +146,29 @@ bindButton('save-svg', () => {
   }
 });
 
+themeSelect.addEventListener('change', () => {
+  if (!isDiagramTheme(themeSelect.value)) {
+    return;
+  }
+  diagramTheme = themeSelect.value;
+  themeSelectedInView = true;
+  persistState();
+  if (latestSource) {
+    scheduleRender(latestSource, 0);
+  }
+});
+
 window.addEventListener('keydown', (event) => {
+  if (isInteractiveTarget(event.target)) {
+    return;
+  }
   if (event.key.toLowerCase() === 'e' && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    openSource();
+    openSource(false);
+    return;
+  }
+  if (event.key.toLowerCase() === 'r' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    refreshDocument();
     return;
   }
   if ((event.ctrlKey || event.metaKey) && event.key === '0') {
@@ -104,6 +197,12 @@ viewport.addEventListener(
   { passive: false },
 );
 
+viewport.addEventListener('scroll', () => {
+  savedScrollLeft = viewport.scrollLeft;
+  savedScrollTop = viewport.scrollTop;
+  schedulePersistState();
+});
+
 installDragToPan();
 
 new ResizeObserver(() => {
@@ -113,14 +212,22 @@ new ResizeObserver(() => {
 }).observe(viewport);
 
 new MutationObserver(() => {
-  scheduleRender(latestSource, 0);
+  if (diagramTheme === 'adaptive' && latestSource) {
+    scheduleRender(latestSource, 0);
+  }
 }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-vscode.postMessage({ type: 'ready' });
+window.addEventListener('pagehide', persistState);
 
-function scheduleRender(source: string, delay = 110): void {
+vscode.postMessage({ type: 'ready', hasPersistedState: hadPersistedState });
+if (sourceVisible) {
+  window.setTimeout(() => openSource(true), 0);
+}
+
+function scheduleRender(source: string, delay: number): void {
   latestSource = source;
   latestRequest += 1;
+  activeRenderController?.abort();
   if (renderTimer !== undefined) {
     window.clearTimeout(renderTimer);
   }
@@ -132,19 +239,23 @@ function scheduleRender(source: string, delay = 110): void {
 
 async function renderLatest(): Promise<void> {
   if (rendering) {
+    activeRenderController?.abort();
     return;
   }
 
   const request = latestRequest;
-  const source = latestSource.trim();
+  const source = latestSource;
+  const controller = new AbortController();
+  activeRenderController = controller;
   rendering = true;
 
-  if (!source) {
+  if (!/\S/u.test(source)) {
     lastSvg = '';
     copyButton.disabled = true;
     saveButton.disabled = true;
     showState('empty');
     renderStatus.textContent = 'Empty file';
+    activeRenderController = undefined;
     rendering = false;
     return;
   }
@@ -155,22 +266,25 @@ async function renderLatest(): Promise<void> {
 
   try {
     await mermaidExtensionsReady;
+    throwIfCancelled(controller.signal, request);
     mermaid.initialize({
+      deterministicIds: true,
+      deterministicIDSeed: 'mermaid-preview-offline',
       startOnLoad: false,
       securityLevel: 'strict',
-      theme: currentTheme(),
+      theme: resolvedDiagramTheme(),
       fontFamily: getComputedStyle(document.body).fontFamily,
       flowchart: { htmlLabels: false, useMaxWidth: false },
       sequence: { useMaxWidth: false },
     });
 
     await mermaid.parse(source);
+    throwIfCancelled(controller.signal, request);
     const { svg } = await mermaid.render(renderId, source);
-    if (request !== latestRequest) {
-      return;
-    }
+    throwIfCancelled(controller.signal, request);
 
     diagram.innerHTML = svg;
+    diagram.dataset.version = String(latestVersion);
     lastSvg = svg;
     const svgElement = diagram.querySelector('svg');
     if (!svgElement) {
@@ -185,19 +299,30 @@ async function renderLatest(): Promise<void> {
       fitDiagram();
     } else {
       applyZoom();
+      restoreScrollPosition();
     }
-    renderStatus.textContent = `Rendered locally • ${Math.round(performance.now() - startedAt)} ms`;
+    const sizeStatus =
+      latestByteLength >= configuration.largeFileThresholdBytes
+        ? ` • ${formatByteLength(latestByteLength)}`
+        : '';
+    renderStatus.textContent = `Rendered • ${Math.round(performance.now() - startedAt)} ms${sizeStatus}`;
   } catch (error: unknown) {
     cleanupFailedRender(renderId);
+    if (error instanceof RenderCancelledError) {
+      return;
+    }
     if (request === latestRequest) {
       lastSvg = '';
       copyButton.disabled = true;
       saveButton.disabled = true;
-      errorMessage.textContent = readableError(error);
+      displayError(error, source);
       renderStatus.textContent = 'Syntax error';
       showState('error');
     }
   } finally {
+    if (activeRenderController === controller) {
+      activeRenderController = undefined;
+    }
     rendering = false;
     if (request !== latestRequest) {
       void renderLatest();
@@ -218,14 +343,17 @@ function fitDiagram(): void {
   const verticalRoom = Math.max(viewport.clientHeight - 72, 120);
   const fittedZoom = Math.min(horizontalRoom / naturalWidth, verticalRoom / naturalHeight, 1.5);
   setZoom(fittedZoom, true);
+  savedScrollLeft = 0;
+  savedScrollTop = 0;
   viewport.scrollTo({ left: 0, top: 0 });
+  schedulePersistState();
 }
 
 function setZoom(value: number, shouldAutoFit: boolean): void {
   zoom = clamp(value, 0.15, 4);
   autoFit = shouldAutoFit;
   applyZoom();
-  vscode.setState({ autoFit, zoom });
+  persistState();
 }
 
 function applyZoom(): void {
@@ -237,6 +365,56 @@ function applyZoom(): void {
   zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
 }
 
+function restoreScrollPosition(): void {
+  const left = savedScrollLeft;
+  const top = savedScrollTop;
+  window.requestAnimationFrame(() => {
+    window.requestAnimationFrame(() => viewport.scrollTo({ left, top }));
+  });
+}
+
+function restoreViewState(value: PersistedPreviewState): void {
+  const state = normalizePreviewState(value);
+  zoom = state.zoom;
+  autoFit = state.autoFit;
+  savedScrollLeft = state.scrollLeft;
+  savedScrollTop = state.scrollTop;
+  sourceVisible = state.sourceVisible;
+  diagramTheme = state.diagramTheme;
+  themeSelectedInView = true;
+  themeSelect.value = diagramTheme;
+  updateSourceButton();
+  applyZoom();
+  if (sourceVisible) {
+    openSource(true);
+  }
+  persistState();
+}
+
+function persistState(): void {
+  if (persistTimer !== undefined) {
+    window.clearTimeout(persistTimer);
+    persistTimer = undefined;
+  }
+  const state: PersistedPreviewState = {
+    autoFit,
+    diagramTheme,
+    scrollLeft: savedScrollLeft,
+    scrollTop: savedScrollTop,
+    sourceVisible,
+    zoom,
+  };
+  vscode.setState(state);
+  vscode.postMessage({ type: 'viewState', state });
+}
+
+function schedulePersistState(): void {
+  if (persistTimer !== undefined) {
+    window.clearTimeout(persistTimer);
+  }
+  persistTimer = window.setTimeout(persistState, 120);
+}
+
 function showState(state: 'diagram' | 'empty' | 'error' | 'loading'): void {
   diagram.hidden = state !== 'diagram';
   emptyState.hidden = state !== 'empty';
@@ -244,16 +422,72 @@ function showState(state: 'diagram' | 'empty' | 'error' | 'loading'): void {
   loadingState.hidden = state !== 'loading';
 }
 
-function currentTheme(): 'dark' | 'default' {
-  return document.body.classList.contains('vscode-dark') ||
-    document.body.classList.contains('vscode-high-contrast')
-    ? 'dark'
-    : 'default';
+function resolvedDiagramTheme(): Exclude<DiagramTheme, 'adaptive'> {
+  return resolveDiagramTheme(diagramTheme, vscodeColorScheme());
 }
 
-function readableError(error: unknown): string {
-  const raw = error instanceof Error ? error.message : String(error);
-  return raw.replace(/^Error:\s*/u, '').replace(/\n{3,}/gu, '\n\n').trim();
+function vscodeColorScheme(): PreviewColorScheme {
+  if (document.body.classList.contains('vscode-high-contrast')) {
+    return 'highContrastDark';
+  }
+  if (document.body.classList.contains('vscode-high-contrast-light')) {
+    return 'highContrastLight';
+  }
+  return document.body.classList.contains('vscode-dark') ? 'dark' : 'light';
+}
+
+function displayError(error: unknown, source: string): void {
+  const details = describeMermaidError(error, source);
+  errorMessage.textContent = details.message;
+  errorLocation.hidden = details.line === undefined;
+  errorLocation.textContent = details.line
+    ? `Line ${details.line}${details.column ? `, column ${details.column}` : ''}`
+    : '';
+  errorExcerpt.hidden = !details.excerpt;
+  errorExcerpt.textContent = details.excerpt ?? '';
+}
+
+function updateLargeFileLabel(isLargeFile: boolean, byteLength: number): void {
+  largeFileLabel.hidden = !isLargeFile;
+  largeFileLabel.textContent = isLargeFile ? `Large file · ${formatByteLength(byteLength)}` : '';
+}
+
+function updateRefreshControls(): void {
+  refreshButton.classList.toggle('button--pending', pendingDocument);
+  refreshButton.setAttribute(
+    'aria-label',
+    pendingDocument ? 'Refresh diagram, changes pending' : 'Refresh diagram',
+  );
+  refreshButton.title =
+    configuration.refreshMode === 'manual'
+      ? 'Refresh diagram; automatic rendering is disabled (R)'
+      : 'Refresh diagram (R)';
+  errorHelp.textContent =
+    configuration.refreshMode === 'manual'
+      ? 'Fix the source, then retry or refresh the preview.'
+      : 'Fix the source and the preview will update automatically.';
+}
+
+function updateSourceButton(): void {
+  sourceButton.setAttribute('aria-pressed', String(sourceVisible));
+  sourceButton.classList.toggle('button--active', sourceVisible);
+}
+
+function refreshDocument(): void {
+  if (pendingDocument || configuration.refreshMode === 'manual') {
+    renderStatus.textContent = 'Refreshing…';
+    vscode.postMessage({ type: 'requestDocument' });
+  } else {
+    retryRender();
+  }
+}
+
+function retryRender(): void {
+  if (latestSource) {
+    scheduleRender(latestSource, 0);
+  } else {
+    vscode.postMessage({ type: 'requestDocument' });
+  }
 }
 
 function cleanupFailedRender(renderId: string): void {
@@ -261,8 +495,11 @@ function cleanupFailedRender(renderId: string): void {
   document.getElementById(`d${renderId}`)?.remove();
 }
 
-function openSource(): void {
-  vscode.postMessage({ type: 'openSource' });
+function openSource(preserveFocus: boolean): void {
+  sourceVisible = true;
+  updateSourceButton();
+  persistState();
+  vscode.postMessage({ type: 'openSource', preserveFocus });
 }
 
 function bindButton(id: string, listener: () => void): void {
@@ -277,8 +514,14 @@ function element<T extends HTMLElement>(id: string): T {
   return match as T;
 }
 
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.min(Math.max(value, minimum), maximum);
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLButtonElement || target instanceof HTMLSelectElement;
+}
+
+function throwIfCancelled(signal: AbortSignal, request: number): void {
+  if (signal.aborted || request !== latestRequest) {
+    throw new RenderCancelledError();
+  }
 }
 
 function installDragToPan(): void {
@@ -319,3 +562,5 @@ function installDragToPan(): void {
   viewport.addEventListener('pointerup', stopDragging);
   viewport.addEventListener('pointercancel', stopDragging);
 }
+
+class RenderCancelledError extends Error {}
