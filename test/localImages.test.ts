@@ -39,3 +39,28 @@ void test('les formats locaux courants sont reconnus', () => {
   assert.equal(isRelativeLocalImage('../assets/logo.webp'), true);
   assert.equal(isRelativeLocalImage('vscode-webview://source/logo.png'), false);
 });
+
+void test('les images locales uniques sont chargées en parallèle une seule fois', async () => {
+  const requested: string[] = [];
+  let activeLoads = 0;
+  let maximumActiveLoads = 0;
+  const source = [
+    'flowchart LR',
+    '  a@{ img: "assets/a.png" }',
+    '  b@{ img: "assets/b.png" }',
+    '  c@{ img: "assets/a.png" }',
+  ].join('\n');
+
+  const result = await inlineLocalImages(source, async (reference) => {
+    requested.push(reference);
+    activeLoads += 1;
+    maximumActiveLoads = Math.max(maximumActiveLoads, activeLoads);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    activeLoads -= 1;
+    return { bytes: new Uint8Array([1]), mimeType: 'image/png' };
+  });
+
+  assert.deepEqual(requested.sort(), ['assets/a.png', 'assets/b.png']);
+  assert.equal(maximumActiveLoads, 2);
+  assert.equal(result.match(/data:image\/png;base64,AQ==/gu)?.length, 3);
+});

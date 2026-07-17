@@ -26,3 +26,14 @@ void test('la webview ne charge que ses ressources locales et échappe le titre'
   assert.match(html, /Preview &lt;unsafe&gt;/u);
   assert.doesNotMatch(html, /<title>Preview <unsafe><\/title>/u);
 });
+
+void test('the preview exposes refresh, retry, themes, and no redundant local badge', () => {
+  assert.match(html, /id="refresh"/u);
+  assert.match(html, /id="error-retry"/u);
+  assert.match(html, /id="diagram-theme"/u);
+  assert.match(html, /value="forest"/u);
+  assert.match(html, /class="toolbar glass-surface"/u);
+  assert.doesNotMatch(html, /offline-badge/u);
+  assert.doesNotMatch(html, />\s*Local\s*</u);
+  assert.doesNotMatch(html, /Rendering locally/u);
+});
