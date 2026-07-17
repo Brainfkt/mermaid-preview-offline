@@ -22,7 +22,7 @@ L’identifiant Marketplace est définitif après création. Le choisir avec soi
 
 ## Première publication recommandée
 
-1. Exécuter `npm ci && npm run package:vsix`.
+1. Exécuter `npm ci && npm run verify && npm run test:visual && npm run package:vsix`.
 2. Installer `artifacts/mermaid-preview-offline-<version>.vsix` dans un profil
    VS Code de test.
 3. Créer ou sélectionner le publisher dans le gestionnaire Marketplace.

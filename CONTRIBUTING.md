@@ -7,6 +7,7 @@ Thank you for contributing to Mermaid Preview Offline.
 ```bash
 npm ci
 npm run verify
+npm run test:visual
 ```
 
 To debug the extension, open the repository in VS Code and launch
@@ -20,3 +21,5 @@ To debug the extension, open the repository in VS Code and launch
 - Do not relax `securityLevel: strict` or `connect-src 'none'` without an
   explicit security review.
 - Run `npm run verify` before submitting the pull request.
+- Run `npm run test:visual` when changing Mermaid, the preview UI, or rendering
+  behavior. Review intentional changes before using `npm run test:visual:update`.

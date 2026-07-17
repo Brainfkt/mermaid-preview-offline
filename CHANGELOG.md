@@ -7,6 +7,17 @@
 - redesigned the Marketplace README with clearer feature, compatibility,
   security, and onboarding sections;
 - added authentic VS Code screenshots for live preview and bundled icon packs.
+- restored zoom, scroll position, diagram theme, and Source mode per preview;
+- added preview-to-the-side and default-editor commands to the Explorer menu;
+- added automatic and manual refresh modes with configurable debounce;
+- added detailed syntax locations, source excerpts, and a Retry action;
+- cancelled obsolete render requests and added adaptive handling for large files;
+- added Adaptive, Default, Dark, Forest, Neutral, and Base diagram themes;
+- refreshed the preview with a minimal glass interface and removed the redundant
+  Local badge;
+- added multi-root and remote-workspace safeguards;
+- added cross-platform CI and 129 visual regression renders covering all 43
+  examples in light, dark, and high-contrast themes.
 
 ## 0.2.0
 

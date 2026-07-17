@@ -22,6 +22,8 @@
   <a href="examples/README.md">Browse 43 examples</a>
   ·
   <a href="examples/COMPATIBILITY.md">Compatibility matrix</a>
+  ·
+  <a href="roadmap.md">Roadmap</a>
 </p>
 
 ![A Mermaid pie chart preview and its source open side by side in VS Code](media/screenshots/pie-with-source.png)
@@ -47,8 +49,9 @@ assets all ship inside the extension.
 ## Made for VS Code workflows
 
 Keep several Mermaid previews open in normal VS Code editor groups. Each view
-has its own zoom level and exposes rendering time, zoom percentage, and local
-rendering status in the footer.
+has its own zoom level and exposes rendering time and zoom percentage in the
+footer. Zoom, scroll position, selected theme, and Source mode are restored for
+each preview after VS Code restarts.
 
 ![Sankey and block diagrams open in two VS Code editor groups](media/screenshots/split-view.png)
 
@@ -81,8 +84,12 @@ use **Reopen Editor With...** → **Text Editor**.
 ## Features
 
 - Live rendering whenever the document changes.
+- Automatic or manual refresh, with a configurable render delay.
 - Readable syntax errors with a direct path back to the source.
+- Error locations with line, column, source excerpt, and a Retry action.
 - Fit-to-window, incremental zoom, and drag-to-pan navigation.
+- Six diagram themes selectable directly from the preview.
+- A modern glass interface that remains native to VS Code themes.
 - SVG copy and file export.
 - Dark, light, and high-contrast VS Code theme support.
 - Mermaid syntax highlighting for `.mmd` and `.mermaid` files.
@@ -92,6 +99,8 @@ use **Reopen Editor With...** → **Text Editor**.
 - Relative SVG, PNG, JPEG, GIF, WebP, AVIF, BMP, and ICO images embedded as
   data URIs.
 - No telemetry, analytics, remote fonts, or runtime downloads.
+- Adaptive handling for large files and cancellation of obsolete renders.
+- Workspace-aware local assets in multi-root and remote workspaces.
 
 ## Diagram coverage
 
@@ -118,12 +127,26 @@ and current limitations.
 | Control | Action |
 |---|---|
 | `E` | Open the source beside the preview |
+| `R` | Refresh the diagram |
 | `Ctrl/Cmd + 0` | Fit the diagram to the viewport |
 | `+` / `-` | Zoom in or out |
 | `Ctrl/Cmd + mouse wheel` | Fine zoom control |
 | Drag | Pan across the canvas |
 | **Copy SVG** | Copy the rendered SVG to the clipboard |
 | **Save SVG** | Save the rendered diagram as an SVG file |
+
+## Settings
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `mermaidPreviewOffline.refreshMode` | `automatic` | Switch between live and manual rendering. |
+| `mermaidPreviewOffline.refreshDelay` | `140` | Set the automatic refresh delay in milliseconds. |
+| `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
+| `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose Adaptive, Default, Dark, Forest, Neutral, or Base. |
+
+Use **Mermaid Preview: Open Preview to the Side** to preserve your current
+editor layout. **Mermaid Preview: Configure Default Editor** switches `.mmd`
+and `.mermaid` files between the offline preview and VS Code's text editor.
 
 ## Privacy and security
 
@@ -150,10 +173,12 @@ Requires Node.js 22 and npm.
 ```bash
 npm ci
 npm run verify
+npm run test:visual
 npm run package:vsix
 ```
 
-The VSIX is generated in `artifacts/`. To debug the extension, open the
+The visual suite renders all 43 examples in light, dark, and high-contrast
+themes. The VSIX is generated in `artifacts/`. To debug the extension, open the
 repository in VS Code and launch **Run Mermaid Preview Offline** with `F5`.
 
 ## Support
