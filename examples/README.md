@@ -52,7 +52,7 @@ ce qui est actuellement pris en charge ou non par l'extension.
 | 39 | Railroad PEG | [`39-railroad-peg.mmd`](39-railroad-peg.mmd) | `railroad-peg-beta` |
 | 40 | Informations moteur | [`40-info.mmd`](40-info.mmd) | `info` |
 | 41 | ZenUML | [`41-zenuml.mmd`](41-zenuml.mmd) | `zenuml` |
-| 42 | Packs d'icônes hors ligne | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon(...)` |
+| 42 | Packs d'icônes hors ligne | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon: "logos:react"` |
 | 43 | Image locale incorporée | [`43-local-image.mmd`](43-local-image.mmd) | `img: "..."` |
 
 ## Périmètre

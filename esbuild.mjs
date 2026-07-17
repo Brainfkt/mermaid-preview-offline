@@ -1,6 +1,21 @@
 import { build } from 'esbuild';
+import { readFile } from 'node:fs/promises';
 
 const production = process.argv.includes('--production');
+const zenUmlRemoteFontFace =
+  '@font-face{font-family:MS Sans Serif;src:url(/fonts/MS%20Sans%20Serif.ttf) format("truetype")}';
+const offlineZenUmlStyles = {
+  name: 'offline-zenuml-styles',
+  setup(buildContext) {
+    buildContext.onLoad(
+      { filter: /[/\\]@zenuml[/\\]core[/\\]dist[/\\]zenuml\.esm\.mjs$/ },
+      async (args) => ({
+        contents: (await readFile(args.path, 'utf8')).replace(zenUmlRemoteFontFace, ''),
+        loader: 'js',
+      }),
+    );
+  },
+};
 
 await Promise.all([
   build({
@@ -26,6 +41,7 @@ await Promise.all([
     minify: true,
     outfile: 'dist/webview.js',
     platform: 'browser',
+    plugins: [offlineZenUmlStyles],
     sourcemap: production ? false : 'linked',
     target: ['chrome120'],
   }),
