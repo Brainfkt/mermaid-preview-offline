@@ -75,3 +75,12 @@ void test('les workflows CI, release et Marketplace sont présents', () => {
     assert.equal(existsSync(resolve(root, '.github', 'workflows', workflow)), true);
   }
 });
+
+void test('CI verifies supported platforms and all visual fixtures', () => {
+  const workflow = readFileSync(resolve(root, '.github', 'workflows', 'ci.yml'), 'utf8');
+  for (const operatingSystem of ['ubuntu-latest', 'windows-latest', 'macos-latest']) {
+    assert.match(workflow, new RegExp(operatingSystem, 'u'));
+  }
+  assert.match(workflow, /npm run test:visual/u);
+  assert.match(workflow, /Render 43 examples in 3 themes/u);
+});

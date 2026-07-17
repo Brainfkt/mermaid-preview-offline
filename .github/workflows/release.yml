@@ -30,6 +30,9 @@ jobs:
           expected="v$(node -p "require('./package.json').version")"
           test "$GITHUB_REF_NAME" = "$expected"
 
+      - name: Run visual regression suite
+        run: npm run test:visual
+
       - name: Package VSIX
         run: npm run package:vsix
 

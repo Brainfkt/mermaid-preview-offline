@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run visual regression suite
+        run: npm run test:visual
+
       - name: Publish extension
         run: npm run publish:marketplace
         env:
