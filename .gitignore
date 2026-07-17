@@ -4,4 +4,3 @@ artifacts/
 dist/
 node_modules/
 *.vsix
-roadmap.md
