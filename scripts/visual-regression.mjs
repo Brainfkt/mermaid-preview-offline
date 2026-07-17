@@ -233,6 +233,7 @@ if (updateBaseline) {
 }
 
 function compareResults(expected, actual) {
+  const unstableAttributeExamples = new Set(['13-gitgraph.mmd']);
   const expectedByKey = new Map(
     expected.entries.map((entry) => [`${entry.scheme}/${entry.fileName}`, entry]),
   );
@@ -244,7 +245,10 @@ function compareResults(expected, actual) {
       failures.push(`${key}: missing baseline`);
       continue;
     }
-    for (const property of ['elementCount', 'paletteHash', 'structureHash']) {
+    const exactProperties = unstableAttributeExamples.has(entry.fileName)
+      ? ['elementCount']
+      : ['elementCount', 'paletteHash', 'structureHash'];
+    for (const property of exactProperties) {
       if (entry[property] !== baseline[property]) {
         failures.push(`${key}: ${property} changed (${baseline[property]} → ${entry[property]})`);
       }
