@@ -93,23 +93,20 @@ const runner = `<script nonce="${nonce}">
         .filter((name) => !/^mermaid-preview-/u.test(name))
         .sort()
         .join('.');
-      const directText = [...element.childNodes]
-        .filter((node) => node.nodeType === Node.TEXT_NODE)
-        .map((node) => node.textContent.trim())
-        .filter(Boolean)
-        .join(' ');
-      structure += '<' + element.tagName.toLowerCase() + (classes ? '.' + classes : '') + '>' + directText;
-      for (const attribute of ['fill', 'stroke', 'color', 'class', 'style']) {
+      structure += '<' + element.tagName.toLowerCase() + (classes ? '.' + classes : '') + '>';
+      for (const attribute of ['fill', 'stroke', 'color', 'class']) {
         const value = element.getAttribute(attribute);
         if (value) palette += attribute + '=' + value.replace(/mermaid-preview-\\d+/gu, 'mermaid-preview');
       }
     }
     const viewBox = svg.viewBox.baseVal;
+    const textContent = svg.textContent.replace(/\\s+/gu, ' ').trim();
     return {
       elementCount: svg.querySelectorAll('*').length,
       paletteHash: hash(palette),
       ratio: Number((viewBox.width / Math.max(viewBox.height, 1)).toFixed(4)),
       structureHash: hash(structure),
+      textHash: hash(textContent),
     };
   };
 
@@ -276,8 +273,8 @@ function compareResults(expected, actual) {
       continue;
     }
     const exactProperties = unstableAttributeExamples.has(entry.fileName)
-      ? ['elementCount']
-      : ['elementCount', 'paletteHash', 'structureHash'];
+      ? ['elementCount', 'textHash']
+      : ['elementCount', 'paletteHash', 'structureHash', 'textHash'];
     for (const property of exactProperties) {
       if (entry[property] !== baseline[property]) {
         failures.push(`${key}: ${property} changed (${baseline[property]} → ${entry[property]})`);
