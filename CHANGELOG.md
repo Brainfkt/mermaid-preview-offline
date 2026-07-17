@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1
+
+- refreshed the extension package with the same transparent icon displayed in
+  the README.
+- redesigned the Marketplace README with clearer feature, compatibility,
+  security, and onboarding sections;
+- added authentic VS Code screenshots for live preview and bundled icon packs.
+
 ## 0.2.0
 
 - bundled the official ZenUML diagram plug-in for offline rendering;
@@ -9,6 +17,7 @@
   offline capabilities.
 - made the local-image example self-contained and the icon-pack example visually
   explicit.
+- removed ZenUML's unavailable absolute font URL from the offline webview bundle.
 
 ## 0.1.1
 

@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -25,6 +25,10 @@
   "engines": {
     "vscode": "^1.96.0"
   },
+  "extensionKind": [
+    "workspace",
+    "ui"
+  ],
   "categories": [
     "Visualization",
     "Programming Languages"
@@ -60,7 +64,9 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onCustomEditor:brainfkt.mermaidPreviewOffline",
-    "onCommand:mermaidPreviewOffline.openPreview"
+    "onCommand:mermaidPreviewOffline.openPreview",
+    "onCommand:mermaidPreviewOffline.openPreviewToSide",
+    "onCommand:mermaidPreviewOffline.configureDefaultEditor"
   ],
   "contributes": {
     "languages": [
@@ -104,6 +110,16 @@
         "command": "mermaidPreviewOffline.openPreview",
         "title": "Mermaid Preview: Open Offline Preview",
         "icon": "$(preview)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openPreviewToSide",
+        "title": "Mermaid Preview: Open Preview to the Side",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "mermaidPreviewOffline.configureDefaultEditor",
+        "title": "Mermaid Preview: Configure Default Editor",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -112,15 +128,81 @@
           "command": "mermaidPreviewOffline.openPreview",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation@8"
+        },
+        {
+          "command": "mermaidPreviewOffline.openPreviewToSide",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "navigation@9"
+        },
+        {
+          "command": "mermaidPreviewOffline.configureDefaultEditor",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "mermaidPreviewOffline@20"
         }
       ],
       "editor/title": [
         {
-          "command": "mermaidPreviewOffline.openPreview",
+          "command": "mermaidPreviewOffline.openPreviewToSide",
           "when": "editorLangId == mermaid",
           "group": "navigation@8"
         }
       ]
+    },
+    "configuration": {
+      "title": "Mermaid Preview Offline",
+      "properties": {
+        "mermaidPreviewOffline.refreshMode": {
+          "type": "string",
+          "enum": [
+            "automatic",
+            "manual"
+          ],
+          "enumDescriptions": [
+            "Render automatically after the document changes.",
+            "Keep the current diagram until Refresh is selected."
+          ],
+          "default": "automatic",
+          "description": "Controls when Mermaid diagrams are rendered."
+        },
+        "mermaidPreviewOffline.refreshDelay": {
+          "type": "number",
+          "default": 140,
+          "minimum": 0,
+          "maximum": 2000,
+          "scope": "resource",
+          "description": "Delay in milliseconds before an automatic render. Large files use at least 400 ms."
+        },
+        "mermaidPreviewOffline.largeFileThresholdKb": {
+          "type": "number",
+          "default": 512,
+          "minimum": 64,
+          "maximum": 10240,
+          "scope": "resource",
+          "description": "File size in KB from which the preview applies a longer render debounce and displays a size indicator."
+        },
+        "mermaidPreviewOffline.diagramTheme": {
+          "type": "string",
+          "enum": [
+            "adaptive",
+            "default",
+            "dark",
+            "forest",
+            "neutral",
+            "base"
+          ],
+          "enumDescriptions": [
+            "Follow the active VS Code color theme.",
+            "Use Mermaid's default theme.",
+            "Use Mermaid's dark theme.",
+            "Use Mermaid's forest theme.",
+            "Use Mermaid's neutral theme.",
+            "Use Mermaid's customizable base theme."
+          ],
+          "default": "adaptive",
+          "scope": "resource",
+          "description": "Default Mermaid color theme. It can also be overridden from an individual preview."
+        }
+      }
     }
   },
   "scripts": {

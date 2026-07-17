@@ -10,7 +10,13 @@
   },
   "include": [
     "src/localImages.ts",
+    "src/mermaidError.ts",
+    "src/previewState.ts",
+    "src/protocol.ts",
+    "src/renderPolicy.ts",
+    "src/theme.ts",
     "src/webviewHtml.ts",
+    "src/workspacePaths.ts",
     "test/**/*.ts"
   ]
 }
