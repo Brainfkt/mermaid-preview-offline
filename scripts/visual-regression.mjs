@@ -134,12 +134,30 @@ const runner = `<script nonce="${nonce}">
         configuration: {
           diagramTheme: 'adaptive',
           largeFileThresholdBytes: 524288,
+          minimapEnabled: true,
           refreshDelay: 0,
           refreshMode: 'automatic',
         },
       }, '*');
       await delay(50);
       const toolbarStyle = getComputedStyle(document.querySelector('.toolbar'));
+      const workspaceBounds = document.querySelector('#workspace').getBoundingClientRect();
+      const viewportBounds = document.querySelector('#viewport').getBoundingClientRect();
+      const toolbarBounds = document.querySelector('.toolbar').getBoundingClientRect();
+      const statusbarBounds = document.querySelector('.statusbar').getBoundingClientRect();
+      if (Math.abs(viewportBounds.top) > 1 ||
+          Math.abs(viewportBounds.bottom - document.documentElement.clientHeight) > 1 ||
+          Math.abs(workspaceBounds.height - viewportBounds.height) > 1 ||
+          toolbarBounds.top < viewportBounds.top ||
+          toolbarBounds.bottom <= viewportBounds.top ||
+          Math.abs(statusbarBounds.bottom - viewportBounds.bottom) > 1 ||
+          getComputedStyle(document.querySelector('.toolbar')).position !== 'absolute' ||
+          getComputedStyle(document.querySelector('.statusbar')).position !== 'absolute') {
+        throw new Error('The preview surface does not extend underneath the toolbar and footer.');
+      }
+      if (scheme.name !== 'high-contrast' && toolbarStyle.backdropFilter === 'none') {
+        throw new Error(scheme.name + ': the toolbar glass backdrop filter is missing.');
+      }
       interfaceThemes.push({
         name: scheme.name,
         backdropFilter: toolbarStyle.backdropFilter,
@@ -153,7 +171,6 @@ const runner = `<script nonce="${nonce}">
         window.postMessage({
           type: 'document',
           source: example.source,
-          originalSource: example.source,
           fileName: example.fileName,
           version,
           byteLength: example.source.length,
@@ -173,11 +190,42 @@ const runner = `<script nonce="${nonce}">
       }
     }
 
-    const sourceButton = document.querySelector('#open-source');
-    sourceButton.click();
-    if (!sourceButton.classList.contains('button--active') ||
-        postedMessages.at(-1)?.type !== 'openSource') {
-      throw new Error('The Source control did not request the text editor.');
+    document.body.className = 'vscode-dark';
+    document.body.style.setProperty('--vscode-editor-background', '#1e1e2e');
+    document.body.style.setProperty('--vscode-editor-foreground', '#d7d7e0');
+    document.body.style.setProperty('--vscode-foreground', '#d7d7e0');
+    document.body.style.setProperty('--vscode-descriptionForeground', '#d7d7e0bb');
+    document.body.style.setProperty('--vscode-panel-border', '#d7d7e055');
+    await delay(80);
+
+    const layoutButton = document.querySelector('#editor-layout');
+    const layoutMessageStart = postedMessages.length;
+    layoutButton.click();
+    const layoutMessages = postedMessages.slice(layoutMessageStart);
+    if (layoutMessages.length !== 1 || layoutMessages[0]?.type !== 'chooseEditorMode') {
+      throw new Error('The layout control did not emit one native editor choice request.');
+    }
+    for (const [mode, label] of [
+      ['preview', 'Preview'],
+      ['beside', 'Beside'],
+      ['above', 'Above'],
+      ['source', 'Source'],
+    ]) {
+      window.postMessage({ type: 'editorMode', mode }, '*');
+      await waitFor(
+        () => document.querySelector('#editor-layout-label')?.textContent === label,
+        mode + ' native editor layout label',
+      );
+    }
+
+    document.querySelector('#fullscreen').click();
+    if (postedMessages.at(-1)?.type !== 'toggleFullscreen') {
+      throw new Error('The full-screen control did not request editor-group maximization.');
+    }
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 't' }));
+    if (getComputedStyle(document.querySelector('.toolbar')).display === 'none') {
+      throw new Error('The toolbar must remain visible.');
     }
 
     const themeSelect = document.querySelector('#diagram-theme');
@@ -201,13 +249,88 @@ const runner = `<script nonce="${nonce}">
       'manual refresh',
     );
 
+    if (document.querySelector('#file-size')?.textContent === '0 B' ||
+        !/px$/u.test(document.querySelector('#diagram-size')?.textContent ?? '')) {
+      throw new Error('File size or natural diagram dimensions are missing.');
+    }
+
+    const minimapExample = examples.find((example) => example.fileName === '02-flowchart-elk.mmd');
+    if (!minimapExample) throw new Error('Missing flowchart minimap fixture.');
+    version += 1;
+    window.postMessage({
+      type: 'document',
+      source: minimapExample.source,
+      fileName: minimapExample.fileName,
+      version,
+      byteLength: minimapExample.source.length,
+      isLargeFile: false,
+    }, '*');
+    await waitFor(
+      () => document.querySelector('#diagram')?.dataset.version === String(version),
+      'flowchart minimap fidelity fixture',
+    );
+
+    const minimapTestViewport = document.querySelector('#viewport');
+    minimapTestViewport.style.width = '180px';
+    minimapTestViewport.style.height = '120px';
+    for (let index = 0; index < 26; index += 1) {
+      document.querySelector('#zoom-in').click();
+    }
+    await delay(250);
+    if (document.querySelector('#minimap').hidden) {
+      throw new Error('Large diagram minimap stayed hidden: ' + JSON.stringify({
+        clientHeight: minimapTestViewport.clientHeight,
+        clientWidth: minimapTestViewport.clientWidth,
+        diagramHidden: document.querySelector('#diagram').hidden,
+        minimapImage: Boolean(document.querySelector('#minimap-diagram img')),
+        scrollHeight: minimapTestViewport.scrollHeight,
+        scrollWidth: minimapTestViewport.scrollWidth,
+        zoom: document.querySelector('#zoom-status').textContent,
+      }));
+    }
+    const minimapImage = document.querySelector('#minimap-diagram img');
+    await waitFor(
+      () => minimapImage?.complete && minimapImage.naturalWidth > 0,
+      'isolated minimap SVG image',
+    );
+    const svgRootId = document.querySelector('#diagram svg')?.id;
+    const encodedSvgPrefix = 'data:image/svg+xml;charset=utf-8,';
+    const isolatedSvg = decodeURIComponent(minimapImage.src.slice(encodedSvgPrefix.length));
+    if (!minimapImage.src.startsWith(encodedSvgPrefix) ||
+        !svgRootId ||
+        !isolatedSvg.includes('id="' + svgRootId + '"') ||
+        document.querySelector('#minimap-diagram svg')) {
+      throw new Error('The minimap did not preserve Mermaid scoped styles in an isolated SVG image.');
+    }
+    minimapTestViewport.style.width = '';
+    minimapTestViewport.style.height = '';
+    await delay(80);
+    minimapTestViewport.scrollTo({ left: 600, top: 60 });
+    await delay(80);
+    const overlayViewportBounds = minimapTestViewport.getBoundingClientRect();
+    const overlayToolbarBounds = document.querySelector('.toolbar').getBoundingClientRect();
+    const overlayStatusbarBounds = document.querySelector('.statusbar').getBoundingClientRect();
+    const overlaySvgBounds = document.querySelector('#diagram svg').getBoundingClientRect();
+    if (Math.abs(overlayViewportBounds.height - document.documentElement.clientHeight) > 1 ||
+        overlaySvgBounds.top >= overlayToolbarBounds.bottom ||
+        overlaySvgBounds.bottom <= overlayToolbarBounds.top ||
+        overlaySvgBounds.left >= overlayToolbarBounds.right ||
+        overlaySvgBounds.right <= overlayToolbarBounds.left ||
+        overlaySvgBounds.bottom <= overlayStatusbarBounds.top) {
+      throw new Error('A zoomed diagram does not continue underneath both interface overlays.');
+    }
+    if (new URLSearchParams(window.location.search).has('capture-overlay')) {
+      document.body.dataset.visualComplete = 'capture';
+      return;
+    }
+    document.querySelector('#fit').click();
+
     version += 1;
     const diagnosticStart = postedMessages.length;
     const invalidSource = 'flowchart LR\\n  broken -->';
     window.postMessage({
       type: 'document',
       source: invalidSource,
-      originalSource: invalidSource,
       fileName: 'invalid.mmd',
       version,
       byteLength: invalidSource.length,
