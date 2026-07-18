@@ -41,7 +41,7 @@ l’identité et la fiche Marketplace soient validées.
 3. Dans Microsoft Entra, ajouter à l’application une information
    d’identification fédérée avec les valeurs suivantes :
    - émetteur : `https://token.actions.githubusercontent.com` ;
-   - sujet : `repo:Brainfkt/mermaid-preview-offline:environment:marketplace` ;
+   - sujet : `repo:Brainfkt@164480359/mermaid-preview-offline@1302799283:environment:marketplace` ;
    - audience : `api://AzureADTokenExchange`.
 4. Ouvrir **Actions** → **Publish to VS Code Marketplace** → **Run workflow**
    et saisir `IDENTITY`. Le récapitulatif du job affiche l’identifiant de
