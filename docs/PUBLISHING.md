@@ -7,8 +7,8 @@
 - publisher créé dans le
   [gestionnaire Visual Studio Marketplace](https://marketplace.visualstudio.com/manage/publishers/) ;
 - publisher identique au champ `publisher` de `package.json` ;
-- secret GitHub `VSCE_PAT` avec le scope Marketplace `Manage` si la publication
-  automatisée par PAT est utilisée.
+- application Microsoft Entra configurée avec une identité fédérée GitHub pour
+  l’environnement `marketplace`.
 
 Le publisher confirmé et inscrit dans le manifeste est `brainfkt`. Pour le
 remplacer dans un fork ou une nouvelle distribution :
@@ -36,22 +36,25 @@ l’identité et la fiche Marketplace soient validées.
 
 1. Dans GitHub, créer l’environnement `marketplace` et activer une approbation
    requise si le plan GitHub le permet.
-2. Dans cet environnement, ouvrir **Environment secrets** puis ajouter un
-   secret nommé exactement `VSCE_PAT`. Une variable GitHub, un secret enregistré
-   uniquement sur la machine locale ou un secret portant un autre nom ne sera
-   pas transmis au workflow.
-3. Ouvrir **Actions** → **Publish to VS Code Marketplace** → **Run workflow**.
-4. Saisir `PUBLISH` dans le champ de confirmation.
+2. Dans **Environment variables**, ajouter `AZURE_CLIENT_ID` et
+   `AZURE_TENANT_ID`. Ces identifiants ne sont pas des secrets.
+3. Dans Microsoft Entra, ajouter à l’application une information
+   d’identification fédérée avec les valeurs suivantes :
+   - émetteur : `https://token.actions.githubusercontent.com` ;
+   - sujet : `repo:Brainfkt/mermaid-preview-offline:environment:marketplace` ;
+   - audience : `api://AzureADTokenExchange`.
+4. Ouvrir **Actions** → **Publish to VS Code Marketplace** → **Run workflow**
+   et saisir `IDENTITY`. Le récapitulatif du job affiche l’identifiant de
+   l’identité Marketplace sans publier l’extension.
+5. Dans le gestionnaire Marketplace, ajouter cet identifiant aux membres du
+   publisher `brainfkt` avec le rôle **Contributor**.
+6. Pour une future version, relancer le workflow et saisir `PUBLISH`.
 
-Le workflow vérifie d’abord que `VSCE_PAT` existe et possède les droits de
-publication sur le publisher du manifeste. Il exécute ensuite toutes les
-validations avant `vsce publish` et utilise `--skip-duplicate` pour rendre une
-relance sans effet destructeur.
-
-Le jeton utilisé par une publication manuelle n’est pas automatiquement partagé
-avec GitHub Actions. Il faut copier ce PAT dans le secret d’environnement ou en
-créer un nouveau avec le scope Marketplace `Manage` si sa valeur n’est plus
-disponible.
+Le workflow utilise un jeton Entra éphémère obtenu par OIDC, vérifie que
+l’identité possède les droits du publisher, exécute toutes les validations puis
+appelle `vsce publish --azure-credential`. `--skip-duplicate` rend une relance
+sans effet destructeur. Aucune souscription Azure ni aucun secret durable ne
+sont nécessaires.
 
 ## Publier une GitHub Release
 
@@ -65,12 +68,11 @@ git push origin main --follow-tags
 Le tag `vX.Y.Z` déclenche la vérification, génère le VSIX et crée une GitHub
 Release avec les notes et le paquet attaché.
 
-## Migration d’authentification à prévoir
+## Authentification sans PAT
 
-Microsoft annonce le retrait des PAT globaux Azure DevOps le 1er décembre 2026
-et recommande Microsoft Entra ID avec fédération d’identité pour les pipelines
-durables. Le workflow PAT est adapté au démarrage, mais doit être remplacé avant
-cette échéance si le jeton utilisé est global.
+Microsoft recommande Microsoft Entra ID avec fédération d’identité pour les
+pipelines durables. Le workflow accorde uniquement à l’environnement GitHub
+`marketplace` le droit de demander un jeton temporaire et ne stocke aucun PAT.
 
 Références officielles :
 

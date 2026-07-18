@@ -4,53 +4,76 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Enter PUBLISH to confirm the Marketplace release'
+        description: 'Enter IDENTITY to get the Marketplace identity ID, or PUBLISH to release'
         required: true
         type: string
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   publish:
-    if: inputs.confirmation == 'PUBLISH'
+    if: inputs.confirmation == 'IDENTITY' || inputs.confirmation == 'PUBLISH'
     runs-on: ubuntu-latest
     environment: marketplace
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate Marketplace secret
+      - name: Sign in to Microsoft Entra
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Resolve Marketplace identity
         shell: bash
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
-          if [[ -z "${VSCE_PAT:-}" ]]; then
-            echo "::error title=Missing VSCE_PAT::Add VSCE_PAT as an environment secret in Settings > Environments > marketplace. A GitHub variable or a token stored only on your computer is not available to this workflow."
+          marketplace_identity_id="$(az rest \
+            --method get \
+            --uri https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 \
+            --query id \
+            --output tsv)"
+          if [[ -z "$marketplace_identity_id" ]]; then
+            echo "::error title=Marketplace identity unavailable::Microsoft Entra did not return a Marketplace identity ID."
             exit 1
           fi
+          echo "::notice title=Marketplace identity ID::$marketplace_identity_id"
+          {
+            echo "## Marketplace identity"
+            echo
+            echo "Add this identity to the brainfkt publisher with the Contributor role:"
+            echo
+            echo '```text'
+            echo "$marketplace_identity_id"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
+        if: inputs.confirmation == 'PUBLISH'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
+        if: inputs.confirmation == 'PUBLISH'
         run: npm ci
 
       - name: Verify Marketplace credentials
+        if: inputs.confirmation == 'PUBLISH'
         shell: bash
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           publisher="$(node -p "require('./package.json').publisher")"
-          npx --no-install vsce verify-pat "$publisher"
+          npx --no-install vsce verify-pat --azure-credential "$publisher"
 
       - name: Run visual regression suite
+        if: inputs.confirmation == 'PUBLISH'
         run: npm run test:visual
 
       - name: Publish extension
+        if: inputs.confirmation == 'PUBLISH'
         run: npm run publish:marketplace
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}

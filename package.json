@@ -217,7 +217,7 @@
     "build:production": "node esbuild.mjs --production",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build",
     "package:vsix": "npm run verify && node scripts/package-vsix.mjs",
-    "publish:marketplace": "npm run verify && vsce publish --no-dependencies --skip-duplicate",
+    "publish:marketplace": "npm run verify && vsce publish --azure-credential --no-dependencies --skip-duplicate",
     "configure:publisher": "node scripts/configure-publisher.mjs",
     "vscode:prepublish": "npm run build:production"
   },

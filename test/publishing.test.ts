@@ -40,6 +40,7 @@ void test('le publisher et les commandes de publication sont configurés', () =>
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
+  assert.match(manifest.scripts['publish:marketplace'] ?? '', /--azure-credential/u);
 });
 
 void test('Marketplace metadata is complete, searchable, and written in English', () => {
@@ -76,15 +77,20 @@ void test('les workflows CI, release et Marketplace sont présents', () => {
   }
 });
 
-void test('Marketplace publishing validates its environment secret and publisher', () => {
+void test('Marketplace publishing uses secretless Microsoft Entra federation', () => {
   const workflow = readFileSync(
     resolve(root, '.github', 'workflows', 'publish-marketplace.yml'),
     'utf8',
   );
   assert.match(workflow, /environment: marketplace/u);
-  assert.match(workflow, /secrets\.VSCE_PAT/u);
-  assert.match(workflow, /Missing VSCE_PAT/u);
-  assert.match(workflow, /vsce verify-pat/u);
+  assert.match(workflow, /id-token: write/u);
+  assert.match(workflow, /azure\/login@v3/u);
+  assert.match(workflow, /vars\.AZURE_CLIENT_ID/u);
+  assert.match(workflow, /vars\.AZURE_TENANT_ID/u);
+  assert.match(workflow, /allow-no-subscriptions: true/u);
+  assert.match(workflow, /vsce verify-pat --azure-credential/u);
+  assert.match(workflow, /Marketplace identity ID/u);
+  assert.doesNotMatch(workflow, /VSCE_PAT/u);
 });
 
 void test('CI verifies supported platforms and all visual fixtures', () => {
