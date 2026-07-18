@@ -46,7 +46,7 @@
       "patterns": [
         {
           "name": "keyword.control.mermaid",
-          "match": "\\b(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|journey|gantt|pie|quadrantChart|requirementDiagram|gitGraph|mindmap|timeline|sankey-beta|xychart-beta|block-beta|packet-beta|kanban|architecture-beta|radar-beta|treemap-beta|swimlane-beta|eventmodeling|venn-beta|ishikawa-beta|wardley-beta|cynefin-beta|treeView-beta|railroad-beta|railroad-ebnf-beta|railroad-abnf-beta|railroad-peg-beta|subgraph|end|participant|actor|activate|deactivate|loop|alt|else|opt|par|and|rect|critical|break|classDef|class|style|linkStyle|click|direction|title|section|accTitle|accDescr)\\b"
+          "match": "\\b(flowchart-elk|flowchart|graph|sequenceDiagram|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|journey|gantt|pie|quadrantChart|requirementDiagram|gitGraph|mindmap|timeline|sankey-beta|xychart-beta|block-beta|packet-beta|kanban|architecture-beta|radar-beta|treemap-beta|zenuml|C4Context|C4Container|C4Component|C4Dynamic|C4Deployment|swimlane-beta|eventmodeling|venn-beta|ishikawa-beta|wardley-beta|cynefin-beta|treeView-beta|railroad-beta|railroad-ebnf-beta|railroad-abnf-beta|railroad-peg-beta|info|subgraph|end|participant|actor|activate|deactivate|loop|alt|else|opt|par|and|rect|critical|break|classDef|class|style|linkStyle|click|direction|title|section|accTitle|accDescr)\\b"
         }
       ]
     },
