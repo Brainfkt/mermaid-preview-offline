@@ -248,6 +248,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       messageSubscription.dispose();
       panelRegistration.dispose();
     });
+
+    void this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
   }
 
   private async saveSvg(documentUri: vscode.Uri, svg: string): Promise<void> {

@@ -127,6 +127,12 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     await this.enqueue(async () => {
       const mode = this.getMode();
       if (await this.isAlreadyArranged(uri, mode, panel)) {
+        if (isSplitMode(mode)) {
+          this.disposeOtherSplitPanels(panel);
+          await this.closeDuplicateSourceTabs(uri);
+        } else {
+          this.disposeOtherPanels(uri, panel);
+        }
         return;
       }
       await this.arrange(uri, mode, panel);
