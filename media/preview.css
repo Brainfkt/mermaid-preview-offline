@@ -24,8 +24,7 @@ body {
 }
 
 body {
-  display: grid;
-  grid-template-rows: 48px minmax(0, 1fr) 28px;
+  position: relative;
   color: var(--vscode-editor-foreground);
   background:
     radial-gradient(
@@ -58,6 +57,9 @@ select {
 
 .toolbar {
   z-index: 2;
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   width: max-content;
   max-width: calc(100% - 16px);
@@ -111,10 +113,6 @@ select:focus-visible {
 .button--active {
   border-color: color-mix(in srgb, var(--preview-accent) 45%, transparent);
   background: color-mix(in srgb, var(--preview-accent) 13%, transparent);
-}
-
-.button--source {
-  color: var(--vscode-symbolIcon-keywordForeground);
 }
 
 .button--icon {
@@ -211,117 +209,27 @@ select:focus-visible {
   cursor: pointer;
 }
 
-.view-picker {
+.button--layout {
   display: inline-flex;
   align-items: center;
-  padding-inline: 5px;
-}
-
-.view-picker select {
-  max-width: 116px;
-  border: 0;
-  color: var(--preview-muted);
-  background: transparent;
+  gap: 6px;
+  padding-inline: 6px 8px;
+  color: var(--vscode-symbolIcon-keywordForeground);
   font-size: 11px;
-  cursor: pointer;
 }
 
 .workspace {
-  --source-ratio: 50%;
-  display: grid;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.workspace--vertical.workspace--split {
-  grid-template-columns: minmax(0, var(--source-ratio)) 5px minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.workspace--horizontal.workspace--split {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, var(--source-ratio)) 5px minmax(0, 1fr);
-}
-
-.workspace--preview,
-.workspace--source {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr);
-}
-
-.workspace--preview .source-pane,
-.workspace--preview .splitter,
-.workspace--source .viewport,
-.workspace--source .splitter {
-  display: none;
-}
-
-.source-pane {
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--vscode-editor-background);
-}
-
-.source-pane textarea {
-  width: 100%;
-  height: 100%;
-  resize: none;
-  border: 0;
-  outline: 0;
-  padding: 18px 20px 48px;
-  color: var(--vscode-editor-foreground);
-  background: transparent;
-  font-family: var(
-    --vscode-editor-font-family,
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    monospace
-  );
-  font-size: var(--vscode-editor-font-size, 13px);
-  line-height: 1.55;
-  tab-size: var(--vscode-editor-tab-size, 2);
-  white-space: pre;
-}
-
-.source-pane textarea:focus {
-  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
-}
-
-.splitter {
-  z-index: 1;
-  position: relative;
-  background: var(--preview-border);
-  touch-action: none;
-}
-
-.workspace--vertical .splitter {
-  cursor: col-resize;
-}
-
-.workspace--horizontal .splitter {
-  cursor: row-resize;
-}
-
-.splitter::after {
   position: absolute;
-  inset: -3px;
-  content: '';
-}
-
-.splitter:hover,
-.splitter:focus-visible,
-.splitter--dragging {
-  outline: none;
-  background: var(--vscode-focusBorder);
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .viewport {
   position: relative;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   overflow: auto;
@@ -348,7 +256,7 @@ select:focus-visible {
   width: max-content;
   min-width: 100%;
   min-height: 100%;
-  padding: 36px;
+  padding: 52px 36px 36px;
 }
 
 .diagram > svg {
@@ -356,6 +264,56 @@ select:focus-visible {
   margin: auto;
   overflow: visible;
   filter: drop-shadow(0 10px 28px color-mix(in srgb, #000 14%, transparent));
+}
+
+.minimap {
+  z-index: 4;
+  position: absolute;
+  right: 14px;
+  bottom: 42px;
+  width: min(188px, calc(100% - 28px));
+  height: min(126px, calc(100% - 98px));
+  overflow: hidden;
+  border-radius: 9px;
+  background: var(--preview-glass-strong);
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.minimap[hidden] {
+  display: none;
+}
+
+.minimap--dragging {
+  cursor: grabbing;
+}
+
+.minimap__diagram {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.minimap__diagram img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  filter: none;
+  user-select: none;
+}
+
+.minimap__window {
+  position: absolute;
+  min-width: 8px;
+  min-height: 8px;
+  border: 1px solid var(--vscode-focusBorder);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vscode-focusBorder) 16%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-editor-background) 62%, transparent);
+  pointer-events: none;
 }
 
 .state-card,
@@ -516,13 +474,25 @@ select:focus-visible {
 
 .statusbar {
   z-index: 2;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
+  height: 28px;
+  min-height: 28px;
   align-items: center;
   gap: 14px;
   min-width: 0;
   padding: 0 10px 2px;
   color: var(--preview-muted);
-  background: transparent;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--vscode-editor-background) 88%, transparent),
+    transparent
+  );
+  text-shadow: 0 1px 3px var(--vscode-editor-background);
+  pointer-events: none;
   font-family: var(
     --vscode-editor-font-family,
     ui-monospace,
@@ -533,6 +503,8 @@ select:focus-visible {
     monospace
   );
   font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .statusbar__spacer {
@@ -543,6 +515,25 @@ select:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+#file-size,
+#diagram-size {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#render-status,
+#zoom-status {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+#file-size::before,
+#diagram-size::before {
+  margin-right: 14px;
+  color: var(--preview-border);
+  content: '•';
 }
 
 @keyframes spin {
@@ -570,6 +561,24 @@ body.vscode-high-contrast-light .glass-surface {
   .toolbar {
     max-width: calc(100% - 8px);
     margin-inline: 4px;
+  }
+
+  .statusbar {
+    gap: 8px;
+  }
+
+  .statusbar__spacer {
+    display: none;
+  }
+
+  #file-name {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  #file-size,
+  #diagram-size {
+    display: none;
   }
 }
 
