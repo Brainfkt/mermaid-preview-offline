@@ -52,13 +52,24 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.match(manifest.dependencies['@iconify-json/material-icon-theme'] ?? '', /^1\./u);
 });
 
-void test('preview commands cover side-by-side opening and default editor selection', () => {
+void test('preview commands expose all four native editor layouts', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
-  assert.deepEqual(commands.slice(0, 3), [
+  const layoutCommands = [
+    'mermaidPreviewOffline.openPreviewOnly',
+    'mermaidPreviewOffline.openSourceOnly',
+    'mermaidPreviewOffline.openBeside',
+    'mermaidPreviewOffline.openAbove',
+  ];
+  for (const command of [
     'mermaidPreviewOffline.openPreview',
     'mermaidPreviewOffline.openPreviewToSide',
+    'mermaidPreviewOffline.chooseEditorLayout',
+    ...layoutCommands,
     'mermaidPreviewOffline.configureDefaultEditor',
-  ]);
+  ]) {
+    assert.ok(commands.includes(command));
+    assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
+  }
   for (const command of [
     'mermaidPreviewOffline.formatDocument',
     'mermaidPreviewOffline.insertElement',
@@ -69,15 +80,14 @@ void test('preview commands cover side-by-side opening and default editor select
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
   }
   assert.ok(manifest.activationEvents.includes('onLanguage:mermaid'));
-  assert.ok(manifest.activationEvents.includes('onCommand:mermaidPreviewOffline.openPreviewToSide'));
-  assert.ok(
-    manifest.activationEvents.includes('onCommand:mermaidPreviewOffline.configureDefaultEditor'),
-  );
-
   const explorerCommands = (manifest.contributes.menus['explorer/context'] ?? []).map(
     (entry) => entry.command,
   );
-  assert.deepEqual(explorerCommands, commands.slice(0, 3));
+  assert.deepEqual(explorerCommands.slice(0, 4), layoutCommands);
+  assert.ok(explorerCommands.includes('mermaidPreviewOffline.configureDefaultEditor'));
+  const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
+  assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
+  assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
 });
 
 void test('Mermaid contributes language snippets for advanced editing', () => {
@@ -88,6 +98,12 @@ void test('Mermaid contributes language snippets for advanced editing', () => {
     readFileSync(resolve(__dirname, '../../snippets/mermaid.json'), 'utf8'),
   ) as Record<string, unknown>;
   assert.equal(Object.keys(snippets).length, 43);
+  const grammar = readFileSync(
+    resolve(__dirname, '../../syntaxes/mermaid.tmLanguage.json'),
+    'utf8',
+  );
+  assert.match(grammar, /flowchart-elk/u);
+  assert.match(grammar, /\|info\|/u);
 });
 
 void test('refresh, large-file, and diagram-theme settings are configurable', () => {
@@ -99,6 +115,8 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
   assert.equal(properties['mermaidPreviewOffline.refreshDelay']?.default, 140);
   assert.equal(properties['mermaidPreviewOffline.refreshDelay']?.maximum, 2000);
   assert.equal(properties['mermaidPreviewOffline.largeFileThresholdKb']?.default, 512);
+  assert.equal(properties['mermaidPreviewOffline.minimap.enabled']?.default, true);
+  assert.equal(properties['mermaidPreviewOffline.minimap.enabled']?.scope, 'resource');
   assert.deepEqual(properties['mermaidPreviewOffline.diagramTheme']?.enum, [
     'adaptive',
     'default',

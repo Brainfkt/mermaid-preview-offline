@@ -5,8 +5,9 @@ import type { PreviewConfiguration } from '../src/protocol';
 import { effectiveRefreshDelay, formatByteLength } from '../src/renderPolicy';
 
 const configuration: PreviewConfiguration = {
-  diagramTheme: 'adaptive',
-  largeFileThresholdBytes: 512 * 1024,
+      diagramTheme: 'adaptive',
+      largeFileThresholdBytes: 512 * 1024,
+      minimapEnabled: true,
   refreshDelay: 140,
   refreshMode: 'automatic',
 };

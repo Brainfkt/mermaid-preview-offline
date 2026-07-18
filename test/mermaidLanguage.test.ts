@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
+  DIAGRAM_DECLARATIONS,
   formatMermaid,
   generateMissingIdentifiers,
   identifierAt,
@@ -9,6 +10,12 @@ import {
   nearestDiagramDeclaration,
   unclosedBlockCount,
 } from '../src/mermaidLanguage';
+
+void test('all bundled diagnostic declarations are recognized', () => {
+  for (const declaration of ['flowchart-elk', 'info']) {
+    assert.equal(DIAGRAM_DECLARATIONS.has(declaration), true, declaration);
+  }
+});
 
 void test('Mermaid formatting indents structural blocks and preserves final newlines', () => {
   assert.equal(
@@ -43,6 +50,12 @@ void test('missing flowchart identifiers are generated from labels without touch
     generated.text,
     'flowchart LR\n  start[Start] --> finish[Finish]\n  ready[Ready]\n',
   );
+});
+
+void test('ELK flowcharts support the same missing-identifier refactor', () => {
+  const generated = generateMissingIdentifiers('flowchart-elk TB\n  [Start] --> [Finish]\n');
+  assert.equal(generated.count, 2);
+  assert.equal(generated.text, 'flowchart-elk TB\n  start[Start] --> finish[Finish]\n');
 });
 
 void test('identifier discovery ignores labels, comments, and Mermaid keywords', () => {
