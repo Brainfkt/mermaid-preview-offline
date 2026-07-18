@@ -9,23 +9,20 @@ export const DIAGRAM_THEMES = [
 
 export type DiagramTheme = (typeof DIAGRAM_THEMES)[number];
 export type RefreshMode = 'automatic' | 'manual';
-export type PreviewLayoutMode = 'preview' | 'source' | 'split';
-export type SplitOrientation = 'horizontal' | 'vertical';
+export type MermaidEditorMode = 'preview' | 'source' | 'beside' | 'above';
 
 export interface PreviewConfiguration {
   diagramTheme: DiagramTheme;
   largeFileThresholdBytes: number;
+  minimapEnabled: boolean;
   refreshDelay: number;
   refreshMode: RefreshMode;
 }
 
 export interface PersistedPreviewState {
   autoFit: boolean;
-  layoutMode: PreviewLayoutMode;
   scrollLeft: number;
   scrollTop: number;
-  splitOrientation: SplitOrientation;
-  splitRatio: number;
   zoom: number;
 }
 
@@ -37,7 +34,6 @@ export type ExtensionToWebviewMessage =
   | {
       type: 'document';
       source: string;
-      originalSource: string;
       fileName: string;
       version: number;
       byteLength: number;
@@ -46,24 +42,22 @@ export type ExtensionToWebviewMessage =
   | {
       type: 'documentChanged';
       fileName: string;
-      originalSource: string;
       version: number;
+      byteLength: number;
     }
   | {
       type: 'restoreViewState';
       state: PersistedPreviewState;
     }
-  | {
-      type: 'sourceVisibility';
-      visible: boolean;
-    };
+  | { type: 'editorMode'; mode: MermaidEditorMode };
 
 export type WebviewToExtensionMessage =
   | { type: 'ready'; hasPersistedState: boolean }
-  | { type: 'openSource'; preserveFocus?: boolean }
+  | { type: 'chooseEditorMode' }
+  | { type: 'setEditorMode'; mode: MermaidEditorMode }
+  | { type: 'toggleFullscreen' }
   | { type: 'requestDocument' }
   | { type: 'setDiagramTheme'; theme: DiagramTheme }
-  | { type: 'sourceEdit'; source: string; baseVersion: number }
   | {
       type: 'diagnostic';
       version: number;

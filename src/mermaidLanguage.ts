@@ -11,6 +11,7 @@ export interface GeneratedIdentifiers {
 
 export const MERMAID_KEYWORDS: readonly MermaidKeyword[] = [
   keyword('flowchart', 'Flowchart declaration', 'Starts a flowchart. Add a direction such as `LR`, `TD`, `TB`, `RL`, or `BT`.'),
+  keyword('flowchart-elk', 'Flowchart declaration', 'Starts a flowchart rendered with the ELK layout engine. Add a direction such as `TB` or `LR`.'),
   keyword('graph', 'Flowchart declaration', 'Alias for `flowchart`, followed by a layout direction.'),
   keyword('sequenceDiagram', 'Sequence diagram declaration', 'Starts a sequence diagram.'),
   keyword('classDiagram', 'Class diagram declaration', 'Starts a UML-style class diagram.'),
@@ -50,6 +51,7 @@ export const MERMAID_KEYWORDS: readonly MermaidKeyword[] = [
   keyword('railroad-ebnf-beta', 'EBNF railroad declaration', 'Starts a railroad diagram from EBNF rules.'),
   keyword('railroad-abnf-beta', 'ABNF railroad declaration', 'Starts a railroad diagram from ABNF rules.'),
   keyword('railroad-peg-beta', 'PEG railroad declaration', 'Starts a railroad diagram from PEG rules.'),
+  keyword('info', 'Info declaration', 'Displays Mermaid renderer version information.'),
   keyword('subgraph', 'Flowchart block', 'Starts a named flowchart subgraph. Close it with `end`.'),
   keyword('end', 'Block terminator', 'Closes a `subgraph` or sequence control block.'),
   keyword('direction', 'Layout direction', 'Overrides layout direction inside a flowchart subgraph.'),
@@ -169,7 +171,7 @@ export function formatMermaid(source: string, indentation: string): string {
 export function generateMissingIdentifiers(source: string): GeneratedIdentifiers {
   const flowchartDeclaration = source
     .split(/\r?\n/u)
-    .find((line) => /^\s*(?:flowchart|graph)\b/iu.test(line));
+    .find((line) => /^\s*(?:flowchart(?:-elk)?|graph)\b/iu.test(line));
   if (!flowchartDeclaration) {
     return { count: 0, text: source };
   }

@@ -8,8 +8,8 @@ import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   DiagramTheme,
   ExtensionToWebviewMessage,
+  MermaidEditorMode,
   PersistedPreviewState,
-  PreviewLayoutMode,
   PreviewConfiguration,
   WebviewToExtensionMessage,
 } from './protocol';
@@ -27,6 +27,7 @@ declare function acquireVsCodeApi(): VsCodeApi;
 const DEFAULT_CONFIGURATION: PreviewConfiguration = {
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
+  minimapEnabled: true,
   refreshDelay: 140,
   refreshMode: 'automatic',
 };
@@ -41,11 +42,11 @@ const vscode = acquireVsCodeApi();
 const rawPreviousState = vscode.getState();
 const hadPersistedState = rawPreviousState !== undefined;
 const initialState = normalizePreviewState(rawPreviousState);
-const workspace = element<HTMLElement>('workspace');
 const viewport = element<HTMLElement>('viewport');
-const sourceEditor = element<HTMLTextAreaElement>('source-editor');
-const splitter = element<HTMLElement>('splitter');
 const diagram = element<HTMLElement>('diagram');
+const minimap = element<HTMLElement>('minimap');
+const minimapDiagram = element<HTMLElement>('minimap-diagram');
+const minimapWindow = element<HTMLElement>('minimap-window');
 const emptyState = element<HTMLElement>('empty-state');
 const loadingState = element<HTMLElement>('loading-state');
 const errorState = element<HTMLElement>('error-state');
@@ -54,28 +55,25 @@ const errorLocation = element<HTMLElement>('error-location');
 const errorExcerpt = element<HTMLElement>('error-excerpt');
 const errorHelp = element<HTMLElement>('error-help');
 const fileName = element<HTMLElement>('file-name');
+const fileSize = element<HTMLElement>('file-size');
+const diagramSize = element<HTMLElement>('diagram-size');
 const renderStatus = element<HTMLElement>('render-status');
 const zoomStatus = element<HTMLElement>('zoom-status');
 const largeFileLabel = element<HTMLElement>('large-file-label');
-const sourceButton = element<HTMLButtonElement>('open-source');
 const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
 const saveButton = element<HTMLButtonElement>('save-svg');
 const themeSelect = element<HTMLSelectElement>('diagram-theme');
 const themePicker = element<HTMLElement>('theme-picker');
-const viewModeSelect = element<HTMLSelectElement>('view-mode');
-const viewPicker = element<HTMLElement>('view-picker');
-const orientationButton = element<HTMLButtonElement>('split-orientation');
+const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
+const editorLayoutLabel = element<HTMLElement>('editor-layout-label');
 
 let configuration = DEFAULT_CONFIGURATION;
 let zoom = initialState.zoom;
 let autoFit = initialState.autoFit;
 let savedScrollLeft = initialState.scrollLeft;
 let savedScrollTop = initialState.scrollTop;
-let layoutMode = initialState.layoutMode;
-let splitOrientation = initialState.splitOrientation;
-let splitRatio = initialState.splitRatio;
-let sourceVisible = false;
+let editorMode: MermaidEditorMode = 'preview';
 let diagramTheme: DiagramTheme = DEFAULT_CONFIGURATION.diagramTheme;
 let naturalWidth = 800;
 let naturalHeight = 600;
@@ -88,16 +86,16 @@ let pendingDocument = false;
 let rendering = false;
 let renderTimer: number | undefined;
 let persistTimer: number | undefined;
-let sourceEditTimer: number | undefined;
-let sourceEditorDirty = false;
-let lastSubmittedSource = '';
 let activeRenderController: AbortController | undefined;
+let lastColorScheme = vscodeColorScheme();
+let minimapScale = 1;
+let minimapOffsetX = 0;
+let minimapOffsetY = 0;
 
 themeSelect.value = diagramTheme;
 updateThemePicker();
 zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
-updateSourceButton();
-updateLayout();
+updateEditorMode();
 
 window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessage>) => {
   const message = event.data;
@@ -109,6 +107,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       themeSelect.value = diagramTheme;
       updateThemePicker();
       updateRefreshControls();
+      updateMinimap();
       if (latestSource && previousTheme !== resolvedDiagramTheme()) {
         scheduleRender(latestSource, 0);
       }
@@ -118,7 +117,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       fileName.textContent = message.fileName;
       latestVersion = message.version;
       latestByteLength = message.byteLength;
-      updateSourceEditor(message.originalSource);
+      updateFileSize(message.byteLength);
       pendingDocument = false;
       updateLargeFileLabel(message.isLargeFile, message.byteLength);
       updateRefreshControls();
@@ -127,7 +126,8 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     case 'documentChanged':
       fileName.textContent = message.fileName;
       latestVersion = message.version;
-      updateSourceEditor(message.originalSource);
+      latestByteLength = message.byteLength;
+      updateFileSize(message.byteLength);
       pendingDocument = true;
       renderStatus.textContent = 'Changes pending';
       updateRefreshControls();
@@ -135,18 +135,21 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     case 'restoreViewState':
       restoreViewState(message.state);
       break;
-    case 'sourceVisibility':
-      sourceVisible = message.visible;
-      updateSourceButton();
+    case 'editorMode':
+      editorMode = message.mode;
+      updateEditorMode();
       break;
   }
 });
 
-bindButton('open-source', () => openSource(false));
-bindButton('empty-open-source', () => openSource(false));
-bindButton('error-open-source', () => openSource(false));
+bindButton('editor-layout', () => {
+  vscode.postMessage({ type: 'chooseEditorMode' });
+});
+bindButton('empty-open-source', openSourceOnly);
+bindButton('error-open-source', openSourceOnly);
 bindButton('error-retry', retryRender);
 bindButton('refresh', refreshDocument);
+bindButton('fullscreen', () => vscode.postMessage({ type: 'toggleFullscreen' }));
 bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
 bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
 bindButton('fit', fitDiagram);
@@ -159,45 +162,6 @@ bindButton('save-svg', () => {
   if (lastSvg) {
     vscode.postMessage({ type: 'saveSvg', svg: lastSvg });
   }
-});
-
-viewModeSelect.addEventListener('change', () => {
-  if (!isLayoutMode(viewModeSelect.value)) return;
-  layoutMode = viewModeSelect.value;
-  updateLayout();
-  persistState();
-});
-
-orientationButton.addEventListener('click', () => {
-  splitOrientation = splitOrientation === 'vertical' ? 'horizontal' : 'vertical';
-  updateLayout();
-  persistState();
-});
-
-sourceEditor.addEventListener('input', () => {
-  sourceEditorDirty = true;
-  pendingDocument = true;
-  renderStatus.textContent = 'Changes pending';
-  updateRefreshControls();
-  if (sourceEditTimer !== undefined) window.clearTimeout(sourceEditTimer);
-  sourceEditTimer = window.setTimeout(() => {
-    sourceEditTimer = undefined;
-    lastSubmittedSource = sourceEditor.value;
-    vscode.postMessage({
-      type: 'sourceEdit',
-      source: lastSubmittedSource,
-      baseVersion: latestVersion,
-    });
-  }, 120);
-});
-
-sourceEditor.addEventListener('keydown', (event) => {
-  if (event.key !== 'Tab') return;
-  event.preventDefault();
-  const start = sourceEditor.selectionStart;
-  const end = sourceEditor.selectionEnd;
-  sourceEditor.setRangeText('  ', start, end, 'end');
-  sourceEditor.dispatchEvent(new Event('input'));
 });
 
 themeSelect.addEventListener('change', () => {
@@ -217,7 +181,7 @@ window.addEventListener('keydown', (event) => {
     return;
   }
   if (event.key.toLowerCase() === 'e' && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    openSource(false);
+    openSourceOnly();
     return;
   }
   if (event.key.toLowerCase() === 'r' && !event.metaKey && !event.ctrlKey && !event.altKey) {
@@ -255,24 +219,34 @@ viewport.addEventListener('scroll', () => {
   savedScrollLeft = viewport.scrollLeft;
   savedScrollTop = viewport.scrollTop;
   schedulePersistState();
+  updateMinimapViewport();
 });
 
 installDragToPan();
-installSplitter();
+installMinimapNavigation();
 
 new ResizeObserver(() => {
-  if (autoFit && layoutMode !== 'source' && !diagram.hidden) {
+  if (autoFit && !diagram.hidden) {
     fitDiagram();
+  } else {
+    updateMinimap();
   }
 }).observe(viewport);
 
 new MutationObserver(() => {
+  const colorScheme = vscodeColorScheme();
+  if (colorScheme === lastColorScheme) {
+    return;
+  }
+  lastColorScheme = colorScheme;
   if (diagramTheme === 'adaptive' && latestSource) {
     scheduleRender(latestSource, 0);
   }
 }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
-window.addEventListener('pagehide', persistState);
+window.addEventListener('pagehide', () => {
+  persistState();
+});
 
 vscode.postMessage({ type: 'ready', hasPersistedState: hadPersistedState });
 
@@ -303,6 +277,7 @@ async function renderLatest(): Promise<void> {
 
   if (!/\S/u.test(source)) {
     lastSvg = '';
+    diagramSize.textContent = '—';
     copyButton.disabled = true;
     saveButton.disabled = true;
     showState('empty');
@@ -345,10 +320,11 @@ async function renderLatest(): Promise<void> {
     }
 
     readNaturalSize(svgElement);
+    refreshMinimapDiagram(svg);
     showState('diagram');
     copyButton.disabled = false;
     saveButton.disabled = false;
-    if (autoFit && layoutMode !== 'source') {
+    if (autoFit) {
       fitDiagram();
     } else {
       applyZoom();
@@ -367,6 +343,7 @@ async function renderLatest(): Promise<void> {
     }
     if (request === latestRequest) {
       lastSvg = '';
+      diagramSize.textContent = '—';
       copyButton.disabled = true;
       saveButton.disabled = true;
       displayError(error, source);
@@ -390,11 +367,12 @@ function readNaturalSize(svg: SVGSVGElement): void {
   naturalWidth = viewBox.width > 0 ? viewBox.width : Math.max(box.width, 1);
   naturalHeight = viewBox.height > 0 ? viewBox.height : Math.max(box.height, 1);
   svg.style.maxWidth = 'none';
+  diagramSize.textContent = `${formatDimension(naturalWidth)} × ${formatDimension(naturalHeight)} px`;
 }
 
 function fitDiagram(): void {
   const horizontalRoom = Math.max(viewport.clientWidth - 72, 120);
-  const verticalRoom = Math.max(viewport.clientHeight - 72, 120);
+  const verticalRoom = Math.max(viewport.clientHeight - 88, 120);
   const fittedZoom = Math.min(horizontalRoom / naturalWidth, verticalRoom / naturalHeight, 1.5);
   setZoom(fittedZoom, true);
   savedScrollLeft = 0;
@@ -417,6 +395,7 @@ function applyZoom(): void {
     svg.style.height = `${Math.round(naturalHeight * zoom)}px`;
   }
   zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
+  updateMinimap();
 }
 
 function restoreScrollPosition(): void {
@@ -433,10 +412,6 @@ function restoreViewState(value: PersistedPreviewState): void {
   autoFit = state.autoFit;
   savedScrollLeft = state.scrollLeft;
   savedScrollTop = state.scrollTop;
-  layoutMode = state.layoutMode;
-  splitOrientation = state.splitOrientation;
-  splitRatio = state.splitRatio;
-  updateLayout();
   applyZoom();
   persistState();
 }
@@ -448,11 +423,8 @@ function persistState(): void {
   }
   const state: PersistedPreviewState = {
     autoFit,
-    layoutMode,
     scrollLeft: savedScrollLeft,
     scrollTop: savedScrollTop,
-    splitOrientation,
-    splitRatio,
     zoom,
   };
   vscode.setState(state);
@@ -471,6 +443,11 @@ function showState(state: 'diagram' | 'empty' | 'error' | 'loading'): void {
   emptyState.hidden = state !== 'empty';
   errorState.hidden = state !== 'error';
   loadingState.hidden = state !== 'loading';
+  if (state === 'diagram') {
+    window.requestAnimationFrame(updateMinimap);
+  } else {
+    minimap.hidden = true;
+  }
 }
 
 function resolvedDiagramTheme(): Exclude<DiagramTheme, 'adaptive'> {
@@ -526,58 +503,100 @@ function updateRefreshControls(): void {
       : 'Fix the source and the preview will update automatically.';
 }
 
-function updateSourceButton(): void {
-  sourceButton.setAttribute('aria-pressed', String(sourceVisible));
-  sourceButton.classList.toggle('button--active', sourceVisible);
+function updateEditorMode(): void {
+  const labels: Record<MermaidEditorMode, string> = {
+    above: 'Above',
+    beside: 'Beside',
+    preview: 'Preview',
+    source: 'Source',
+  };
+  const descriptions: Record<MermaidEditorMode, string> = {
+    above: 'Source above preview',
+    beside: 'Source beside preview',
+    preview: 'Preview only',
+    source: 'Source only',
+  };
+  editorLayoutLabel.textContent = labels[editorMode];
+  editorLayoutButton.title = `Editor layout: ${descriptions[editorMode]}`;
+  editorLayoutButton.setAttribute(
+    'aria-label',
+    `Choose editor layout, current layout: ${descriptions[editorMode]}`,
+  );
 }
 
-function updateSourceEditor(source: string): void {
-  if (sourceEditor.value === source) {
-    sourceEditorDirty = false;
+function updateFileSize(byteLength: number): void {
+  fileSize.textContent = formatByteLength(byteLength);
+  fileSize.title = `${byteLength.toLocaleString()} bytes`;
+}
+
+function formatDimension(value: number): string {
+  return Math.round(value).toLocaleString();
+}
+
+function refreshMinimapDiagram(svgSource: string): void {
+  const thumbnail = document.createElement('img');
+  thumbnail.alt = '';
+  thumbnail.decoding = 'async';
+  thumbnail.draggable = false;
+  thumbnail.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgSource)}`;
+  minimapDiagram.replaceChildren(thumbnail);
+}
+
+function updateMinimap(): void {
+  const hasOverflow =
+    viewport.scrollWidth > viewport.clientWidth + 1 ||
+    viewport.scrollHeight > viewport.clientHeight + 1;
+  const visible = configuration.minimapEnabled && !diagram.hidden && hasOverflow;
+  minimap.hidden = !visible;
+  if (!visible) {
     return;
   }
-  if (sourceEditorDirty && source === lastSubmittedSource) return;
-  const selectionStart = sourceEditor.selectionStart;
-  const selectionEnd = sourceEditor.selectionEnd;
-  sourceEditor.value = source;
-  sourceEditorDirty = false;
-  const length = sourceEditor.value.length;
-  sourceEditor.setSelectionRange(
-    Math.min(selectionStart, length),
-    Math.min(selectionEnd, length),
-  );
+
+  const svg = diagram.querySelector('svg');
+  const thumbnail = minimapDiagram.querySelector('img');
+  if (!svg || !thumbnail) {
+    minimap.hidden = true;
+    return;
+  }
+
+  const minimapWidth = Math.max(minimap.clientWidth, 1);
+  const minimapHeight = Math.max(minimap.clientHeight, 1);
+  const contentWidth = Math.max(viewport.scrollWidth, 1);
+  const contentHeight = Math.max(viewport.scrollHeight, 1);
+  minimapScale = Math.min(minimapWidth / contentWidth, minimapHeight / contentHeight);
+  minimapOffsetX = (minimapWidth - contentWidth * minimapScale) / 2;
+  minimapOffsetY = (minimapHeight - contentHeight * minimapScale) / 2;
+
+  const viewportBounds = viewport.getBoundingClientRect();
+  const svgBounds = svg.getBoundingClientRect();
+  const svgLeft = svgBounds.left - viewportBounds.left + viewport.scrollLeft;
+  const svgTop = svgBounds.top - viewportBounds.top + viewport.scrollTop;
+  thumbnail.style.left = `${svgLeft}px`;
+  thumbnail.style.top = `${svgTop}px`;
+  thumbnail.style.width = `${svgBounds.width}px`;
+  thumbnail.style.height = `${svgBounds.height}px`;
+
+  minimapDiagram.style.width = `${contentWidth}px`;
+  minimapDiagram.style.height = `${contentHeight}px`;
+  minimapDiagram.style.transform =
+    `translate(${minimapOffsetX}px, ${minimapOffsetY}px) scale(${minimapScale})`;
+  updateMinimapViewport();
 }
 
-function updateLayout(): void {
-  workspace.classList.remove(
-    'workspace--preview',
-    'workspace--source',
-    'workspace--split',
-    'workspace--horizontal',
-    'workspace--vertical',
-  );
-  workspace.classList.add(`workspace--${layoutMode}`, `workspace--${splitOrientation}`);
-  workspace.style.setProperty('--source-ratio', `${Math.round(splitRatio * 1000) / 10}%`);
-  splitter.setAttribute('aria-valuenow', String(Math.round(splitRatio * 100)));
-  splitter.setAttribute(
-    'aria-orientation',
-    splitOrientation === 'vertical' ? 'vertical' : 'horizontal',
-  );
-  viewModeSelect.value = layoutMode;
-  const label = viewModeSelect.selectedOptions[0]?.textContent?.trim() || layoutMode;
-  viewPicker.title = `View mode: ${label}`;
-  orientationButton.disabled = layoutMode !== 'split';
-  const sourcePlacement =
-    splitOrientation === 'vertical' ? 'above preview' : 'beside preview';
-  orientationButton.title = `Place source ${sourcePlacement}`;
-  orientationButton.setAttribute('aria-label', `Place source ${sourcePlacement}`);
-  orientationButton.querySelector('path')?.setAttribute(
-    'd',
-    splitOrientation === 'vertical' ? 'M11 5v14' : 'M4 12h16',
-  );
-  if (layoutMode !== 'source' && autoFit && !diagram.hidden) {
-    window.requestAnimationFrame(fitDiagram);
+function updateMinimapViewport(): void {
+  if (minimap.hidden) {
+    return;
   }
+  const contentWidth = Math.max(viewport.scrollWidth, 1);
+  const contentHeight = Math.max(viewport.scrollHeight, 1);
+  const left = minimapOffsetX + viewport.scrollLeft * minimapScale;
+  const top = minimapOffsetY + viewport.scrollTop * minimapScale;
+  const width = Math.min(viewport.clientWidth * minimapScale, contentWidth * minimapScale);
+  const height = Math.min(viewport.clientHeight * minimapScale, contentHeight * minimapScale);
+  minimapWindow.style.left = `${left}px`;
+  minimapWindow.style.top = `${top}px`;
+  minimapWindow.style.width = `${Math.max(width, 8)}px`;
+  minimapWindow.style.height = `${Math.max(height, 8)}px`;
 }
 
 function updateThemePicker(): void {
@@ -609,10 +628,8 @@ function cleanupFailedRender(renderId: string): void {
   document.getElementById(`d${renderId}`)?.remove();
 }
 
-function openSource(preserveFocus: boolean): void {
-  sourceVisible = true;
-  updateSourceButton();
-  vscode.postMessage({ type: 'openSource', preserveFocus });
+function openSourceOnly(): void {
+  vscode.postMessage({ type: 'setEditorMode', mode: 'source' });
 }
 
 function bindButton(id: string, listener: () => void): void {
@@ -681,48 +698,43 @@ function installDragToPan(): void {
   viewport.addEventListener('pointercancel', stopDragging);
 }
 
-function installSplitter(): void {
+function installMinimapNavigation(): void {
   let pointerId: number | undefined;
 
-  const ratioFromPointer = (event: PointerEvent): number => {
-    const bounds = workspace.getBoundingClientRect();
-    return splitOrientation === 'vertical'
-      ? (event.clientX - bounds.left) / Math.max(bounds.width, 1)
-      : (event.clientY - bounds.top) / Math.max(bounds.height, 1);
+  const navigate = (event: PointerEvent): void => {
+    const bounds = minimap.getBoundingClientRect();
+    const contentX = (event.clientX - bounds.left - minimapOffsetX) / minimapScale;
+    const contentY = (event.clientY - bounds.top - minimapOffsetY) / minimapScale;
+    viewport.scrollTo({
+      left: contentX - viewport.clientWidth / 2,
+      top: contentY - viewport.clientHeight / 2,
+    });
   };
 
-  splitter.addEventListener('pointerdown', (event) => {
-    if (layoutMode !== 'split' || event.button !== 0) return;
+  minimap.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
     pointerId = event.pointerId;
-    splitter.setPointerCapture(pointerId);
-    splitter.classList.add('splitter--dragging');
+    minimap.setPointerCapture(pointerId);
+    minimap.classList.add('minimap--dragging');
+    navigate(event);
   });
-  splitter.addEventListener('pointermove', (event) => {
-    if (event.pointerId !== pointerId) return;
-    splitRatio = clamp(ratioFromPointer(event), 0.2, 0.8);
-    updateLayout();
+  minimap.addEventListener('pointermove', (event) => {
+    if (event.pointerId === pointerId) {
+      navigate(event);
+    }
   });
   const stopDragging = (event: PointerEvent): void => {
-    if (event.pointerId !== pointerId) return;
+    if (event.pointerId !== pointerId) {
+      return;
+    }
     pointerId = undefined;
-    splitter.classList.remove('splitter--dragging');
-    persistState();
+    minimap.classList.remove('minimap--dragging');
   };
-  splitter.addEventListener('pointerup', stopDragging);
-  splitter.addEventListener('pointercancel', stopDragging);
-  splitter.addEventListener('keydown', (event) => {
-    const decrease = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
-    const increase = event.key === 'ArrowRight' || event.key === 'ArrowDown';
-    if (!decrease && !increase) return;
-    event.preventDefault();
-    splitRatio = clamp(splitRatio + (decrease ? -0.05 : 0.05), 0.2, 0.8);
-    updateLayout();
-    persistState();
-  });
-}
-
-function isLayoutMode(value: string): value is PreviewLayoutMode {
-  return value === 'preview' || value === 'source' || value === 'split';
+  minimap.addEventListener('pointerup', stopDragging);
+  minimap.addEventListener('pointercancel', stopDragging);
 }
 
 class RenderCancelledError extends Error {}

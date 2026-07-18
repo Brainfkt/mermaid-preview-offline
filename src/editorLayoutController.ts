@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 
-import { editorLayoutFor, editorLayoutMatches, readSourceRatio } from './editorLayout';
+import {
+  editorLayoutFor,
+  editorLayoutMatches,
+  readSourceRatio,
+  shouldApplyEditorLayout,
+} from './editorLayout';
 import type { MermaidEditorMode } from './protocol';
 
 const MODE_STATE_KEY = 'mermaidPreviewOffline.editorMode';
@@ -47,6 +52,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   private currentSplit: ActiveSplit | undefined;
   private layoutTransitioning = false;
   private pendingMode: MermaidEditorMode | undefined;
+  private requestedSourceKey: string | undefined;
 
   public readonly onDidChangeMode = this.modeEmitter.event;
 
@@ -127,6 +133,27 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     });
   }
 
+  public async syncPreviewForSource(uri: vscode.Uri): Promise<void> {
+    const requestedSourceKey = uri.toString();
+    this.requestedSourceKey = requestedSourceKey;
+    await this.enqueue(async () => {
+      if (this.requestedSourceKey !== requestedSourceKey) {
+        return;
+      }
+      const mode = this.getMode();
+      if (!isSplitMode(mode)) {
+        return;
+      }
+      const panel = this.firstPanel(uri);
+      if (panel && (await this.isAlreadyArranged(uri, mode, panel))) {
+        this.disposeOtherSplitPanels(panel);
+        await this.closeDuplicateSourceTabs(uri);
+        return;
+      }
+      await this.arrange(uri, mode, panel, true);
+    });
+  }
+
   public async saveCurrentRatio(uri: vscode.Uri, allowHidden = false): Promise<void> {
     if (this.layoutTransitioning) {
       return;
@@ -156,6 +183,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     uri: vscode.Uri,
     mode: MermaidEditorMode,
     preferredPanel?: vscode.WebviewPanel,
+    focusSource = false,
   ): Promise<void> {
     const splitMode = isSplitMode(mode) ? mode : undefined;
     const ownsCurrentSplit =
@@ -170,7 +198,8 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     try {
       const ratio = this.context.workspaceState.get<number>(this.ratioKey(uri), 0.5);
       const currentLayout = await vscode.commands.executeCommand<unknown>('vscode.getEditorLayout');
-      if (!editorLayoutMatches(currentLayout, mode) || (splitMode && !ownsCurrentSplit)) {
+      const restoreSplitRatio = splitMode !== undefined && this.currentSplit === undefined;
+      if (shouldApplyEditorLayout(currentLayout, mode, restoreSplitRatio)) {
         await vscode.commands.executeCommand('vscode.setEditorLayout', editorLayoutFor(mode, ratio));
       }
 
@@ -185,7 +214,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
         return;
       }
 
-      await this.openSplit(uri, preferredPanel);
+      await this.openSplit(uri, preferredPanel, focusSource);
       this.currentSplit = { mode, uri };
     } finally {
       this.layoutTransitioning = false;
@@ -254,26 +283,37 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   private async openSplit(
     uri: vscode.Uri,
     preferredPanel?: vscode.WebviewPanel,
+    focusSource = false,
   ): Promise<void> {
     const document = await vscode.workspace.openTextDocument(uri);
     await vscode.window.showTextDocument(document, {
-      preserveFocus: true,
+      preserveFocus: !focusSource,
       preview: false,
       viewColumn: vscode.ViewColumn.One,
     });
+    await this.closeDuplicateSourceTabs(uri);
 
     const panel = this.registeredPanel(uri, preferredPanel);
     if (panel) {
-      panel.reveal(vscode.ViewColumn.Two, false);
-      this.disposeOtherPanels(uri, panel);
+      this.disposeOtherSplitPanels(panel);
+      panel.reveal(vscode.ViewColumn.Two, focusSource);
       return;
     }
+    this.disposeOtherSplitPanels();
     await vscode.commands.executeCommand(
       'vscode.openWith',
       uri,
       this.viewType,
       vscode.ViewColumn.Two,
     );
+    if (focusSource) {
+      await vscode.window.showTextDocument(document, {
+        preserveFocus: false,
+        preview: false,
+        viewColumn: vscode.ViewColumn.One,
+      });
+    }
+    await this.closeDuplicateSourceTabs(uri);
   }
 
   private firstPanel(uri: vscode.Uri): vscode.WebviewPanel | undefined {
@@ -295,6 +335,31 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       if (panel !== retained) {
         panel.dispose();
       }
+    }
+  }
+
+  private disposeOtherSplitPanels(retained?: vscode.WebviewPanel): void {
+    for (const entries of [...this.panels.values()]) {
+      for (const panel of [...entries]) {
+        if (panel !== retained) {
+          panel.dispose();
+        }
+      }
+    }
+  }
+
+  private async closeDuplicateSourceTabs(uri: vscode.Uri): Promise<void> {
+    const duplicateTabs = vscode.window.tabGroups.all.flatMap((group) =>
+      group.viewColumn === vscode.ViewColumn.One
+        ? []
+        : group.tabs.filter(
+            (tab) =>
+              tab.input instanceof vscode.TabInputText &&
+              tab.input.uri.toString() === uri.toString(),
+          ),
+    );
+    if (duplicateTabs.length > 0) {
+      await vscode.window.tabGroups.close(duplicateTabs, true);
     }
   }
 

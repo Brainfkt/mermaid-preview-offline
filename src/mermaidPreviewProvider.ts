@@ -3,6 +3,8 @@ import process from 'node:process';
 
 import * as vscode from 'vscode';
 
+import { isEditorMode } from './editorLayoutController';
+import type { MermaidEditorLayoutController } from './editorLayoutController';
 import { imageMimeType, inlineLocalImages, type LoadedLocalImage } from './localImages';
 import type { MermaidDiagnosticStore } from './languageFeatures';
 import { isDiagramTheme, normalizePreviewState } from './previewState';
@@ -23,6 +25,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   public constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly diagnostics: MermaidDiagnosticStore,
+    private readonly layoutController: MermaidEditorLayoutController,
   ) {}
 
   public resolveCustomTextEditor(
@@ -43,7 +46,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     let documentTimer: NodeJS.Timeout | undefined;
     let stateTimer: NodeJS.Timeout | undefined;
     let pendingState: PersistedPreviewState | undefined;
-    let lastSourceSentToWebview = document.getText();
+    const panelRegistration = this.layoutController.registerPanel(document.uri, webviewPanel);
 
     webview.options = {
       enableScripts: true,
@@ -66,22 +69,15 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       await webview.postMessage({ type: 'configuration', configuration: configuration() });
     };
 
-    const postSourceVisibility = async (): Promise<void> => {
-      const visible = vscode.window.visibleTextEditors.some(
-        (editor) => editor.document.uri.toString() === document.uri.toString(),
-      );
-      await webview.postMessage({ type: 'sourceVisibility', visible });
-    };
-
     const sendDocument = async (generation: number): Promise<void> => {
       if (disposed || generation !== documentGeneration) {
         return;
       }
 
       const version = document.version;
-      const originalSource = document.getText();
-      const byteLength = Buffer.byteLength(originalSource, 'utf8');
-      const source = await inlineLocalImages(originalSource, (reference) =>
+      const documentSource = document.getText();
+      const byteLength = Buffer.byteLength(documentSource, 'utf8');
+      const source = await inlineLocalImages(documentSource, (reference) =>
         this.loadLocalImage(document.uri, reference),
       );
       if (
@@ -93,11 +89,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       }
 
       const currentConfiguration = configuration();
-      lastSourceSentToWebview = originalSource;
       await webview.postMessage({
         type: 'document',
         source,
-        originalSource,
         fileName: fileNameOf(document.uri),
         version,
         byteLength,
@@ -148,8 +142,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         void webview.postMessage({
           type: 'documentChanged',
           fileName: fileNameOf(document.uri),
-          originalSource: document.getText(),
           version: document.version,
+          byteLength: Buffer.byteLength(document.getText(), 'utf8'),
         });
       } else {
         queueDocument();
@@ -166,8 +160,16 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       }
     });
 
-    const visibilitySubscription = vscode.window.onDidChangeVisibleTextEditors(() => {
-      void postSourceVisibility();
+    const modeSubscription = this.layoutController.onDidChangeMode((mode) => {
+      void webview.postMessage({ type: 'editorMode', mode });
+    });
+
+    const panelStateSubscription = webviewPanel.onDidChangeViewState((event) => {
+      if (event.webviewPanel.active) {
+        void this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
+      } else {
+        void this.layoutController.saveCurrentRatio(document.uri, true);
+      }
     });
 
     const messageSubscription = webview.onDidReceiveMessage(async (message: unknown) => {
@@ -187,16 +189,22 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
               });
             }
           }
-          await postSourceVisibility();
+          await webview.postMessage({
+            type: 'editorMode',
+            mode: this.layoutController.getMode(),
+          });
           queueDocument(0);
+          await this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
           break;
         }
-        case 'openSource':
-          await vscode.window.showTextDocument(document, {
-            preview: false,
-            preserveFocus: message.preserveFocus ?? false,
-            viewColumn: webviewPanel.viewColumn,
-          });
+        case 'chooseEditorMode':
+          await this.layoutController.chooseMode(document.uri, webviewPanel);
+          break;
+        case 'setEditorMode':
+          await this.layoutController.applyMode(document.uri, message.mode, webviewPanel);
+          break;
+        case 'toggleFullscreen':
+          await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
           break;
         case 'requestDocument':
           queueDocument(0);
@@ -204,29 +212,6 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'setDiagramTheme':
           await updateDiagramTheme(message.theme);
           break;
-        case 'sourceEdit': {
-          const currentSource = document.getText();
-          if (
-            document.version !== message.baseVersion &&
-            currentSource !== lastSourceSentToWebview
-          ) {
-            queueDocument(0);
-            break;
-          }
-          if (currentSource === message.source) break;
-          const edit = new vscode.WorkspaceEdit();
-          edit.replace(
-            document.uri,
-            new vscode.Range(document.positionAt(0), document.positionAt(currentSource.length)),
-            message.source,
-          );
-          if (await vscode.workspace.applyEdit(edit)) {
-            lastSourceSentToWebview = message.source;
-          } else {
-            queueDocument(0);
-          }
-          break;
-        }
         case 'diagnostic':
           if (message.version === document.version) {
             this.setDiagnostic(document, message);
@@ -252,13 +237,16 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.onDidDispose(() => {
       disposed = true;
+      void this.layoutController.saveCurrentRatio(document.uri, true);
       if (documentTimer) clearTimeout(documentTimer);
       if (stateTimer) clearTimeout(stateTimer);
       if (pendingState) void this.context.workspaceState.update(stateKey, pendingState);
       changeSubscription.dispose();
       configurationSubscription.dispose();
-      visibilitySubscription.dispose();
+      modeSubscription.dispose();
+      panelStateSubscription.dispose();
       messageSubscription.dispose();
+      panelRegistration.dispose();
     });
   }
 
@@ -348,10 +336,12 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const refreshMode = configuration.get<unknown>('refreshMode', 'automatic');
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
+  const minimapEnabled = configuration.get<boolean>('minimap.enabled', true);
 
   return {
     diagramTheme: isDiagramTheme(configuredTheme) ? configuredTheme : 'adaptive',
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
+    minimapEnabled,
     refreshDelay: clampInteger(refreshDelay, 0, 2_000),
     refreshMode: refreshMode === 'manual' ? 'manual' : 'automatic',
   };
@@ -382,35 +372,34 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
 
   const candidate = value as {
     hasPersistedState?: unknown;
-    preserveFocus?: unknown;
-    baseVersion?: unknown;
     column?: unknown;
     line?: unknown;
     message?: unknown;
-    source?: unknown;
+    mode?: unknown;
     state?: unknown;
     svg?: unknown;
     theme?: unknown;
     type?: unknown;
     version?: unknown;
   };
-  if (candidate.type === 'requestDocument') {
+  if (
+    candidate.type === 'requestDocument' ||
+    candidate.type === 'chooseEditorMode' ||
+    candidate.type === 'toggleFullscreen'
+  ) {
     return true;
   }
   if (candidate.type === 'ready') {
     return typeof candidate.hasPersistedState === 'boolean';
   }
-  if (candidate.type === 'openSource') {
-    return candidate.preserveFocus === undefined || typeof candidate.preserveFocus === 'boolean';
+  if (candidate.type === 'setEditorMode') {
+    return isEditorMode(candidate.mode);
   }
   if (candidate.type === 'viewState') {
     return typeof candidate.state === 'object' && candidate.state !== null;
   }
   if (candidate.type === 'setDiagramTheme') {
     return isDiagramTheme(candidate.theme);
-  }
-  if (candidate.type === 'sourceEdit') {
-    return typeof candidate.source === 'string' && typeof candidate.baseVersion === 'number';
   }
   if (candidate.type === 'clearDiagnostic') {
     return typeof candidate.version === 'number';

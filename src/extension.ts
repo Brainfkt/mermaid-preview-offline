@@ -4,27 +4,58 @@ import {
   MERMAID_PREVIEW_VIEW_TYPE,
   MermaidPreviewProvider,
 } from './mermaidPreviewProvider';
+import { MermaidEditorLayoutController } from './editorLayoutController';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
+import type { MermaidEditorMode } from './protocol';
 
 const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
 const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
+const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
+const MODE_COMMANDS: ReadonlyArray<[string, MermaidEditorMode]> = [
+  ['mermaidPreviewOffline.openPreviewOnly', 'preview'],
+  ['mermaidPreviewOffline.openSourceOnly', 'source'],
+  ['mermaidPreviewOffline.openBeside', 'beside'],
+  ['mermaidPreviewOffline.openAbove', 'above'],
+];
 
 export function activate(context: vscode.ExtensionContext): void {
   const diagnostics = registerMermaidLanguageFeatures(context);
-  const provider = new MermaidPreviewProvider(context, diagnostics);
+  const layoutController = new MermaidEditorLayoutController(
+    context,
+    MERMAID_PREVIEW_VIEW_TYPE,
+  );
+  const provider = new MermaidPreviewProvider(context, diagnostics, layoutController);
 
   context.subscriptions.push(
+    layoutController,
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {
-      supportsMultipleEditorsPerDocument: true,
+      supportsMultipleEditorsPerDocument: false,
       webviewOptions: { retainContextWhenHidden: true },
     }),
+    vscode.window.onDidChangeActiveTextEditor((editor) => {
+      const uri = editor?.document.uri;
+      if (uri && isMermaidDocument(uri)) {
+        void layoutController.syncPreviewForSource(uri);
+      }
+    }),
     vscode.commands.registerCommand(OPEN_PREVIEW_COMMAND, async (resource?: vscode.Uri) => {
-      await openPreview(resource);
+      await applyEditorMode(layoutController, 'preview', resource);
     }),
     vscode.commands.registerCommand(OPEN_PREVIEW_TO_SIDE_COMMAND, async (resource?: vscode.Uri) => {
-      await openPreview(resource, vscode.ViewColumn.Beside);
+      await applyEditorMode(layoutController, 'beside', resource);
     }),
+    vscode.commands.registerCommand(CHOOSE_LAYOUT_COMMAND, async (resource?: vscode.Uri) => {
+      const uri = mermaidUri(resource);
+      if (uri) {
+        await layoutController.chooseMode(uri);
+      }
+    }),
+    ...MODE_COMMANDS.map(([command, mode]) =>
+      vscode.commands.registerCommand(command, async (resource?: vscode.Uri) => {
+        await applyEditorMode(layoutController, mode, resource);
+      }),
+    ),
     vscode.commands.registerCommand(
       CONFIGURE_DEFAULT_EDITOR_COMMAND,
       async (resource?: vscode.Uri) => {
@@ -32,29 +63,29 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     ),
   );
+
+  const activeSourceUri = vscode.window.activeTextEditor?.document.uri;
+  if (activeSourceUri && isMermaidDocument(activeSourceUri)) {
+    void layoutController.syncPreviewForSource(activeSourceUri);
+  }
 }
 
 export function deactivate(): void {}
 
-async function openPreview(resource?: vscode.Uri, viewColumn?: vscode.ViewColumn): Promise<void> {
-  const uri = resource ?? vscode.window.activeTextEditor?.document.uri;
-  if (!uri || !isMermaidDocument(uri)) {
-    void vscode.window.showWarningMessage('Open a .mmd or .mermaid file first.');
-    return;
+async function applyEditorMode(
+  controller: MermaidEditorLayoutController,
+  mode: MermaidEditorMode,
+  resource?: vscode.Uri,
+): Promise<void> {
+  const uri = mermaidUri(resource);
+  if (uri) {
+    await controller.applyMode(uri, mode);
   }
-
-  await vscode.commands.executeCommand(
-    'vscode.openWith',
-    uri,
-    MERMAID_PREVIEW_VIEW_TYPE,
-    viewColumn,
-  );
 }
 
 async function configureDefaultEditor(resource?: vscode.Uri): Promise<void> {
-  const uri = resource ?? vscode.window.activeTextEditor?.document.uri;
-  if (!uri || !isMermaidDocument(uri)) {
-    void vscode.window.showWarningMessage('Select a .mmd or .mermaid file first.');
+  const uri = mermaidUri(resource, 'Select a .mmd or .mermaid file first.');
+  if (!uri) {
     return;
   }
 
@@ -108,4 +139,24 @@ async function configureDefaultEditor(resource?: vscode.Uri): Promise<void> {
 
 function isMermaidDocument(uri: vscode.Uri): boolean {
   return /\.(?:mmd|mermaid)$/iu.test(uri.path);
+}
+
+function mermaidUri(
+  resource?: vscode.Uri,
+  warning = 'Open a .mmd or .mermaid file first.',
+): vscode.Uri | undefined {
+  const uri = resource ?? activeEditorUri();
+  if (!uri || !isMermaidDocument(uri)) {
+    void vscode.window.showWarningMessage(warning);
+    return undefined;
+  }
+  return uri;
+}
+
+function activeEditorUri(): vscode.Uri | undefined {
+  const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+  if (input instanceof vscode.TabInputText || input instanceof vscode.TabInputCustom) {
+    return input.uri;
+  }
+  return vscode.window.activeTextEditor?.document.uri;
 }

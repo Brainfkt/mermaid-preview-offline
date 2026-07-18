@@ -45,6 +45,17 @@ export function editorLayoutMatches(value: unknown, mode: MermaidEditorMode): bo
   );
 }
 
+export function shouldApplyEditorLayout(
+  value: unknown,
+  mode: MermaidEditorMode,
+  restoreSplitRatio = false,
+): boolean {
+  return (
+    !editorLayoutMatches(value, mode) ||
+    (restoreSplitRatio && (mode === 'beside' || mode === 'above'))
+  );
+}
+
 export function readSourceRatio(
   value: unknown,
   mode: Extract<MermaidEditorMode, 'above' | 'beside'>,
