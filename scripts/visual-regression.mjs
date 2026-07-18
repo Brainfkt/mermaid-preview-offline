@@ -153,6 +153,7 @@ const runner = `<script nonce="${nonce}">
         window.postMessage({
           type: 'document',
           source: example.source,
+          originalSource: example.source,
           fileName: example.fileName,
           version,
           byteLength: example.source.length,
@@ -199,6 +200,29 @@ const runner = `<script nonce="${nonce}">
       () => document.querySelector('#diagram svg') !== svgBeforeRefresh,
       'manual refresh',
     );
+
+    version += 1;
+    const diagnosticStart = postedMessages.length;
+    const invalidSource = 'flowchart LR\\n  broken -->';
+    window.postMessage({
+      type: 'document',
+      source: invalidSource,
+      originalSource: invalidSource,
+      fileName: 'invalid.mmd',
+      version,
+      byteLength: invalidSource.length,
+      isLargeFile: false,
+    }, '*');
+    await waitFor(
+      () => !document.querySelector('#error-state').hidden,
+      'syntax diagnostic',
+    );
+    const diagnostic = postedMessages
+      .slice(diagnosticStart)
+      .find((message) => message.type === 'diagnostic');
+    if (!diagnostic || /addHook is not a function/u.test(diagnostic.message)) {
+      throw new Error('The renderer did not report a valid Mermaid syntax diagnostic.');
+    }
 
     const output = document.createElement('script');
     output.id = 'visual-results';

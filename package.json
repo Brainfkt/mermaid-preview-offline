@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -66,7 +66,12 @@
     "onCustomEditor:brainfkt.mermaidPreviewOffline",
     "onCommand:mermaidPreviewOffline.openPreview",
     "onCommand:mermaidPreviewOffline.openPreviewToSide",
-    "onCommand:mermaidPreviewOffline.configureDefaultEditor"
+    "onCommand:mermaidPreviewOffline.configureDefaultEditor",
+    "onCommand:mermaidPreviewOffline.formatDocument",
+    "onCommand:mermaidPreviewOffline.insertElement",
+    "onCommand:mermaidPreviewOffline.generateMissingIds",
+    "onCommand:mermaidPreviewOffline.renameIdentifier",
+    "onLanguage:mermaid"
   ],
   "contributes": {
     "languages": [
@@ -88,6 +93,12 @@
         "language": "mermaid",
         "scopeName": "source.mermaid",
         "path": "./syntaxes/mermaid.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "mermaid",
+        "path": "./snippets/mermaid.json"
       }
     ],
     "customEditors": [
@@ -120,6 +131,26 @@
         "command": "mermaidPreviewOffline.configureDefaultEditor",
         "title": "Mermaid Preview: Configure Default Editor",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "mermaidPreviewOffline.formatDocument",
+        "title": "Mermaid: Format Document",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "mermaidPreviewOffline.insertElement",
+        "title": "Mermaid: Insert Node or Link",
+        "icon": "$(add)"
+      },
+      {
+        "command": "mermaidPreviewOffline.generateMissingIds",
+        "title": "Mermaid: Generate Missing Identifiers",
+        "icon": "$(symbol-key)"
+      },
+      {
+        "command": "mermaidPreviewOffline.renameIdentifier",
+        "title": "Mermaid: Rename Identifier",
+        "icon": "$(edit)"
       }
     ],
     "menus": {
@@ -145,6 +176,28 @@
           "command": "mermaidPreviewOffline.openPreviewToSide",
           "when": "editorLangId == mermaid",
           "group": "navigation@8"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "mermaidPreviewOffline.insertElement",
+          "when": "editorLangId == mermaid",
+          "group": "mermaidPreviewOffline@1"
+        },
+        {
+          "command": "mermaidPreviewOffline.generateMissingIds",
+          "when": "editorLangId == mermaid",
+          "group": "mermaidPreviewOffline@2"
+        },
+        {
+          "command": "mermaidPreviewOffline.renameIdentifier",
+          "when": "editorLangId == mermaid",
+          "group": "mermaidPreviewOffline@3"
+        },
+        {
+          "command": "mermaidPreviewOffline.formatDocument",
+          "when": "editorLangId == mermaid",
+          "group": "modification@9"
         }
       ]
     },

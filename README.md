@@ -40,6 +40,7 @@ assets all ship inside the extension.
 | | Capability | What it gives you |
 |---|---|---|
 | ⚡ | **Instant preview** | Mermaid files open directly in a polished live preview. |
+| ✎ | **Advanced editing** | Problems, quick fixes, completion, snippets, formatting, and safe refactors. |
 | 🔒 | **Private by design** | Diagram source never leaves your machine. |
 | 📴 | **Truly offline** | No CDN, API, account, sign-in, or network dependency. |
 | 🔍 | **Comfortable navigation** | Fit, zoom, and drag across large diagrams. |
@@ -52,6 +53,9 @@ Keep several Mermaid previews open in normal VS Code editor groups. Each view
 has its own zoom level and exposes rendering time and zoom percentage in the
 footer. Zoom and scroll position are restored per preview after VS Code
 restarts, while the selected diagram theme stays synchronized across files.
+Choose **Preview only**, **Source only**, or **Split source and preview** from
+the preview toolbar. Split mode can place the editable source beside or above
+the diagram, and its draggable ratio is restored per file.
 
 ![Sankey and block diagrams open in two VS Code editor groups](media/screenshots/split-view.png)
 
@@ -88,6 +92,12 @@ use **Reopen Editor With...** → **Text Editor**.
 - Automatic or manual refresh, with a configurable render delay.
 - Readable syntax errors with a direct path back to the source.
 - Error locations with line, column, source excerpt, and a Retry action.
+- Native Problems diagnostics and editor underlines powered by bundled Mermaid.
+- Quick fixes for common declaration typos, Unicode arrows, missing block ends,
+  and missing node identifiers.
+- Keyword completion, contextual hover help, and 43 diagram-family snippets.
+- Formatting, node/link insertion, missing-ID generation, and rename support.
+- Editable preview/source layouts with persistent orientation and proportions.
 - Fit-to-window, incremental zoom, and drag-to-pan navigation.
 - Six workspace-wide diagram themes selectable directly from the preview.
 - A modern glass interface that remains native to VS Code themes.
@@ -128,6 +138,9 @@ and current limitations.
 | Control | Action |
 |---|---|
 | `E` | Open the source in the current editor group |
+| **View mode** | Switch between preview-only, source-only, and split layouts |
+| **Split orientation** | Place source beside or above the preview |
+| Drag the separator | Resize source and preview |
 | `R` | Refresh the diagram |
 | `Ctrl/Cmd + 0` | Fit the diagram to the viewport |
 | `+` / `-` | Zoom in or out |
@@ -148,6 +161,9 @@ and current limitations.
 Use **Mermaid Preview: Open Preview to the Side** to preserve your current
 editor layout. **Mermaid Preview: Configure Default Editor** switches `.mmd`
 and `.mermaid` files between the offline preview and VS Code's text editor.
+In a Mermaid text editor, use **Mermaid: Insert Node or Link**, **Mermaid:
+Generate Missing Identifiers**, **Mermaid: Rename Identifier**, or **Mermaid:
+Format Document** from the Command Palette or editor context menu.
 
 ## Privacy and security
 

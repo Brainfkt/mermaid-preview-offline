@@ -59,3 +59,14 @@ void test('source, refresh, and theme controls are icon-only and the footer is u
   assert.doesNotMatch(html, />\s*Local\s*</u);
   assert.doesNotMatch(html, /Rendering locally/u);
 });
+
+void test('advanced source layouts expose editable, resizable split controls', () => {
+  assert.match(html, /id="source-editor"/u);
+  assert.match(html, /id="view-mode"/u);
+  assert.match(html, /value="preview"/u);
+  assert.match(html, /value="source"/u);
+  assert.match(html, /value="split"/u);
+  assert.match(html, /id="split-orientation"/u);
+  assert.match(html, /id="splitter"/u);
+  assert.match(html, /role="separator"/u);
+});

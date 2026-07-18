@@ -19,6 +19,7 @@ interface PublishingManifest {
   keywords: string[];
   pricing: string;
   publisher: string;
+  version: string;
   repository: { type: string; url: string };
   scripts: Record<string, string>;
 }
@@ -37,6 +38,7 @@ void test('le manifeste pointe vers le dépôt autonome', () => {
 });
 
 void test('le publisher et les commandes de publication sont configurés', () => {
+  assert.equal(manifest.version, '0.3.0');
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
@@ -91,7 +93,29 @@ void test('Marketplace publishing uses secretless Microsoft Entra federation', (
   assert.match(workflow, /vsce verify-pat --azure-credential/u);
   assert.match(workflow, /Marketplace identity ID/u);
   assert.match(workflow, /inputs\.confirmation == 'VERIFY'/u);
+  assert.match(workflow, /tags:\s*\n\s*- 'v\*\.\*\.\*'/u);
+  assert.match(workflow, /github\.event_name == 'push'/u);
+  assert.match(workflow, /PUBLISH_MODE/u);
+  assert.match(workflow, /Verify tag and manifest versions/u);
   assert.doesNotMatch(workflow, /VSCE_PAT/u);
+});
+
+void test('a version tag creates both the GitHub release and Marketplace publication', () => {
+  const releaseWorkflow = readFileSync(
+    resolve(root, '.github', 'workflows', 'release.yml'),
+    'utf8',
+  );
+  const marketplaceWorkflow = readFileSync(
+    resolve(root, '.github', 'workflows', 'publish-marketplace.yml'),
+    'utf8',
+  );
+  for (const workflow of [releaseWorkflow, marketplaceWorkflow]) {
+    assert.match(workflow, /tags:\s*\n\s*- 'v\*\.\*\.\*'/u);
+    assert.match(workflow, /require\('\.\/package\.json'\)\.version/u);
+    assert.match(workflow, /GITHUB_REF_NAME/u);
+  }
+  assert.match(releaseWorkflow, /gh release create/u);
+  assert.match(marketplaceWorkflow, /npm run publish:marketplace/u);
 });
 
 void test('CI verifies supported platforms and all visual fixtures', () => {

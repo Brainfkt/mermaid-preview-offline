@@ -4,6 +4,7 @@ import process from 'node:process';
 import * as vscode from 'vscode';
 
 import { imageMimeType, inlineLocalImages, type LoadedLocalImage } from './localImages';
+import type { MermaidDiagnosticStore } from './languageFeatures';
 import { isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   PersistedPreviewState,
@@ -19,7 +20,10 @@ export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 const VIEW_STATE_KEY_PREFIX = 'mermaidPreviewOffline.viewState.';
 
 export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
-  public constructor(private readonly context: vscode.ExtensionContext) {}
+  public constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly diagnostics: MermaidDiagnosticStore,
+  ) {}
 
   public resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -39,6 +43,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     let documentTimer: NodeJS.Timeout | undefined;
     let stateTimer: NodeJS.Timeout | undefined;
     let pendingState: PersistedPreviewState | undefined;
+    let lastSourceSentToWebview = document.getText();
 
     webview.options = {
       enableScripts: true,
@@ -88,9 +93,11 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       }
 
       const currentConfiguration = configuration();
+      lastSourceSentToWebview = originalSource;
       await webview.postMessage({
         type: 'document',
         source,
+        originalSource,
         fileName: fileNameOf(document.uri),
         version,
         byteLength,
@@ -141,6 +148,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         void webview.postMessage({
           type: 'documentChanged',
           fileName: fileNameOf(document.uri),
+          originalSource: document.getText(),
           version: document.version,
         });
       } else {
@@ -196,6 +204,39 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'setDiagramTheme':
           await updateDiagramTheme(message.theme);
           break;
+        case 'sourceEdit': {
+          const currentSource = document.getText();
+          if (
+            document.version !== message.baseVersion &&
+            currentSource !== lastSourceSentToWebview
+          ) {
+            queueDocument(0);
+            break;
+          }
+          if (currentSource === message.source) break;
+          const edit = new vscode.WorkspaceEdit();
+          edit.replace(
+            document.uri,
+            new vscode.Range(document.positionAt(0), document.positionAt(currentSource.length)),
+            message.source,
+          );
+          if (await vscode.workspace.applyEdit(edit)) {
+            lastSourceSentToWebview = message.source;
+          } else {
+            queueDocument(0);
+          }
+          break;
+        }
+        case 'diagnostic':
+          if (message.version === document.version) {
+            this.setDiagnostic(document, message);
+          }
+          break;
+        case 'clearDiagnostic':
+          if (message.version === document.version) {
+            this.diagnostics.clearRender(document.uri);
+          }
+          break;
         case 'viewState':
           persistViewState(message.state);
           break;
@@ -238,6 +279,32 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
     await vscode.workspace.fs.writeFile(target, new TextEncoder().encode(svg));
     void vscode.window.showInformationMessage(`Diagram saved to ${target.fsPath}.`);
+  }
+
+  private setDiagnostic(
+    document: vscode.TextDocument,
+    details: Extract<WebviewToExtensionMessage, { type: 'diagnostic' }>,
+  ): void {
+    const line = Math.min(Math.max((details.line ?? 1) - 1, 0), document.lineCount - 1);
+    const lineText = document.lineAt(line);
+    const startCharacter = Math.min(
+      Math.max((details.column ?? 1) - 1, 0),
+      lineText.range.end.character,
+    );
+    const range = new vscode.Range(
+      line,
+      startCharacter,
+      line,
+      Math.min(startCharacter + 1, lineText.range.end.character),
+    );
+    const diagnostic = new vscode.Diagnostic(
+      range,
+      details.message.split(/\r?\n/u, 1)[0]?.slice(0, 500) ?? 'Invalid Mermaid syntax',
+      vscode.DiagnosticSeverity.Error,
+    );
+    diagnostic.source = 'Mermaid';
+    diagnostic.code = 'syntax';
+    this.diagnostics.setRender(document.uri, diagnostic);
   }
 
   private async loadLocalImage(
@@ -316,10 +383,16 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   const candidate = value as {
     hasPersistedState?: unknown;
     preserveFocus?: unknown;
+    baseVersion?: unknown;
+    column?: unknown;
+    line?: unknown;
+    message?: unknown;
+    source?: unknown;
     state?: unknown;
     svg?: unknown;
     theme?: unknown;
     type?: unknown;
+    version?: unknown;
   };
   if (candidate.type === 'requestDocument') {
     return true;
@@ -335,6 +408,20 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   }
   if (candidate.type === 'setDiagramTheme') {
     return isDiagramTheme(candidate.theme);
+  }
+  if (candidate.type === 'sourceEdit') {
+    return typeof candidate.source === 'string' && typeof candidate.baseVersion === 'number';
+  }
+  if (candidate.type === 'clearDiagnostic') {
+    return typeof candidate.version === 'number';
+  }
+  if (candidate.type === 'diagnostic') {
+    return (
+      typeof candidate.version === 'number' &&
+      typeof candidate.message === 'string' &&
+      (candidate.line === undefined || typeof candidate.line === 'number') &&
+      (candidate.column === undefined || typeof candidate.column === 'number')
+    );
   }
   return (
     (candidate.type === 'copySvg' || candidate.type === 'saveSvg') &&

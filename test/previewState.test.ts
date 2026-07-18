@@ -15,8 +15,11 @@ void test('preview state restores per-file zoom and scroll only', () => {
     }),
     {
       autoFit: false,
+      layoutMode: 'preview',
       scrollLeft: 315,
       scrollTop: 92,
+      splitOrientation: 'vertical',
+      splitRatio: 0.5,
       zoom: 1.75,
     },
   );
@@ -35,6 +38,24 @@ void test('invalid preview state is normalized safely', () => {
   assert.equal(normalized.zoom, 4);
   assert.equal(normalized.scrollLeft, 0);
   assert.equal(normalized.scrollTop, 0);
+  assert.equal(normalized.layoutMode, 'preview');
+  assert.equal(normalized.splitOrientation, 'vertical');
+  assert.equal(normalized.splitRatio, 0.5);
   assert.equal('diagramTheme' in normalized, false);
   assert.equal('sourceVisible' in normalized, false);
+});
+
+void test('split layout state is restored and its ratio is constrained', () => {
+  const normalized = normalizePreviewState({
+    autoFit: true,
+    layoutMode: 'split',
+    scrollLeft: 0,
+    scrollTop: 0,
+    splitOrientation: 'horizontal',
+    splitRatio: 0.95,
+    zoom: 1,
+  });
+  assert.equal(normalized.layoutMode, 'split');
+  assert.equal(normalized.splitOrientation, 'horizontal');
+  assert.equal(normalized.splitRatio, 0.8);
 });

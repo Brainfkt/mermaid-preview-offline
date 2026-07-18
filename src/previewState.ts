@@ -6,8 +6,11 @@ import {
 
 export const DEFAULT_PREVIEW_STATE: PersistedPreviewState = {
   autoFit: true,
+  layoutMode: 'preview',
   scrollLeft: 0,
   scrollTop: 0,
+  splitOrientation: 'vertical',
+  splitRatio: 0.5,
   zoom: 1,
 };
 
@@ -18,8 +21,14 @@ export function normalizePreviewState(value: unknown): PersistedPreviewState {
 
   return {
     autoFit: typeof value.autoFit === 'boolean' ? value.autoFit : true,
+    layoutMode:
+      value.layoutMode === 'source' || value.layoutMode === 'split'
+        ? value.layoutMode
+        : 'preview',
     scrollLeft: finiteNonNegative(value.scrollLeft),
     scrollTop: finiteNonNegative(value.scrollTop),
+    splitOrientation: value.splitOrientation === 'horizontal' ? 'horizontal' : 'vertical',
+    splitRatio: clamp(finiteNumber(value.splitRatio, 0.5), 0.2, 0.8),
     zoom: clamp(finiteNumber(value.zoom, 1), 0.15, 4),
   };
 }

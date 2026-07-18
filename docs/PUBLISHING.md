@@ -49,25 +49,39 @@ l’identité et la fiche Marketplace soient validées.
 5. Dans le gestionnaire Marketplace, ajouter cet identifiant aux membres du
    publisher `brainfkt` avec le rôle **Contributor**.
 6. Relancer le workflow avec `VERIFY` pour contrôler les droits sans publier.
-7. Pour une future version, relancer le workflow et saisir `PUBLISH`.
+7. Pour une future version, pousser simplement son tag `vX.Y.Z`. La publication
+   Marketplace se déclenche automatiquement. L’entrée manuelle `PUBLISH` reste
+   disponible pour reprendre une publication interrompue.
 
 Le workflow utilise un jeton Entra éphémère obtenu par OIDC, vérifie que
-l’identité possède les droits du publisher, exécute toutes les validations puis
-appelle `vsce publish --azure-credential`. `--skip-duplicate` rend une relance
-sans effet destructeur. Aucune souscription Azure ni aucun secret durable ne
-sont nécessaires.
+l’identité possède les droits du publisher, contrôle que le tag correspond à
+la version du manifeste, exécute toutes les validations puis appelle
+`vsce publish --azure-credential`. `--skip-duplicate` rend une relance sans effet
+destructeur. Aucune souscription Azure ni aucun secret durable ne sont
+nécessaires.
 
 ## Publier une GitHub Release
 
 La version du tag doit correspondre exactement à `package.json` :
 
+Pour publier la v0.3.0 préparée dans le manifeste :
+
 ```bash
-npm version patch
-git push origin main --follow-tags
+git tag v0.3.0
+git push origin main v0.3.0
 ```
 
-Le tag `vX.Y.Z` déclenche la vérification, génère le VSIX et crée une GitHub
-Release avec les notes et le paquet attaché.
+Pour les versions suivantes, mettre à jour `package.json`, `package-lock.json`
+et `CHANGELOG.md`, puis créer le tag correspondant. Le tag `vX.Y.Z` déclenche en
+parallèle les deux workflows protégés :
+
+- **GitHub Release** vérifie la version, génère le VSIX et crée la release avec
+  les notes et le paquet attaché ;
+- **Publish to VS Code Marketplace** vérifie la même version et publie le VSIX
+  auprès du publisher `brainfkt`.
+
+Un tag qui ne correspond pas exactement au champ `version` échoue avant toute
+publication.
 
 ## Authentification sans PAT
 

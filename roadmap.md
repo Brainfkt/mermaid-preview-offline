@@ -23,37 +23,23 @@
 
 ## v0.3 — Expérience d’édition avancée
 
-- [ ] Surligner dans le diagramme l’élément correspondant à la ligne sélectionnée.
-- [ ] Cliquer sur un nœud pour atteindre sa définition dans le code.
-- [ ] Synchroniser la sélection entre source et aperçu.
-- [ ] Afficher les erreurs dans le panneau Problems de VS Code.
-- [ ] Souligner les erreurs directement dans l’éditeur.
-- [ ] Ajouter des corrections rapides pour les erreurs fréquentes.
-- [ ] Proposer l’autocomplétion des mots-clés Mermaid.
-- [ ] Ajouter des snippets pour chaque famille de diagrammes.
-- [ ] Fournir une documentation contextuelle au survol des mots-clés.
-- [ ] Ajouter une commande de formatage Mermaid.
-- [ ] Ajouter une commande pour insérer rapidement un nouveau nœud ou lien.
-- [ ] Générer automatiquement les identifiants manquants.
-- [ ] Renommer un identifiant dans tout le diagramme.
-- [ ] Afficher une vue Outline des nœuds, participants, classes ou entités.
-- [ ] Rechercher un élément et le centrer dans l’aperçu.
-- [ ] Ajouter un historique local des erreurs de rendu.
-- [ ] Proposer un mode Source vertical ou horizontal.
-- [ ] Permettre de modifier la proportion entre source et aperçu.
-- [ ] Ajouter un mode aperçu seul, source seule et partagé.
-- [ ] Supporter les documents Mermaid non enregistrés.
+- [x] Afficher les erreurs dans le panneau Problems de VS Code.
+- [x] Souligner les erreurs directement dans l’éditeur.
+- [x] Ajouter des corrections rapides pour les erreurs fréquentes.
+- [x] Proposer l’autocomplétion des mots-clés Mermaid.
+- [x] Ajouter des snippets pour chaque famille de diagrammes.
+- [x] Fournir une documentation contextuelle au survol des mots-clés.
+- [x] Ajouter une commande de formatage Mermaid.
+- [x] Ajouter une commande pour insérer rapidement un nouveau nœud ou lien.
+- [x] Générer automatiquement les identifiants manquants.
+- [x] Renommer un identifiant dans tout le diagramme.
+- [x] Proposer un mode Source vertical ou horizontal.
+- [x] Permettre de modifier la proportion entre source et aperçu.
+- [x] Ajouter un mode aperçu seul, source seule et partagé.
 
 ## v0.4 — Navigation et lecture
 
 - [ ] Ajouter une minimap pour les grands diagrammes.
-- [ ] Ajouter des boutons précédent/suivant dans l’historique de navigation.
-- [ ] Centrer automatiquement un élément sélectionné.
-- [ ] Ajouter un zoom sur une zone rectangulaire.
-- [ ] Ajouter un zoom à 100 %.
-- [ ] Ajouter des niveaux de zoom prédéfinis.
-- [ ] Améliorer les gestes du trackpad.
-- [ ] Permettre le déplacement avec la barre d’espace.
 - [ ] Ajouter un mode plein écran.
 - [ ] Ajouter un mode présentation sans interface.
 - [ ] Masquer automatiquement la barre d’outils.

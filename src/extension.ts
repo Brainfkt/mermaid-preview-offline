@@ -4,13 +4,15 @@ import {
   MERMAID_PREVIEW_VIEW_TYPE,
   MermaidPreviewProvider,
 } from './mermaidPreviewProvider';
+import { registerMermaidLanguageFeatures } from './languageFeatures';
 
 const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
 const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
 
 export function activate(context: vscode.ExtensionContext): void {
-  const provider = new MermaidPreviewProvider(context);
+  const diagnostics = registerMermaidLanguageFeatures(context);
+  const provider = new MermaidPreviewProvider(context, diagnostics);
 
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {

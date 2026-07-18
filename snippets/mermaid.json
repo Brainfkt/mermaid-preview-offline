@@ -1,0 +1,217 @@
+{
+  "Flowchart": {
+    "prefix": "flowchart",
+    "body": ["flowchart ${1|LR,TD,TB,RL,BT|}", "  ${2:start}[\"${3:Start}\"] --> ${4:finish}[\"${5:Finish}\"]"],
+    "description": "Create a Mermaid flowchart"
+  },
+  "Flowchart with ELK layout": {
+    "prefix": "flowchart-elk",
+    "body": ["---", "config:", "  layout: elk", "---", "flowchart LR", "  ${1:a}[\"${2:A}\"] --> ${3:b}[\"${4:B}\"]"],
+    "description": "Create a flowchart using the bundled ELK renderer"
+  },
+  "Sequence diagram": {
+    "prefix": "sequence",
+    "body": ["sequenceDiagram", "  participant ${1:a} as ${2:Alice}", "  participant ${3:b} as ${4:Bob}", "  ${1:a}->>${3:b}: ${5:Message}"],
+    "description": "Create a sequence diagram"
+  },
+  "Class diagram": {
+    "prefix": "class",
+    "body": ["classDiagram", "  class ${1:Animal} {", "    +${2:name}: string", "    +${3:move}()", "  }"],
+    "description": "Create a class diagram"
+  },
+  "State diagram": {
+    "prefix": "state",
+    "body": ["stateDiagram-v2", "  [*] --> ${1:Ready}", "  ${1:Ready} --> ${2:Done}", "  ${2:Done} --> [*]"],
+    "description": "Create a state diagram"
+  },
+  "Entity relationship diagram": {
+    "prefix": "er",
+    "body": ["erDiagram", "  ${1:CUSTOMER} ||--o{ ${2:ORDER} : ${3:places}", "  ${1:CUSTOMER} {", "    string id PK", "  }"],
+    "description": "Create an entity relationship diagram"
+  },
+  "Gantt chart": {
+    "prefix": "gantt",
+    "body": ["gantt", "  title ${1:Project plan}", "  dateFormat YYYY-MM-DD", "  section ${2:Work}", "  ${3:Task} :${4:2026-01-01}, ${5:5d}"],
+    "description": "Create a Gantt chart"
+  },
+  "User journey": {
+    "prefix": "journey",
+    "body": ["journey", "  title ${1:User journey}", "  section ${2:Discovery}", "    ${3:Find product}: ${4:5}: ${5:User}"],
+    "description": "Create a user journey"
+  },
+  "Pie chart": {
+    "prefix": "pie",
+    "body": ["pie showData", "  title ${1:Distribution}", "  \"${2:A}\" : ${3:60}", "  \"${4:B}\" : ${5:40}"],
+    "description": "Create a pie chart"
+  },
+  "Donut chart": {
+    "prefix": "donut",
+    "body": ["---", "config:", "  pie:", "    donutHole: ${1:0.55}", "---", "pie showData", "  title ${2:Donut chart}", "  \"${3:A}\" : ${4:60}", "  \"${5:B}\" : ${6:40}"],
+    "description": "Create a donut-ready pie chart"
+  },
+  "Quadrant chart": {
+    "prefix": "quadrant",
+    "body": ["quadrantChart", "  title ${1:Priorities}", "  x-axis ${2:Low effort} --> ${3:High effort}", "  y-axis ${4:Low impact} --> ${5:High impact}", "  ${6:Idea}: [${7:0.3}, ${8:0.8}]"],
+    "description": "Create a quadrant chart"
+  },
+  "Requirement diagram": {
+    "prefix": "requirement",
+    "body": ["requirementDiagram", "  requirement ${1:requirement_name} {", "    id: ${2:REQ-1}", "    text: ${3:Requirement text}", "    risk: ${4:medium}", "    verifymethod: ${5:test}", "  }"],
+    "description": "Create a requirement diagram"
+  },
+  "Git graph": {
+    "prefix": "gitgraph",
+    "body": ["gitGraph", "  commit id: \"${1:Initial}\"", "  branch ${2:feature}", "  checkout ${2:feature}", "  commit id: \"${3:Change}\""],
+    "description": "Create a Git graph"
+  },
+  "C4 context": {
+    "prefix": "c4-context",
+    "body": ["C4Context", "  title ${1:System context}", "  Person(${2:user}, \"${3:User}\")", "  System(${4:system}, \"${5:System}\")", "  Rel(${2:user}, ${4:system}, \"${6:Uses}\")"],
+    "description": "Create a C4 context diagram"
+  },
+  "C4 container": {
+    "prefix": "c4-container",
+    "body": ["C4Container", "  title ${1:Containers}", "  Container(${2:web}, \"${3:Web app}\", \"${4:TypeScript}\")", "  ContainerDb(${5:db}, \"${6:Database}\", \"${7:PostgreSQL}\")", "  Rel(${2:web}, ${5:db}, \"${8:Reads and writes}\")"],
+    "description": "Create a C4 container diagram"
+  },
+  "C4 component": {
+    "prefix": "c4-component",
+    "body": ["C4Component", "  title ${1:Components}", "  Component(${2:api}, \"${3:API}\", \"${4:Service}\")", "  Component(${5:worker}, \"${6:Worker}\", \"${7:Processor}\")", "  Rel(${2:api}, ${5:worker}, \"${8:Queues}\")"],
+    "description": "Create a C4 component diagram"
+  },
+  "C4 dynamic": {
+    "prefix": "c4-dynamic",
+    "body": ["C4Dynamic", "  title ${1:Dynamic view}", "  Container(${2:client}, \"${3:Client}\")", "  Container(${4:api}, \"${5:API}\")", "  Rel(${2:client}, ${4:api}, \"${6:1. Request}\")"],
+    "description": "Create a C4 dynamic diagram"
+  },
+  "C4 deployment": {
+    "prefix": "c4-deployment",
+    "body": ["C4Deployment", "  title ${1:Deployment}", "  Deployment_Node(${2:cloud}, \"${3:Cloud}\") {", "    Container(${4:app}, \"${5:Application}\")", "  }"],
+    "description": "Create a C4 deployment diagram"
+  },
+  "Mindmap": {
+    "prefix": "mindmap",
+    "body": ["mindmap", "  root((${1:Topic}))", "    ${2:Branch}", "      ${3:Leaf}"],
+    "description": "Create a mindmap"
+  },
+  "Timeline": {
+    "prefix": "timeline",
+    "body": ["timeline", "  title ${1:Timeline}", "  ${2:2025} : ${3:Milestone}", "  ${4:2026} : ${5:Next milestone}"],
+    "description": "Create a timeline"
+  },
+  "Sankey diagram": {
+    "prefix": "sankey",
+    "body": ["sankey-beta", "${1:Source},${2:Target},${3:10}"],
+    "description": "Create a Sankey diagram"
+  },
+  "XY chart": {
+    "prefix": "xychart",
+    "body": ["xychart-beta", "  title \"${1:Series}\"", "  x-axis [${2:Jan}, ${3:Feb}, ${4:Mar}]", "  y-axis \"${5:Value}\" 0 --> ${6:100}", "  line [${7:20}, ${8:45}, ${9:70}]"],
+    "description": "Create an XY chart"
+  },
+  "Block diagram": {
+    "prefix": "block",
+    "body": ["block-beta", "  columns ${1:3}", "  ${2:a}[\"${3:A}\"] ${4:b}[\"${5:B}\"] ${6:c}[\"${7:C}\"]", "  ${2:a} --> ${4:b}"],
+    "description": "Create a block diagram"
+  },
+  "Packet diagram": {
+    "prefix": "packet",
+    "body": ["packet-beta", "  0-7: \"${1:Header}\"", "  8-15: \"${2:Payload}\""],
+    "description": "Create a packet diagram"
+  },
+  "Kanban board": {
+    "prefix": "kanban",
+    "body": ["kanban", "  ${1:todo}[${2:Todo}]", "    ${3:task1}[${4:First task}]", "  ${5:done}[${6:Done}]"],
+    "description": "Create a Kanban board"
+  },
+  "Architecture diagram": {
+    "prefix": "architecture",
+    "body": ["architecture-beta", "  group ${1:api}(${2:cloud})[${3:API}]", "  service ${4:server}(${5:server})[${6:Server}] in ${1:api}"],
+    "description": "Create an architecture diagram"
+  },
+  "Radar chart": {
+    "prefix": "radar",
+    "body": ["radar-beta", "  axis ${1:a}[\"${2:Speed}\"], ${3:b}[\"${4:Quality}\"], ${5:c}[\"${6:Cost}\"]", "  curve ${7:product}[\"${8:Product}\"]{${9:80}, ${10:65}, ${11:45}}"],
+    "description": "Create a radar chart"
+  },
+  "Treemap": {
+    "prefix": "treemap",
+    "body": ["treemap-beta", "  \"${1:Category}\"", "    \"${2:Item A}\": ${3:60}", "    \"${4:Item B}\": ${5:40}"],
+    "description": "Create a treemap"
+  },
+  "Swimlane diagram": {
+    "prefix": "swimlane",
+    "body": ["swimlane-beta LR", "  subgraph ${1:teamA}[${2:Team A}]", "    ${3:a}[\"${4:Task}\"]", "  end", "  subgraph ${5:teamB}[${6:Team B}]", "    ${7:b}[\"${8:Review}\"]", "  end", "  ${3:a} --> ${7:b}"],
+    "description": "Create a swimlane diagram"
+  },
+  "Event modeling diagram": {
+    "prefix": "event-modeling",
+    "body": ["eventmodeling", "  tf 01 ui ${1:Context}.${2:UI}", "  tf 02 cmd ${1:Context}.${3:Command} [[${3:Command}]]", "  tf 03 evt ${1:Context}.${4:Event} [[${4:Event}]]", "  tf 04 rmo ${1:Context}.${5:ReadModel}"],
+    "description": "Create an event modeling diagram"
+  },
+  "Ishikawa diagram": {
+    "prefix": "ishikawa",
+    "body": ["ishikawa-beta", "  ${1:Effect}", "    ${2:Category}", "      ${3:Cause}", "      ${4:Another cause}"],
+    "description": "Create an Ishikawa cause-and-effect diagram"
+  },
+  "Cynefin diagram": {
+    "prefix": "cynefin",
+    "body": ["cynefin-beta", "  title ${1:Decisions}", "  complex", "    \"${2:Experiment}\"", "  complicated", "    \"${3:Analyze}\"", "  clear", "    \"${4:Apply practice}\"", "  chaotic", "    \"${5:Stabilize}\""],
+    "description": "Create a Cynefin decision diagram"
+  },
+  "Tree view": {
+    "prefix": "tree",
+    "body": ["treeView-beta", "  ${1:project}/", "    ${2:src}/", "      ${3:index.ts}", "    ${4:README.md}"],
+    "description": "Create a tree view"
+  },
+  "Venn diagram": {
+    "prefix": "venn",
+    "body": ["venn-beta", "  title \"${1:Venn diagram}\"", "  set ${2:A}[\"${3:Set A}\"]:${4:20}", "  set ${5:B}[\"${6:Set B}\"]:${7:20}", "  union ${2:A},${5:B}[\"${8:Overlap}\"]:${9:8}"],
+    "description": "Create a Venn diagram"
+  },
+  "Wardley map": {
+    "prefix": "wardley",
+    "body": ["wardley-beta", "  title ${1:Wardley map}", "  evolution Genesis@0.25 -> Custom@0.50 -> Product@0.75 -> Commodity@1.0", "  anchor ${2:User} [${3:0.95}, ${4:0.90}]", "  component \"${5:Application}\" [${6:0.75}, ${7:0.65}] (build)", "  ${2:User} -> \"${5:Application}\""],
+    "description": "Create a Wardley map"
+  },
+  "Railroad diagram": {
+    "prefix": "railroad",
+    "body": ["railroad-beta", "  title ${1:Grammar}", "  ${2:command} = sequence(terminal(\"${3:create}\"), nonterminal(\"${4:identifier}\"));"],
+    "description": "Create a railroad grammar diagram"
+  },
+  "EBNF railroad": {
+    "prefix": "railroad-ebnf",
+    "body": ["railroad-ebnf-beta", "  title ${1:EBNF grammar}", "  ${2:list} = ${3:item}, { \",\", ${3:item} };", "  ${3:item} = ${4:identifier}, [ \":\", ${5:value} ];"],
+    "description": "Create an EBNF railroad diagram"
+  },
+  "ABNF railroad": {
+    "prefix": "railroad-abnf",
+    "body": ["railroad-abnf-beta", "  title ${1:ABNF grammar}", "  ${2:request} = ${3:method} SP ${4:path};", "  ${3:method} = \"GET\" / \"POST\";"],
+    "description": "Create an ABNF railroad diagram"
+  },
+  "PEG railroad": {
+    "prefix": "railroad-peg",
+    "body": ["railroad-peg-beta", "  title ${1:PEG grammar}", "  ${2:expression} <- ${3:term} ((\"+\" / \"-\") ${3:term})*;", "  ${3:term} <- ${4:number};"],
+    "description": "Create a PEG railroad diagram"
+  },
+  "Info diagram": {
+    "prefix": "info",
+    "body": ["info"],
+    "description": "Create a Mermaid info diagram"
+  },
+  "ZenUML diagram": {
+    "prefix": "zenuml",
+    "body": ["zenuml", "  title ${1:Interaction}", "  ${2:Client}->${3:Server}.${4:request}()", "  ${3:Server} --> ${2:Client}: ${5:response}"],
+    "description": "Create a ZenUML diagram with the bundled plug-in"
+  },
+  "Diagram with Iconify icon": {
+    "prefix": "icon-node",
+    "body": ["flowchart LR", "  ${1:service}@{ icon: \"logos:${2:github-icon}\", form: \"square\", label: \"${3:Service}\", pos: \"b\", h: 96 }", "  ${1:service} --> ${4:output}[\"${5:Output}\"]"],
+    "description": "Create a node that uses a bundled Iconify icon"
+  },
+  "Diagram with local image": {
+    "prefix": "local-image",
+    "body": ["flowchart LR", "  ${1:imageNode}@{ img: \"${2:assets/image.svg}\", label: \"${3:Diagram asset}\", pos: \"b\", h: 112, constraint: \"on\" }"],
+    "description": "Create a node referencing a workspace-local image"
+  }
+}

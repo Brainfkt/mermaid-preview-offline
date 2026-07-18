@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.0
+
+- added native Mermaid diagnostics to VS Code Problems with editor underlines
+  and quick fixes for common declaration, arrow, identifier, and block errors;
+- added Mermaid keyword completion, contextual hover documentation, and 43
+  diagram-family snippets;
+- added document formatting, node/link insertion, missing-ID generation, and
+  diagram-wide identifier renaming;
+- added an editable source pane with preview-only, source-only, and split modes,
+  horizontal or vertical placement, and a persistent draggable ratio;
+- made `vX.Y.Z` tags automatically publish the matching version to both GitHub
+  Releases and the VS Code Marketplace using the existing secretless Entra OIDC
+  identity.
+- kept Mermaid parsing inside the browser-backed webview so native diagnostics
+  never invoke DOMPurify from the DOM-less VS Code extension host.
+
 ## 0.2.2
 
 - compacted the preview toolbar and aligned its controls to the left in the

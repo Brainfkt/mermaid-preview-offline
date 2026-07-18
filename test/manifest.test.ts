@@ -24,6 +24,7 @@ interface ExtensionManifest {
       selector: Array<{ filenamePattern: string }>;
       viewType: string;
     }>;
+    snippets: Array<{ language: string; path: string }>;
     menus: Record<string, Array<{ command: string; when: string }>>;
   };
   dependencies: Record<string, string>;
@@ -53,11 +54,21 @@ void test('Mermaid est une dépendance locale épinglée', () => {
 
 void test('preview commands cover side-by-side opening and default editor selection', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
-  assert.deepEqual(commands, [
+  assert.deepEqual(commands.slice(0, 3), [
     'mermaidPreviewOffline.openPreview',
     'mermaidPreviewOffline.openPreviewToSide',
     'mermaidPreviewOffline.configureDefaultEditor',
   ]);
+  for (const command of [
+    'mermaidPreviewOffline.formatDocument',
+    'mermaidPreviewOffline.insertElement',
+    'mermaidPreviewOffline.generateMissingIds',
+    'mermaidPreviewOffline.renameIdentifier',
+  ]) {
+    assert.ok(commands.includes(command));
+    assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
+  }
+  assert.ok(manifest.activationEvents.includes('onLanguage:mermaid'));
   assert.ok(manifest.activationEvents.includes('onCommand:mermaidPreviewOffline.openPreviewToSide'));
   assert.ok(
     manifest.activationEvents.includes('onCommand:mermaidPreviewOffline.configureDefaultEditor'),
@@ -66,7 +77,17 @@ void test('preview commands cover side-by-side opening and default editor select
   const explorerCommands = (manifest.contributes.menus['explorer/context'] ?? []).map(
     (entry) => entry.command,
   );
-  assert.deepEqual(explorerCommands, commands);
+  assert.deepEqual(explorerCommands, commands.slice(0, 3));
+});
+
+void test('Mermaid contributes language snippets for advanced editing', () => {
+  assert.deepEqual(manifest.contributes.snippets, [
+    { language: 'mermaid', path: './snippets/mermaid.json' },
+  ]);
+  const snippets = JSON.parse(
+    readFileSync(resolve(__dirname, '../../snippets/mermaid.json'), 'utf8'),
+  ) as Record<string, unknown>;
+  assert.equal(Object.keys(snippets).length, 43);
 });
 
 void test('refresh, large-file, and diagram-theme settings are configurable', () => {
@@ -91,4 +112,13 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
 
 void test('the extension can run in local and remote VS Code extension hosts', () => {
   assert.deepEqual(manifest.extensionKind, ['workspace', 'ui']);
+});
+
+void test('Mermaid rendering stays out of the DOM-less extension host', () => {
+  const languageFeatures = readFileSync(
+    resolve(__dirname, '../../src/languageFeatures.ts'),
+    'utf8',
+  );
+  assert.doesNotMatch(languageFeatures, /import mermaid from ['"]mermaid['"]/u);
+  assert.doesNotMatch(languageFeatures, /mermaid\.parse/u);
 });

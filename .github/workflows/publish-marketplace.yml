@@ -1,6 +1,9 @@
 name: Publish to VS Code Marketplace
 
 on:
+  push:
+    tags:
+      - 'v*.*.*'
   workflow_dispatch:
     inputs:
       confirmation:
@@ -12,11 +15,17 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: marketplace-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
-    if: inputs.confirmation == 'IDENTITY' || inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
+    if: github.event_name == 'push' || inputs.confirmation == 'IDENTITY' || inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
     runs-on: ubuntu-latest
     environment: marketplace
+    env:
+      PUBLISH_MODE: ${{ github.event_name == 'push' && 'PUBLISH' || inputs.confirmation }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -53,27 +62,34 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
-        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
+        if: env.PUBLISH_MODE == 'VERIFY' || env.PUBLISH_MODE == 'PUBLISH'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
+        if: env.PUBLISH_MODE == 'VERIFY' || env.PUBLISH_MODE == 'PUBLISH'
         run: npm ci
 
+      - name: Verify tag and manifest versions
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          expected="v$(node -p "require('./package.json').version")"
+          test "$GITHUB_REF_NAME" = "$expected"
+
       - name: Verify Marketplace credentials
-        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
+        if: env.PUBLISH_MODE == 'VERIFY' || env.PUBLISH_MODE == 'PUBLISH'
         shell: bash
         run: |
           publisher="$(node -p "require('./package.json').publisher")"
           npx --no-install vsce verify-pat --azure-credential "$publisher"
 
       - name: Run visual regression suite
-        if: inputs.confirmation == 'PUBLISH'
+        if: env.PUBLISH_MODE == 'PUBLISH'
         run: npm run test:visual
 
       - name: Publish extension
-        if: inputs.confirmation == 'PUBLISH'
+        if: env.PUBLISH_MODE == 'PUBLISH'
         run: npm run publish:marketplace
