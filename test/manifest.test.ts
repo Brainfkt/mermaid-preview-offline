@@ -132,6 +132,19 @@ void test('the extension can run in local and remote VS Code extension hosts', (
   assert.deepEqual(manifest.extensionKind, ['workspace', 'ui']);
 });
 
+void test('split preview follows the active source without duplicate custom editors', () => {
+  const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
+  const controller = readFileSync(
+    resolve(__dirname, '../../src/editorLayoutController.ts'),
+    'utf8',
+  );
+  assert.match(extension, /supportsMultipleEditorsPerDocument:\s*false/u);
+  assert.match(extension, /onDidChangeActiveTextEditor/u);
+  assert.match(extension, /syncPreviewForSource/u);
+  assert.match(controller, /disposeOtherSplitPanels/u);
+  assert.match(controller, /closeDuplicateSourceTabs/u);
+});
+
 void test('Mermaid rendering stays out of the DOM-less extension host', () => {
   const languageFeatures = readFileSync(
     resolve(__dirname, '../../src/languageFeatures.ts'),

@@ -7,6 +7,7 @@ import {
   editorLayoutFor,
   editorLayoutMatches,
   readSourceRatio,
+  shouldApplyEditorLayout,
 } from '../src/editorLayout';
 
 void test('preview and source-only layouts collapse to one native editor group', () => {
@@ -93,4 +94,14 @@ void test('layout matching detects stable modes without reapplying editor groups
     ),
     false,
   );
+});
+
+void test('matching split layouts stay stable while switching Mermaid source tabs', () => {
+  const beside = {
+    orientation: BESIDE_ORIENTATION,
+    groups: [{ size: 0.4 }, { size: 0.6 }],
+  };
+  assert.equal(shouldApplyEditorLayout(beside, 'beside'), false);
+  assert.equal(shouldApplyEditorLayout(beside, 'beside', true), true);
+  assert.equal(shouldApplyEditorLayout(beside, 'above'), true);
 });

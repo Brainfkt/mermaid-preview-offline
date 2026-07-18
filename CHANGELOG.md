@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.0
+
+- replaced the embedded source textarea with four workspace-persistent native
+  VS Code layouts: Preview, Source, Beside, and Above;
+- kept full Mermaid completion, formatting, snippets, refactors, and diagnostics
+  available in Beside and Above through the real text editor;
+- added the four layout actions to the Mermaid Explorer context menu and stored
+  native split proportions per file;
+- made Beside and Above follow the active Mermaid source tab, reuse the existing
+  editor groups, and remove duplicate source or preview instances;
+- expanded the diagram canvas beneath the header and footer, with an always
+  visible translucent glass toolbar over zoomed diagrams;
+- added an optional bottom-right minimap for diagrams larger than the viewport,
+  including click-and-drag navigation;
+- added editor-group full screen;
+- added exact UTF-8 file size and natural rendered diagram dimensions to the
+  preview footer.
+- recognized `flowchart-elk` and `info` in diagnostics, completion, hover help,
+  formatting, refactors, and syntax highlighting.
+
 ## 0.3.0
 
 - added native Mermaid diagnostics to VS Code Problems with editor underlines

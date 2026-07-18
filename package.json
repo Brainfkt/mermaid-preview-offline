@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -66,6 +66,11 @@
     "onCustomEditor:brainfkt.mermaidPreviewOffline",
     "onCommand:mermaidPreviewOffline.openPreview",
     "onCommand:mermaidPreviewOffline.openPreviewToSide",
+    "onCommand:mermaidPreviewOffline.chooseEditorLayout",
+    "onCommand:mermaidPreviewOffline.openPreviewOnly",
+    "onCommand:mermaidPreviewOffline.openSourceOnly",
+    "onCommand:mermaidPreviewOffline.openBeside",
+    "onCommand:mermaidPreviewOffline.openAbove",
     "onCommand:mermaidPreviewOffline.configureDefaultEditor",
     "onCommand:mermaidPreviewOffline.formatDocument",
     "onCommand:mermaidPreviewOffline.insertElement",
@@ -128,6 +133,31 @@
         "icon": "$(split-horizontal)"
       },
       {
+        "command": "mermaidPreviewOffline.chooseEditorLayout",
+        "title": "Mermaid Preview: Choose Editor Layout",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openPreviewOnly",
+        "title": "Mermaid Preview: Preview Only",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openSourceOnly",
+        "title": "Mermaid Preview: Source Only",
+        "icon": "$(code)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openBeside",
+        "title": "Mermaid Preview: Source Beside Preview",
+        "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openAbove",
+        "title": "Mermaid Preview: Source Above Preview",
+        "icon": "$(split-vertical)"
+      },
+      {
         "command": "mermaidPreviewOffline.configureDefaultEditor",
         "title": "Mermaid Preview: Configure Default Editor",
         "icon": "$(settings-gear)"
@@ -156,14 +186,24 @@
     "menus": {
       "explorer/context": [
         {
-          "command": "mermaidPreviewOffline.openPreview",
+          "command": "mermaidPreviewOffline.openPreviewOnly",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation@8"
         },
         {
-          "command": "mermaidPreviewOffline.openPreviewToSide",
+          "command": "mermaidPreviewOffline.openSourceOnly",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "navigation@9"
+        },
+        {
+          "command": "mermaidPreviewOffline.openBeside",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "navigation@10"
+        },
+        {
+          "command": "mermaidPreviewOffline.openAbove",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "navigation@11"
         },
         {
           "command": "mermaidPreviewOffline.configureDefaultEditor",
@@ -173,8 +213,8 @@
       ],
       "editor/title": [
         {
-          "command": "mermaidPreviewOffline.openPreviewToSide",
-          "when": "editorLangId == mermaid",
+          "command": "mermaidPreviewOffline.chooseEditorLayout",
+          "when": "editorLangId == mermaid || activeCustomEditorId == brainfkt.mermaidPreviewOffline",
           "group": "navigation@8"
         }
       ],
@@ -232,6 +272,12 @@
           "maximum": 10240,
           "scope": "resource",
           "description": "File size in KB from which the preview applies a longer render debounce and displays a size indicator."
+        },
+        "mermaidPreviewOffline.minimap.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Shows a navigable minimap when the rendered diagram is larger than the preview viewport."
         },
         "mermaidPreviewOffline.diagramTheme": {
           "type": "string",
