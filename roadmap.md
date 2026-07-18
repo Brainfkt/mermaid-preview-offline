@@ -39,16 +39,10 @@
 
 ## v0.4 — Navigation et lecture
 
-- [ ] Ajouter une minimap pour les grands diagrammes.
-- [ ] Ajouter un mode plein écran.
-- [ ] Ajouter un mode présentation sans interface.
-- [ ] Masquer automatiquement la barre d’outils.
-- [ ] Ajouter une grille optionnelle.
-- [ ] Ajouter des repères d’alignement.
-- [ ] Afficher la taille réelle du diagramme.
-- [ ] Permettre de verrouiller la position et le zoom.
-- [ ] Synchroniser le zoom de plusieurs aperçus côte à côte.
-- [ ] Ajouter un mode comparaison entre deux diagrammes.
+- [x] Ajouter une minimap en bas à droite pour les grands diagrammes.
+- [x] Ajouter un mode plein écran.
+- [x] Afficher la taille réelle du fichier
+- [x] Améliorer comportement Preview Mode / Split Mode
 
 ## v0.5 — Export professionnel
 
