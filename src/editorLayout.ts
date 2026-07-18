@@ -14,6 +14,8 @@ export interface EditorLayout {
 export const BESIDE_ORIENTATION = 0;
 export const ABOVE_ORIENTATION = 1;
 
+export type SplitEditorTabKind = 'other' | 'preview' | 'source';
+
 export function editorLayoutFor(mode: MermaidEditorMode, ratio: number): EditorLayout {
   if (mode === 'preview' || mode === 'source') {
     return { groups: [{}] };
@@ -53,6 +55,20 @@ export function shouldApplyEditorLayout(
   return (
     !editorLayoutMatches(value, mode) ||
     (restoreSplitRatio && (mode === 'beside' || mode === 'above'))
+  );
+}
+
+export function shouldCloseRemainingSplitTab(
+  closedTabs: readonly SplitEditorTabKind[],
+  remainingTabs: readonly SplitEditorTabKind[],
+): boolean {
+  if (remainingTabs.length !== 1) {
+    return false;
+  }
+  const remaining = remainingTabs[0];
+  return (
+    (remaining === 'preview' && closedTabs.includes('source')) ||
+    (remaining === 'source' && closedTabs.includes('preview'))
   );
 }
 

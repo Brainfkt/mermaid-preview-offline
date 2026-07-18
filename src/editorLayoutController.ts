@@ -5,7 +5,9 @@ import {
   editorLayoutMatches,
   readSourceRatio,
   shouldApplyEditorLayout,
+  shouldCloseRemainingSplitTab,
 } from './editorLayout';
+import type { SplitEditorTabKind } from './editorLayout';
 import type { MermaidEditorMode } from './protocol';
 
 const MODE_STATE_KEY = 'mermaidPreviewOffline.editorMode';
@@ -16,6 +18,11 @@ type SplitMode = Extract<MermaidEditorMode, 'above' | 'beside'>;
 interface ActiveSplit {
   mode: SplitMode;
   uri: vscode.Uri;
+}
+
+interface ClosedTabIdentity {
+  kind: 'other' | 'preview' | 'source';
+  uri?: string;
 }
 
 const MODE_ITEMS: ReadonlyArray<{
@@ -128,8 +135,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       const mode = this.getMode();
       if (await this.isAlreadyArranged(uri, mode, panel)) {
         if (isSplitMode(mode)) {
-          this.disposeOtherSplitPanels(panel);
-          await this.closeDuplicateSourceTabs(uri);
+          await this.reconcileSplitTabs(uri, panel);
         } else {
           this.disposeOtherPanels(uri, panel);
         }
@@ -152,11 +158,27 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       }
       const panel = this.firstPanel(uri);
       if (panel && (await this.isAlreadyArranged(uri, mode, panel))) {
-        this.disposeOtherSplitPanels(panel);
-        await this.closeDuplicateSourceTabs(uri);
+        await this.reconcileSplitTabs(uri, panel);
         return;
       }
       await this.arrange(uri, mode, panel, true);
+    });
+  }
+
+  public async handleTabsChanged(event: vscode.TabChangeEvent): Promise<void> {
+    const closedTabs = event.closed.map((tab) => this.closedTabIdentity(tab));
+    await this.enqueue(async () => {
+      const split = this.currentSplit;
+      if (!split || !isSplitMode(this.getMode())) {
+        return;
+      }
+      if (await this.closeLastSplitPair(closedTabs, split)) {
+        return;
+      }
+      await this.reconcileSplitTabs(
+        split.uri,
+        this.panelInColumn(split.uri, vscode.ViewColumn.Two),
+      );
     });
   }
 
@@ -291,35 +313,27 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     preferredPanel?: vscode.WebviewPanel,
     focusSource = false,
   ): Promise<void> {
+    const panel = this.registeredPanel(uri, preferredPanel);
+    if (panel) {
+      this.disposeOtherSplitPanels(panel);
+      panel.reveal(vscode.ViewColumn.Two, focusSource);
+    } else {
+      this.disposeOtherSplitPanels();
+      await vscode.commands.executeCommand(
+        'vscode.openWith',
+        uri,
+        this.viewType,
+        vscode.ViewColumn.Two,
+      );
+    }
+
     const document = await vscode.workspace.openTextDocument(uri);
     await vscode.window.showTextDocument(document, {
       preserveFocus: !focusSource,
       preview: false,
       viewColumn: vscode.ViewColumn.One,
     });
-    await this.closeDuplicateSourceTabs(uri);
-
-    const panel = this.registeredPanel(uri, preferredPanel);
-    if (panel) {
-      this.disposeOtherSplitPanels(panel);
-      panel.reveal(vscode.ViewColumn.Two, focusSource);
-      return;
-    }
-    this.disposeOtherSplitPanels();
-    await vscode.commands.executeCommand(
-      'vscode.openWith',
-      uri,
-      this.viewType,
-      vscode.ViewColumn.Two,
-    );
-    if (focusSource) {
-      await vscode.window.showTextDocument(document, {
-        preserveFocus: false,
-        preview: false,
-        viewColumn: vscode.ViewColumn.One,
-      });
-    }
-    await this.closeDuplicateSourceTabs(uri);
+    await this.reconcileSplitTabs(uri, panel);
   }
 
   private firstPanel(uri: vscode.Uri): vscode.WebviewPanel | undefined {
@@ -333,7 +347,16 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     const entries = this.panels.get(uri.toString());
     return preferredPanel && entries?.has(preferredPanel)
       ? preferredPanel
-      : this.firstPanel(uri);
+      : this.panelInColumn(uri, vscode.ViewColumn.Two) ?? this.firstPanel(uri);
+  }
+
+  private panelInColumn(
+    uri: vscode.Uri,
+    viewColumn: vscode.ViewColumn,
+  ): vscode.WebviewPanel | undefined {
+    return [...(this.panels.get(uri.toString()) ?? [])].find(
+      (panel) => panel.viewColumn === viewColumn,
+    );
   }
 
   private disposeOtherPanels(uri: vscode.Uri, retained: vscode.WebviewPanel): void {
@@ -351,6 +374,91 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
           panel.dispose();
         }
       }
+    }
+  }
+
+  private async reconcileSplitTabs(
+    uri: vscode.Uri,
+    retainedPanel?: vscode.WebviewPanel,
+  ): Promise<void> {
+    if (retainedPanel) {
+      this.disposeOtherSplitPanels(retainedPanel);
+    }
+    await this.closeDuplicateSourceTabs(uri);
+    await this.closeUnexpectedPreviewTabs(uri);
+  }
+
+  private async closeLastSplitPair(
+    closedTabs: readonly ClosedTabIdentity[],
+    split: ActiveSplit,
+  ): Promise<boolean> {
+    const uriKey = split.uri.toString();
+    const closedKinds = closedTabs.map((tab): SplitEditorTabKind =>
+      tab.uri === uriKey ? tab.kind : 'other',
+    );
+    const remainingTabs = vscode.window.tabGroups.all.flatMap((group) => group.tabs);
+    const remainingKinds = remainingTabs.map((tab) => this.splitTabKind(tab, uriKey));
+    const remainingTab = remainingTabs[0];
+    if (!remainingTab || !shouldCloseRemainingSplitTab(closedKinds, remainingKinds)) {
+      return false;
+    }
+
+    await this.saveSplitRatio(split);
+    this.layoutTransitioning = true;
+    try {
+      const didClose = await vscode.window.tabGroups.close(remainingTab, true);
+      this.currentSplit = undefined;
+      if (didClose && vscode.window.tabGroups.all.every((group) => group.tabs.length === 0)) {
+        await vscode.commands.executeCommand(
+          'vscode.setEditorLayout',
+          editorLayoutFor('preview', 0.5),
+        );
+      }
+    } finally {
+      this.layoutTransitioning = false;
+    }
+    return true;
+  }
+
+  private closedTabIdentity(tab: vscode.Tab): ClosedTabIdentity {
+    if (tab.input instanceof vscode.TabInputText) {
+      return { kind: 'source', uri: tab.input.uri.toString() };
+    }
+    if (
+      tab.input instanceof vscode.TabInputCustom &&
+      tab.input.viewType === this.viewType
+    ) {
+      return { kind: 'preview', uri: tab.input.uri.toString() };
+    }
+    return { kind: 'other' };
+  }
+
+  private splitTabKind(tab: vscode.Tab, uriKey: string): SplitEditorTabKind {
+    const identity = this.closedTabIdentity(tab);
+    return identity.uri === uriKey ? identity.kind : 'other';
+  }
+
+  private async closeUnexpectedPreviewTabs(uri: vscode.Uri): Promise<void> {
+    const previewTabs = vscode.window.tabGroups.all.flatMap((group) =>
+      group.tabs.filter(
+        (tab) =>
+          tab.input instanceof vscode.TabInputCustom &&
+          tab.input.viewType === this.viewType,
+      ),
+    );
+    const retainedTab = previewTabs.find(
+      (tab) =>
+        tab.group.viewColumn === vscode.ViewColumn.Two &&
+        tab.isActive &&
+        tab.input instanceof vscode.TabInputCustom &&
+        tab.input.uri.toString() === uri.toString(),
+    );
+    if (!retainedTab) {
+      return;
+    }
+    const unexpectedTabs = previewTabs.filter((tab) => tab !== retainedTab);
+    if (unexpectedTabs.length > 0) {
+      await vscode.window.tabGroups.close(unexpectedTabs, true);
     }
   }
 

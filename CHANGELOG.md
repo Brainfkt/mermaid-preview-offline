@@ -10,6 +10,7 @@
   native split proportions per file;
 - made Beside and Above follow the active Mermaid source tab, reuse the existing
   editor groups, and remove duplicate source or preview instances;
+- made the final source/preview pair close together when either tab is closed;
 - expanded the diagram canvas beneath the header and footer, with an always
   visible translucent glass toolbar over zoomed diagrams;
 - added an optional bottom-right minimap for diagrams larger than the viewport,

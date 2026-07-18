@@ -140,9 +140,12 @@ void test('split preview follows the active source without duplicate custom edit
   );
   assert.match(extension, /supportsMultipleEditorsPerDocument:\s*false/u);
   assert.match(extension, /onDidChangeActiveTextEditor/u);
+  assert.match(extension, /onDidChangeTabs/u);
   assert.match(extension, /syncPreviewForSource/u);
+  assert.match(extension, /handleTabsChanged/u);
   assert.match(controller, /disposeOtherSplitPanels/u);
   assert.match(controller, /closeDuplicateSourceTabs/u);
+  assert.match(controller, /closeUnexpectedPreviewTabs/u);
 });
 
 void test('Mermaid rendering stays out of the DOM-less extension host', () => {

@@ -39,6 +39,9 @@ export function activate(context: vscode.ExtensionContext): void {
         void layoutController.syncPreviewForSource(uri);
       }
     }),
+    vscode.window.tabGroups.onDidChangeTabs((event) => {
+      void layoutController.handleTabsChanged(event);
+    }),
     vscode.commands.registerCommand(OPEN_PREVIEW_COMMAND, async (resource?: vscode.Uri) => {
       await applyEditorMode(layoutController, 'preview', resource);
     }),

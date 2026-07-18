@@ -8,6 +8,7 @@ import {
   editorLayoutMatches,
   readSourceRatio,
   shouldApplyEditorLayout,
+  shouldCloseRemainingSplitTab,
 } from '../src/editorLayout';
 
 void test('preview and source-only layouts collapse to one native editor group', () => {
@@ -104,4 +105,13 @@ void test('matching split layouts stay stable while switching Mermaid source tab
   assert.equal(shouldApplyEditorLayout(beside, 'beside'), false);
   assert.equal(shouldApplyEditorLayout(beside, 'beside', true), true);
   assert.equal(shouldApplyEditorLayout(beside, 'above'), true);
+});
+
+void test('the last source and preview tabs close as one split pair', () => {
+  assert.equal(shouldCloseRemainingSplitTab(['source'], ['preview']), true);
+  assert.equal(shouldCloseRemainingSplitTab(['preview'], ['source']), true);
+  assert.equal(shouldCloseRemainingSplitTab(['source'], ['source']), false);
+  assert.equal(shouldCloseRemainingSplitTab(['preview'], ['preview']), false);
+  assert.equal(shouldCloseRemainingSplitTab(['source'], ['preview', 'other']), false);
+  assert.equal(shouldCloseRemainingSplitTab(['other'], ['preview']), false);
 });
