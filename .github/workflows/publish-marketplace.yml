@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Enter IDENTITY to get the Marketplace identity ID, or PUBLISH to release'
+        description: 'Enter IDENTITY to get the ID, VERIFY to check access, or PUBLISH to release'
         required: true
         type: string
 
@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   publish:
-    if: inputs.confirmation == 'IDENTITY' || inputs.confirmation == 'PUBLISH'
+    if: inputs.confirmation == 'IDENTITY' || inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
     runs-on: ubuntu-latest
     environment: marketplace
     steps:
@@ -53,18 +53,18 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup Node.js
-        if: inputs.confirmation == 'PUBLISH'
+        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
       - name: Install dependencies
-        if: inputs.confirmation == 'PUBLISH'
+        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
         run: npm ci
 
       - name: Verify Marketplace credentials
-        if: inputs.confirmation == 'PUBLISH'
+        if: inputs.confirmation == 'VERIFY' || inputs.confirmation == 'PUBLISH'
         shell: bash
         run: |
           publisher="$(node -p "require('./package.json').publisher")"

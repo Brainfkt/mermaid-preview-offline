@@ -48,7 +48,8 @@ l’identité et la fiche Marketplace soient validées.
    l’identité Marketplace sans publier l’extension.
 5. Dans le gestionnaire Marketplace, ajouter cet identifiant aux membres du
    publisher `brainfkt` avec le rôle **Contributor**.
-6. Pour une future version, relancer le workflow et saisir `PUBLISH`.
+6. Relancer le workflow avec `VERIFY` pour contrôler les droits sans publier.
+7. Pour une future version, relancer le workflow et saisir `PUBLISH`.
 
 Le workflow utilise un jeton Entra éphémère obtenu par OIDC, vérifie que
 l’identité possède les droits du publisher, exécute toutes les validations puis

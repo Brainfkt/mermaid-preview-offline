@@ -90,6 +90,7 @@ void test('Marketplace publishing uses secretless Microsoft Entra federation', (
   assert.match(workflow, /allow-no-subscriptions: true/u);
   assert.match(workflow, /vsce verify-pat --azure-credential/u);
   assert.match(workflow, /Marketplace identity ID/u);
+  assert.match(workflow, /inputs\.confirmation == 'VERIFY'/u);
   assert.doesNotMatch(workflow, /VSCE_PAT/u);
 });
 
