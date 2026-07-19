@@ -34,6 +34,8 @@ Open any `.mmd` or `.mermaid` file and the diagram appears immediately in a
 native VS Code editor. Use the layout control to switch between preview-only,
 source-only, source beside preview, and source above preview. The renderer,
 plug-ins, icons, and supported local assets all ship inside the extension.
+Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
+a time or together in a live document view.
 
 ## Why use it?
 
@@ -45,6 +47,7 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 | 📴 | **Truly offline** | No CDN, API, account, sign-in, or network dependency. |
 | 🔍 | **Comfortable navigation** | Fit, zoom, and drag across large diagrams. |
 | ⇩ | **Professional export** | Preview and export PNG, WebP, PDF, or portable SVG files. |
+| ▤ | **Documentation workflows** | Render embedded Mermaid blocks and export documents with local images. |
 | ◇ | **Broad Mermaid coverage** | Core diagrams, experimental families, ZenUML, icons, and local images. |
 
 ## Made for VS Code workflows
@@ -118,6 +121,9 @@ use **Reopen Editor With...** → **Text Editor**.
   theme, metadata, and file name templates.
 - Diagram Studio with eight customizable templates and all 43 bundled examples.
 - Rendered Git comparisons with side-by-side and color-coded overlay views.
+- Preview the Mermaid block under the cursor in Markdown, MDX, or AsciiDoc.
+- Render every Mermaid block in a live document view with source navigation.
+- Export documentation copies that replace Mermaid blocks with local SVG or PNG images.
 - Dark, light, and high-contrast VS Code theme support.
 - Mermaid syntax highlighting for `.mmd` and `.mermaid` files.
 - Mermaid `11.16.0` bundled and pinned for reproducible rendering.
@@ -210,6 +216,53 @@ zoom.
 When a Mermaid file is already open in VS Code's text diff editor, select
 **Mermaid Preview: Preview Diff Visually** from the editor title bar to render
 the existing before and after sides without choosing the revisions again.
+
+## Markdown, MDX, and AsciiDoc
+
+Place the cursor inside a Mermaid block and run **Mermaid Preview: Preview Block
+Under Cursor**. To render every diagram in the active document, use **Mermaid
+Preview: Preview All Blocks in Document**. Both commands are available from the
+editor title and context menus. The document view updates after source edits;
+select **Go to source** on any diagram (or double-click its canvas) to reveal and
+select the corresponding block in a native text editor.
+
+Markdown and MDX support backtick or tilde fences, including attribute-style
+MDX fences:
+
+````markdown
+```mermaid
+flowchart LR
+  Docs --> Preview
+```
+
+~~~{.mermaid}
+sequenceDiagram
+  Editor->>Preview: Update
+~~~
+````
+
+AsciiDoc supports both diagram and source block forms:
+
+```asciidoc
+[mermaid]
+....
+flowchart LR
+  Docs --> Preview
+....
+
+[source,mermaid]
+----
+sequenceDiagram
+  Editor->>Preview: Update
+----
+```
+
+Use **Mermaid Preview: Export Document with Diagram Images…** to create a copy
+of the document in which every Mermaid block is replaced by a local image
+reference. Choose optimized SVG or PNG; PNG honors the configured export DPI,
+scale, margin, background, and theme. Images are written to a dedicated
+`<document>.assets` directory beside the exported file. The source document is
+never overwritten.
 
 ## Offline CLI and VS Code tasks
 

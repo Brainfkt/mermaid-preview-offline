@@ -74,53 +74,12 @@
 
 ## v0.7 — Markdown et documentation
 
-- [ ] Prévisualiser le bloc Mermaid sous le curseur dans un fichier Markdown.
-- [ ] Afficher tous les blocs Mermaid d’un document Markdown.
-- [ ] Remplacer les blocs Mermaid par des images lors d’un export.
-- [ ] Supporter les blocs Mermaid dans MDX.
-- [ ] Supporter les blocs Mermaid dans AsciiDoc.
-- [ ] Naviguer du diagramme vers son bloc source.
-- [ ] Vérifier que chaque diagramme possède une description accessible.
-
-## v0.8 — Accessibilité et internationalisation
-
-- [ ] Rendre toute la barre d’outils accessible au clavier.
-- [ ] Ajouter des labels complets pour les lecteurs d’écran.
-- [ ] Fournir une représentation textuelle structurée du diagramme.
-- [ ] Naviguer entre les nœuds au clavier.
-- [ ] Annoncer les erreurs et changements de rendu.
-- [ ] Améliorer les contrastes de l’interface.
-- [ ] Ajouter un mode daltonisme.
-- [ ] Personnaliser la taille de l’interface.
-- [ ] Respecter les préférences d’animation du système.
-- [ ] Traduire l’extension en français.
-- [ ] Préparer l’extension pour d’autres traductions.
-- [ ] Détecter automatiquement la langue de VS Code.
-- [ ] Localiser les commandes, paramètres, erreurs et écrans d’accueil.
-- [ ] Ajouter une documentation accessible pour chaque raccourci.
-
-## v0.9 — Performance, sécurité et fiabilité
-
-- [ ] Déplacer le rendu dans un worker dédié.
-- [ ] Charger Mermaid et ses plug-ins à la demande.
-- [ ] Mettre en cache les diagrammes inchangés.
-- [ ] Réduire la taille du bundle.
-- [ ] Libérer automatiquement les aperçus inactifs.
-- [ ] Ajouter des benchmarks pour les diagrammes complexes.
-- [ ] Afficher un avertissement lorsque le rendu devient anormalement coûteux.
-- [ ] Ajouter un mode de diagnostic entièrement local.
-- [ ] Mesurer localement les étapes du rendu sans télémétrie.
-- [ ] Respecter complètement VS Code Workspace Trust.
-- [ ] Demander confirmation avant d’ouvrir les liens externes.
-- [ ] Renforcer la validation des SVG et images locales.
-- [ ] Tester automatiquement les traversées de chemins.
-- [ ] Générer un SBOM pour chaque version.
-- [ ] Signer et vérifier les artefacts de publication.
-- [ ] Automatiser les audits de dépendances.
-- [ ] Tester la CSP et l’absence totale de requêtes réseau.
-- [ ] Ajouter des tests de mémoire et de fuite des webviews.
-- [ ] Prévoir une stratégie de mise à jour contrôlée de Mermaid.
-- [ ] Publier une matrice de compatibilité générée automatiquement.
+- [x] Prévisualiser le bloc Mermaid sous le curseur dans un fichier Markdown.
+- [x] Afficher tous les blocs Mermaid d’un document Markdown.
+- [x] Remplacer les blocs Mermaid par des images lors d’un export.
+- [x] Supporter les blocs Mermaid dans MDX.
+- [x] Supporter les blocs Mermaid dans AsciiDoc.
+- [x] Naviguer du diagramme vers son bloc source.
 
 ## v1.0 — Version de référence
 
@@ -129,36 +88,9 @@
 - [ ] Garantir l’export identique sur macOS, Windows et Linux.
 - [ ] Couvrir chaque diagramme pris en charge par un test visuel.
 - [ ] Fournir une documentation complète et localisée.
-- [ ] Ajouter un écran d’accueil interactif.
-- [ ] Proposer une visite guidée au premier lancement.
 - [ ] Inclure une galerie de modèles professionnels.
-- [ ] Finaliser l’accessibilité clavier et lecteur d’écran.
 - [ ] Publier des engagements clairs de confidentialité et de compatibilité.
-- [ ] Fournir une procédure de migration entre versions.
 - [ ] Atteindre une ouverture instantanée sur les diagrammes courants.
-- [ ] Ne déclencher aucune connexion réseau à l’exécution.
 - [ ] Garantir des exports autonomes et reproductibles.
-- [ ] Obtenir une expérience cohérente dans VS Code Desktop et les environnements distants.
-
-## Idées expérimentales après la v1.0
-
-- [ ] Éditeur visuel optionnel par glisser-déposer.
-- [ ] Création de liens entre nœuds à la souris.
-- [ ] Conversion des modifications visuelles en code Mermaid.
-- [ ] Animation contrôlée des diagrammes.
-- [ ] Mode présentation avec étapes successives.
-- [ ] Diagrammes paramétrables à partir de fichiers JSON, YAML ou CSV locaux.
 - [ ] Génération d’ERD depuis un schéma SQL local.
-- [ ] Génération de diagrammes de classes depuis un projet local.
 - [ ] Génération d’un graphe de dépendances depuis `package.json`.
-- [ ] Génération de diagrammes d’architecture depuis des fichiers de configuration.
-- [ ] API d’extension pour ajouter des renderers hors ligne.
-- [ ] Système de plug-ins locaux vérifiés.
-- [ ] Partage de thèmes et modèles sous forme de fichiers.
-- [ ] Comparaison sémantique de deux diagrammes.
-- [ ] Détection des nœuds orphelins ou inaccessibles.
-- [ ] Analyse de complexité d’un diagramme.
-- [ ] Suggestions locales d’amélioration de lisibilité.
-- [ ] Mode storyboard pour enchaîner plusieurs diagrammes.
-- [ ] Création de collections de diagrammes exportables.
-- [ ] Génération de packages de documentation entièrement hors ligne.

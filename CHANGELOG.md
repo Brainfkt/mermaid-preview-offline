@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0
+
+- added a focused preview for the Mermaid block under the cursor in Markdown,
+  MDX, and AsciiDoc documents;
+- added a live document view that renders every Mermaid block locally and
+  updates as the source document changes;
+- added direct navigation from each rendered diagram to its exact source block;
+- added Markdown and MDX fenced-block support, including backtick, tilde, and
+  attribute-style Mermaid fences;
+- added AsciiDoc `[mermaid]` and `[source,mermaid]` listing-block support;
+- added documentation export that replaces Mermaid source blocks with optimized
+  SVG or configurable PNG images stored beside the exported document.
+
 ## 0.6.0
 
 - added Diagram Studio, an offline template gallery for creating new Mermaid
