@@ -63,6 +63,7 @@ const stub = `<script nonce="${nonce}">
 </script>`;
 const runner = `<script nonce="${nonce}">
   const examples = ${safeJson(examples)};
+  const captureExport = new URLSearchParams(window.location.search).has('capture-export');
   const schemes = [
     { name: 'light', className: 'vscode-light', background: '#ffffff', foreground: '#1f2328' },
     { name: 'dark', className: 'vscode-dark', background: '#1e1e2e', foreground: '#d7d7e0' },
@@ -117,11 +118,15 @@ const runner = `<script nonce="${nonce}">
     const entries = [];
     const interfaceThemes = [];
     let version = 0;
-    for (const scheme of schemes) {
+    for (const scheme of captureExport ? schemes.slice(0, 1) : schemes) {
       document.body.className = scheme.className;
       document.body.style.setProperty('--vscode-editor-background', scheme.background);
       document.body.style.setProperty('--vscode-editor-foreground', scheme.foreground);
       document.body.style.setProperty('--vscode-foreground', scheme.foreground);
+      document.body.style.setProperty('--vscode-font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+      document.body.style.setProperty('--vscode-font-size', '13px');
+      document.body.style.setProperty('--vscode-input-background', scheme.background);
+      document.body.style.setProperty('--vscode-input-foreground', scheme.foreground);
       document.body.style.setProperty('--vscode-descriptionForeground', scheme.foreground + 'bb');
       document.body.style.setProperty('--vscode-panel-border', scheme.foreground + '55');
       document.body.style.setProperty('--vscode-button-background', '#7c3aed');
@@ -166,12 +171,13 @@ const runner = `<script nonce="${nonce}">
         boxShadow: toolbarStyle.boxShadow,
       });
 
-      for (const example of examples) {
+      for (const example of captureExport ? examples.slice(0, 1) : examples) {
         version += 1;
         window.postMessage({
           type: 'document',
           source: example.source,
           fileName: example.fileName,
+          sourceUri: 'file:///examples/' + example.fileName,
           version,
           byteLength: example.source.length,
           isLargeFile: false,
@@ -194,6 +200,10 @@ const runner = `<script nonce="${nonce}">
     document.body.style.setProperty('--vscode-editor-background', '#1e1e2e');
     document.body.style.setProperty('--vscode-editor-foreground', '#d7d7e0');
     document.body.style.setProperty('--vscode-foreground', '#d7d7e0');
+    document.body.style.setProperty('--vscode-font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+    document.body.style.setProperty('--vscode-font-size', '13px');
+    document.body.style.setProperty('--vscode-input-background', '#1e1e2e');
+    document.body.style.setProperty('--vscode-input-foreground', '#d7d7e0');
     document.body.style.setProperty('--vscode-descriptionForeground', '#d7d7e0bb');
     document.body.style.setProperty('--vscode-panel-border', '#d7d7e055');
     await delay(80);
@@ -261,6 +271,7 @@ const runner = `<script nonce="${nonce}">
       type: 'document',
       source: minimapExample.source,
       fileName: minimapExample.fileName,
+      sourceUri: 'file:///examples/' + minimapExample.fileName,
       version,
       byteLength: minimapExample.source.length,
       isLargeFile: false,
@@ -325,6 +336,84 @@ const runner = `<script nonce="${nonce}">
     }
     document.querySelector('#fit').click();
 
+    window.postMessage({
+      type: 'exportConfiguration',
+      profiles: [],
+      settings: {
+        background: 'transparent',
+        backgroundColor: '#ffffff',
+        dpi: 144,
+        fileNameTemplate: '{name}-{theme}@{scale}x.{format}',
+        format: 'png',
+        includeMetadata: true,
+        margin: 24,
+        optimizeSvg: true,
+        scale: 1,
+        svgVariant: 'optimized',
+        theme: 'default',
+      },
+    }, '*');
+    document.querySelector('#export-open').click();
+    await waitFor(
+      () => document.querySelector('#export-dialog').open,
+      'professional export dialog',
+    );
+    await waitFor(
+      () => document.querySelector('#export-preview-image').src.startsWith('data:image/png') ||
+        !document.querySelector('#export-preview-error').hidden,
+      'professional export preview result',
+    );
+    if (!document.querySelector('#export-preview-error').hidden) {
+      throw new Error('The professional export preview reports: ' +
+        document.querySelector('#export-preview-error').textContent);
+    }
+    const exportFormat = document.querySelector('#export-format');
+    exportFormat.value = 'webp';
+    exportFormat.dispatchEvent(new Event('change', { bubbles: true }));
+    const exportTheme = document.querySelector('#export-theme');
+    exportTheme.value = 'dark';
+    exportTheme.dispatchEvent(new Event('change', { bubbles: true }));
+    const exportDpi = document.querySelector('#export-dpi');
+    exportDpi.value = '300';
+    exportDpi.dispatchEvent(new Event('input', { bubbles: true }));
+    const exportScale = document.querySelector('#export-scale');
+    exportScale.value = '0.5';
+    exportScale.dispatchEvent(new Event('input', { bubbles: true }));
+    const exportBackground = document.querySelector('#export-background');
+    exportBackground.value = 'color';
+    exportBackground.dispatchEvent(new Event('change', { bubbles: true }));
+    const exportColor = document.querySelector('#export-background-color');
+    exportColor.value = '#1e1e2e';
+    exportColor.dispatchEvent(new Event('input', { bubbles: true }));
+    await waitFor(
+      () => /300 DPI · WEBP/u.test(document.querySelector('#export-preview-metrics').textContent),
+      'updated WebP export preview',
+    );
+    document.querySelector('#export-folder').click();
+    if (postedMessages.at(-1)?.type !== 'exportFolder' ||
+        postedMessages.at(-1)?.settings?.format !== 'webp') {
+      throw new Error('Folder export did not forward the selected settings.');
+    }
+    const optimizedCopyStart = postedMessages.length;
+    document.querySelector('#export-copy-svg-optimized').click();
+    await waitFor(
+      () => postedMessages.slice(optimizedCopyStart).some((message) =>
+        message.type === 'copySvg' && message.svg.includes('mermaid-preview-offline-metadata')),
+      'optimized SVG clipboard export',
+    );
+    const profileMessageStart = postedMessages.length;
+    document.querySelector('#export-profile-name').value = 'Documentation';
+    document.querySelector('#export-profile-save').click();
+    if (!postedMessages.slice(profileMessageStart).some((message) =>
+      message.type === 'saveExportProfiles' && message.profiles[0]?.name === 'Documentation')) {
+      throw new Error('The export profile was not persisted.');
+    }
+    if (captureExport) {
+      document.body.dataset.visualComplete = 'capture';
+      return;
+    }
+    document.querySelector('#export-close').click();
+
     version += 1;
     const diagnosticStart = postedMessages.length;
     const invalidSource = 'flowchart LR\\n  broken -->';
@@ -332,6 +421,7 @@ const runner = `<script nonce="${nonce}">
       type: 'document',
       source: invalidSource,
       fileName: 'invalid.mmd',
+      sourceUri: 'file:///examples/invalid.mmd',
       version,
       byteLength: invalidSource.length,
       isLargeFile: false,
@@ -366,6 +456,15 @@ const runner = `<script nonce="${nonce}">
 html = html.replace(`<script nonce="${nonce}" src="${webviewScript}"></script>`, `${stub}<script nonce="${nonce}" src="${webviewScript}"></script>${runner}`);
 const harnessPath = join(outputDirectory, 'harness.html');
 writeFileSync(harnessPath, html);
+const httpHarnessPath = join(outputDirectory, 'harness-http.html');
+writeFileSync(
+  httpHarnessPath,
+  html
+    .replaceAll(webviewScript, '/dist/webview.js')
+    .replaceAll(stylesheet, '/media/preview.css')
+    .replaceAll('img-src file:', "img-src 'self'")
+    .replaceAll('style-src file:', "style-src 'self'"),
+);
 
 const chrome = findChrome();
 const result = spawnSync(
