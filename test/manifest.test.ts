@@ -78,6 +78,9 @@ void test('preview commands expose all four native editor layouts', () => {
     'mermaidPreviewOffline.generateFromTemplate',
     'mermaidPreviewOffline.compareGitVersions',
     'mermaidPreviewOffline.previewVisualDiff',
+    'mermaidPreviewOffline.previewDocumentationBlock',
+    'mermaidPreviewOffline.previewDocumentation',
+    'mermaidPreviewOffline.exportDocumentation',
   ]) {
     assert.ok(commands.includes(command));
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
@@ -121,6 +124,29 @@ void test('v0.6 project workflows expose Diagram Studio and visual Git diff comm
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   const visualDiff = titleCommands.find((entry) => entry.command === 'mermaidPreviewOffline.previewVisualDiff');
   assert.match(visualDiff?.when ?? '', /textCompareEditorVisible/u);
+});
+
+void test('v0.7 documentation workflows support Markdown, MDX, and AsciiDoc', () => {
+  const commands = manifest.contributes.commands.map((entry) => entry.command);
+  const documentationCommands = [
+    'mermaidPreviewOffline.previewDocumentationBlock',
+    'mermaidPreviewOffline.previewDocumentation',
+    'mermaidPreviewOffline.exportDocumentation',
+  ];
+  for (const command of documentationCommands) {
+    assert.ok(commands.includes(command));
+    assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
+  }
+  for (const language of ['markdown', 'mdx', 'asciidoc']) {
+    assert.ok(manifest.activationEvents.includes(`onLanguage:${language}`));
+  }
+  const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
+  for (const command of documentationCommands) {
+    const contribution = titleCommands.find((entry) => entry.command === command);
+    assert.match(contribution?.when ?? '', /editorLangId == markdown/u);
+    assert.match(contribution?.when ?? '', /editorLangId == mdx/u);
+    assert.match(contribution?.when ?? '', /editorLangId == asciidoc/u);
+  }
 });
 
 void test('professional export is exposed to the UI, tasks, and offline CLI', () => {
