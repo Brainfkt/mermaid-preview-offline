@@ -73,6 +73,11 @@ void test('preview commands expose all four native editor layouts', () => {
     ...layoutCommands,
     'mermaidPreviewOffline.configureDefaultEditor',
     'mermaidPreviewOffline.export',
+    'mermaidPreviewOffline.newDiagram',
+    'mermaidPreviewOffline.browseExamples',
+    'mermaidPreviewOffline.generateFromTemplate',
+    'mermaidPreviewOffline.compareGitVersions',
+    'mermaidPreviewOffline.previewVisualDiff',
   ]) {
     assert.ok(commands.includes(command));
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
@@ -96,6 +101,26 @@ void test('preview commands expose all four native editor layouts', () => {
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
+});
+
+void test('v0.6 project workflows expose Diagram Studio and visual Git diff commands', () => {
+  const commands = manifest.contributes.commands.map((entry) => entry.command);
+  const projectCommands = [
+    'mermaidPreviewOffline.newDiagram',
+    'mermaidPreviewOffline.browseExamples',
+    'mermaidPreviewOffline.generateFromTemplate',
+    'mermaidPreviewOffline.compareGitVersions',
+    'mermaidPreviewOffline.previewVisualDiff',
+  ];
+  for (const command of projectCommands) {
+    assert.ok(commands.includes(command));
+    assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
+  }
+  const explorerCommands = manifest.contributes.menus['explorer/context'] ?? [];
+  assert.ok(explorerCommands.some((entry) => entry.command === 'mermaidPreviewOffline.compareGitVersions'));
+  const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
+  const visualDiff = titleCommands.find((entry) => entry.command === 'mermaidPreviewOffline.previewVisualDiff');
+  assert.match(visualDiff?.when ?? '', /textCompareEditorVisible/u);
 });
 
 void test('professional export is exposed to the UI, tasks, and offline CLI', () => {
