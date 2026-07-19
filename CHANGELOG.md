@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0
+
+- added Diagram Studio, an offline template gallery for creating new Mermaid
+  diagrams from eight customizable professional starting points;
+- added a searchable visual explorer for all 43 bundled Mermaid examples;
+- added live template fields, editable Mermaid source, file-name customization,
+  and immediate local preview before creating a file;
+- added visual Git comparison between any available revision and the working
+  tree, with source-change statistics and synchronized zoom;
+- added side-by-side and color-coded overlay modes for rendered Git revisions;
+- added a visual preview command for the two sides of VS Code text diff editors.
+
 ## 0.5.0
 
 - added a professional export dialog with a live result preview and reusable
