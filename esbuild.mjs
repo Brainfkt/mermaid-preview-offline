@@ -46,6 +46,21 @@ await Promise.all([
     target: ['chrome120'],
   }),
   build({
+    entryPoints: ['src/projectWebview.ts'],
+    bundle: true,
+    define: {
+      'process.env.NODE_ENV': '"production"',
+    },
+    format: 'iife',
+    logLevel: 'info',
+    minify: true,
+    outfile: 'dist/project-webview.js',
+    platform: 'browser',
+    plugins: [offlineZenUmlStyles],
+    sourcemap: production ? false : 'linked',
+    target: ['chrome120'],
+  }),
+  build({
     entryPoints: ['src/cliRenderer.ts'],
     bundle: true,
     define: {
