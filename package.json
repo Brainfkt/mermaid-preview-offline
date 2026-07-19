@@ -1,8 +1,8 @@
 {
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
-  "description": "Instant, private Mermaid diagram preview and professional PNG, WebP, PDF, and SVG export—100% offline in VS Code.",
-  "version": "0.5.0",
+  "description": "Instant Mermaid diagram preview, templates, visual Git diffs, and professional export—100% offline in VS Code.",
+  "version": "0.6.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -63,7 +63,9 @@
     "visualization",
     "svg export",
     "documentation",
-    "mmd"
+    "mmd",
+    "template gallery",
+    "git diff"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -81,6 +83,11 @@
     "onCommand:mermaidPreviewOffline.generateMissingIds",
     "onCommand:mermaidPreviewOffline.renameIdentifier",
     "onCommand:mermaidPreviewOffline.export",
+    "onCommand:mermaidPreviewOffline.newDiagram",
+    "onCommand:mermaidPreviewOffline.browseExamples",
+    "onCommand:mermaidPreviewOffline.generateFromTemplate",
+    "onCommand:mermaidPreviewOffline.compareGitVersions",
+    "onCommand:mermaidPreviewOffline.previewVisualDiff",
     "onTaskType:mermaid-export",
     "onLanguage:mermaid"
   ],
@@ -192,6 +199,31 @@
         "command": "mermaidPreviewOffline.export",
         "title": "Mermaid Preview: Export Diagram…",
         "icon": "$(export)"
+      },
+      {
+        "command": "mermaidPreviewOffline.newDiagram",
+        "title": "Mermaid Preview: New Diagram from Template…",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "mermaidPreviewOffline.browseExamples",
+        "title": "Mermaid Preview: Browse Example Gallery…",
+        "icon": "$(library)"
+      },
+      {
+        "command": "mermaidPreviewOffline.generateFromTemplate",
+        "title": "Mermaid Preview: Generate Custom Diagram…",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "mermaidPreviewOffline.compareGitVersions",
+        "title": "Mermaid Preview: Compare Git Versions Visually…",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "mermaidPreviewOffline.previewVisualDiff",
+        "title": "Mermaid Preview: Preview Diff Visually",
+        "icon": "$(open-preview)"
       }
     ],
     "menus": {
@@ -225,6 +257,11 @@
           "command": "mermaidPreviewOffline.export",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "mermaidPreviewOffline@21"
+        },
+        {
+          "command": "mermaidPreviewOffline.compareGitVersions",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "mermaidPreviewOffline@22"
         }
       ],
       "editor/title": [
@@ -237,6 +274,16 @@
           "command": "mermaidPreviewOffline.export",
           "when": "activeCustomEditorId == brainfkt.mermaidPreviewOffline",
           "group": "navigation@9"
+        },
+        {
+          "command": "mermaidPreviewOffline.compareGitVersions",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "navigation@10"
+        },
+        {
+          "command": "mermaidPreviewOffline.previewVisualDiff",
+          "when": "textCompareEditorVisible && (resourceExtname == .mmd || resourceExtname == .mermaid)",
+          "group": "navigation@11"
         }
       ],
       "editor/context": [
@@ -495,8 +542,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:compile": "tsc -p tsconfig.test.json",
     "test": "npm run test:compile && node --test .test-dist/test/*.test.js",
-    "test:visual": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs",
-    "test:visual:update": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs --update",
+    "test:visual": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs && node scripts/project-visual-regression.mjs",
+    "test:visual:update": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs --update && node scripts/project-visual-regression.mjs",
     "build": "node esbuild.mjs",
     "build:production": "node esbuild.mjs --production",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build",

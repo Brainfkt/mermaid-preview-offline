@@ -11,12 +11,15 @@
   "include": [
     "src/localImages.ts",
     "src/exportSettings.ts",
+    "src/diagramTemplates.ts",
     "src/mermaidError.ts",
     "src/mermaidLanguage.ts",
     "src/previewState.ts",
     "src/protocol.ts",
     "src/renderPolicy.ts",
     "src/theme.ts",
+    "src/projectWebviewHtml.ts",
+    "src/visualDiff.ts",
     "src/webviewHtml.ts",
     "src/workspacePaths.ts",
     "test/**/*.ts"
