@@ -12,6 +12,8 @@
     "src/localImages.ts",
     "src/exportSettings.ts",
     "src/diagramTemplates.ts",
+    "src/documentationBlocks.ts",
+    "src/documentationWebviewHtml.ts",
     "src/mermaidError.ts",
     "src/mermaidLanguage.ts",
     "src/previewState.ts",
