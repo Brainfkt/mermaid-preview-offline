@@ -44,7 +44,7 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 | 🔒 | **Private by design** | Diagram source never leaves your machine. |
 | 📴 | **Truly offline** | No CDN, API, account, sign-in, or network dependency. |
 | 🔍 | **Comfortable navigation** | Fit, zoom, and drag across large diagrams. |
-| ⇩ | **Portable SVG output** | Copy the SVG or save it as a standalone file. |
+| ⇩ | **Professional export** | Preview and export PNG, WebP, PDF, or portable SVG files. |
 | ◇ | **Broad Mermaid coverage** | Core diagrams, experimental families, ZenUML, icons, and local images. |
 
 ## Made for VS Code workflows
@@ -86,7 +86,8 @@ portable and do not depend on local file paths.
 2. Open a `.mmd` or `.mermaid` file from the Explorer.
 3. Select the layout control and choose **Source**, **Beside**, or **Above** to
    edit in VS Code's native Mermaid editor.
-4. Use **Copy SVG** or **Save SVG** when the diagram is ready.
+4. Use **Export** to preview the final result, tune its output profile, and save
+   PNG, WebP, PDF, or SVG.
 
 No configuration is required. To temporarily open a Mermaid file as plain text,
 use **Reopen Editor With...** → **Text Editor**.
@@ -110,7 +111,11 @@ use **Reopen Editor With...** → **Text Editor**.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
 - Six workspace-wide diagram themes selectable directly from the preview.
 - A modern glass interface that remains native to VS Code themes.
-- SVG copy and file export.
+- Live export preview with reusable profiles.
+- PNG, WebP, PDF, optimized SVG, and original SVG export.
+- Direct PNG clipboard copy, recursive folder export, and a task-ready offline CLI.
+- Configurable DPI, scale, margin, transparent or colored background, export
+  theme, metadata, and file name templates.
 - Dark, light, and high-contrast VS Code theme support.
 - Mermaid syntax highlighting for `.mmd` and `.mermaid` files.
 - Mermaid `11.16.0` bundled and pinned for reproducible rendering.
@@ -157,8 +162,9 @@ and current limitations.
 | `+` / `-` | Zoom in or out |
 | `Ctrl/Cmd + mouse wheel` | Fine zoom control |
 | Drag | Pan across the canvas |
-| **Copy SVG** | Copy the rendered SVG to the clipboard |
-| **Save SVG** | Save the rendered diagram as an SVG file |
+| **Copy SVG** | Copy the current original rendered SVG to the clipboard |
+| **Export** | Preview and save PNG, WebP, PDF, optimized SVG, or original SVG |
+| Export dialog | Copy PNG/original SVG/optimized SVG, save profiles, or export a folder |
 
 ## Settings
 
@@ -169,6 +175,13 @@ and current limitations.
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Show the minimap when the diagram exceeds the viewport. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose a theme shared by every preview in the workspace. |
+| `mermaidPreviewOffline.export.format` | `png` | Choose the default professional export format. |
+| `mermaidPreviewOffline.export.theme` | `default` | Render exports with a theme independent from the preview. |
+| `mermaidPreviewOffline.export.scale` | `1` | Set the default export scale factor. |
+| `mermaidPreviewOffline.export.dpi` | `144` | Set raster and PDF resolution. |
+| `mermaidPreviewOffline.export.margin` | `24` | Add space around the exported diagram. |
+| `mermaidPreviewOffline.export.background` | `transparent` | Choose a transparent or colored background. |
+| `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Build output names from export tokens. |
 
 The Mermaid file context menu exposes all four layouts. **Mermaid Preview:
 Configure Default Editor** switches `.mmd` and `.mermaid` files between the
@@ -176,6 +189,50 @@ offline preview and VS Code's text editor.
 In a Mermaid text editor, use **Mermaid: Insert Node or Link**, **Mermaid:
 Generate Missing Identifiers**, **Mermaid: Rename Identifier**, or **Mermaid:
 Format Document** from the Command Palette or editor context menu.
+
+## Offline CLI and VS Code tasks
+
+The repository includes a Node.js 22 CLI that uses an installed Chrome,
+Chromium, or Edge executable as its local rendering engine. It never contacts a
+remote service.
+
+```bash
+npm ci
+npm run build
+npm link
+
+mpo examples/01-flowchart.mmd \
+  --format png --dpi 300 --scale 2 --background transparent
+
+mpo examples \
+  --output exported --format pdf --theme neutral
+```
+
+`npm link` exposes the local executable as the short `mpo` command. Use
+`--profile profile.json` to load saved settings, `--name-template` to control
+output names, `--browser` when the browser is in a non-standard location, and
+`--json` for machine-readable output. `--help` lists every option.
+
+The extension also contributes a `mermaid-export` task type:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Export Mermaid documentation",
+      "type": "mermaid-export",
+      "source": "${workspaceFolder}/docs/diagrams",
+      "output": "${workspaceFolder}/build/diagrams",
+      "format": "png",
+      "theme": "neutral",
+      "dpi": 300,
+      "scale": 2,
+      "background": "#ffffff"
+    }
+  ]
+}
+```
 
 ## Privacy and security
 
@@ -186,7 +243,8 @@ Rendering happens inside a restricted VS Code webview. The extension:
 - runs Mermaid with `securityLevel: strict`;
 - contains no telemetry or analytics;
 - rejects absolute image paths and paths outside the workspace;
-- writes outside the current document only after an explicit **Save SVG** action.
+- writes outside the current document only after an explicit save, folder export,
+  task, or CLI invocation.
 
 ## Install from a VSIX
 

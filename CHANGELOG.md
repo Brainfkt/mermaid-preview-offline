@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.5.0
+
+- added a professional export dialog with a live result preview and reusable
+  export profiles;
+- added PNG, WebP, and single-page PDF output alongside original and optimized
+  SVG export;
+- added direct PNG clipboard copy, configurable DPI, scale, margin, transparent
+  or colored backgrounds, and export themes independent from VS Code;
+- added automatic SVG optimization and source metadata in SVG, PNG, WebP, and
+  PDF outputs;
+- added configurable file name templates with name, format, theme, scale, DPI,
+  date, time, and source-extension tokens;
+- added recursive folder export that preserves the source directory structure;
+- added the `mermaidPreviewOffline.export` command and the `mermaid-export`
+  VS Code task type;
+- added the short `mpo` Node.js CLI, which renders locally through
+  an installed Chrome, Chromium, or Edge browser.
+
 ## 0.4.0
 
 - replaced the embedded source textarea with four workspace-persistent native
