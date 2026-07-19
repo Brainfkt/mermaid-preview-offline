@@ -1,8 +1,8 @@
 {
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
-  "description": "Instant Mermaid diagram preview, templates, visual Git diffs, and professional export—100% offline in VS Code.",
-  "version": "0.6.0",
+  "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
+  "version": "0.7.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -65,7 +65,9 @@
     "documentation",
     "mmd",
     "template gallery",
-    "git diff"
+    "git diff",
+    "mdx",
+    "asciidoc"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -88,8 +90,14 @@
     "onCommand:mermaidPreviewOffline.generateFromTemplate",
     "onCommand:mermaidPreviewOffline.compareGitVersions",
     "onCommand:mermaidPreviewOffline.previewVisualDiff",
+    "onCommand:mermaidPreviewOffline.previewDocumentationBlock",
+    "onCommand:mermaidPreviewOffline.previewDocumentation",
+    "onCommand:mermaidPreviewOffline.exportDocumentation",
     "onTaskType:mermaid-export",
-    "onLanguage:mermaid"
+    "onLanguage:mermaid",
+    "onLanguage:markdown",
+    "onLanguage:mdx",
+    "onLanguage:asciidoc"
   ],
   "contributes": {
     "languages": [
@@ -224,6 +232,21 @@
         "command": "mermaidPreviewOffline.previewVisualDiff",
         "title": "Mermaid Preview: Preview Diff Visually",
         "icon": "$(open-preview)"
+      },
+      {
+        "command": "mermaidPreviewOffline.previewDocumentationBlock",
+        "title": "Mermaid Preview: Preview Block Under Cursor",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "mermaidPreviewOffline.previewDocumentation",
+        "title": "Mermaid Preview: Preview All Blocks in Document",
+        "icon": "$(multiple-windows)"
+      },
+      {
+        "command": "mermaidPreviewOffline.exportDocumentation",
+        "title": "Mermaid Preview: Export Document with Diagram Images…",
+        "icon": "$(export)"
       }
     ],
     "menus": {
@@ -284,6 +307,21 @@
           "command": "mermaidPreviewOffline.previewVisualDiff",
           "when": "textCompareEditorVisible && (resourceExtname == .mmd || resourceExtname == .mermaid)",
           "group": "navigation@11"
+        },
+        {
+          "command": "mermaidPreviewOffline.previewDocumentationBlock",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "navigation@8"
+        },
+        {
+          "command": "mermaidPreviewOffline.previewDocumentation",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "navigation@9"
+        },
+        {
+          "command": "mermaidPreviewOffline.exportDocumentation",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "navigation@10"
         }
       ],
       "editor/context": [
@@ -306,6 +344,21 @@
           "command": "mermaidPreviewOffline.formatDocument",
           "when": "editorLangId == mermaid",
           "group": "modification@9"
+        },
+        {
+          "command": "mermaidPreviewOffline.previewDocumentationBlock",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "mermaidPreviewOffline@1"
+        },
+        {
+          "command": "mermaidPreviewOffline.previewDocumentation",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "mermaidPreviewOffline@2"
+        },
+        {
+          "command": "mermaidPreviewOffline.exportDocumentation",
+          "when": "editorLangId == markdown || editorLangId == mdx || editorLangId == asciidoc || resourceExtname == .mdx || resourceExtname == .adoc || resourceExtname == .asciidoc || resourceExtname == .asc",
+          "group": "mermaidPreviewOffline@3"
         }
       ]
     },
