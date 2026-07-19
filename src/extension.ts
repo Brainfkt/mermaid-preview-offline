@@ -5,6 +5,7 @@ import {
   MermaidPreviewProvider,
 } from './mermaidPreviewProvider';
 import { MermaidEditorLayoutController } from './editorLayoutController';
+import { MERMAID_EXPORT_TASK_TYPE, MermaidExportTaskProvider } from './exportTaskProvider';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
 import type { MermaidEditorMode } from './protocol';
 
@@ -12,6 +13,7 @@ const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
 const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
 const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
+const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
 const MODE_COMMANDS: ReadonlyArray<[string, MermaidEditorMode]> = [
   ['mermaidPreviewOffline.openPreviewOnly', 'preview'],
   ['mermaidPreviewOffline.openSourceOnly', 'source'],
@@ -26,6 +28,7 @@ export function activate(context: vscode.ExtensionContext): void {
     MERMAID_PREVIEW_VIEW_TYPE,
   );
   const provider = new MermaidPreviewProvider(context, diagnostics, layoutController);
+  const exportTaskProvider = new MermaidExportTaskProvider(context);
 
   context.subscriptions.push(
     layoutController,
@@ -33,6 +36,7 @@ export function activate(context: vscode.ExtensionContext): void {
       supportsMultipleEditorsPerDocument: false,
       webviewOptions: { retainContextWhenHidden: true },
     }),
+    vscode.tasks.registerTaskProvider(MERMAID_EXPORT_TASK_TYPE, exportTaskProvider),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       const uri = editor?.document.uri;
       if (uri && isMermaidDocument(uri)) {
@@ -53,6 +57,14 @@ export function activate(context: vscode.ExtensionContext): void {
       if (uri) {
         await layoutController.chooseMode(uri);
       }
+    }),
+    vscode.commands.registerCommand(EXPORT_COMMAND, async (resource?: vscode.Uri) => {
+      const uri = mermaidUri(resource);
+      if (!uri) {
+        return;
+      }
+      await layoutController.applyMode(uri, 'preview');
+      await provider.showExportDialog(uri);
     }),
     ...MODE_COMMANDS.map(([command, mode]) =>
       vscode.commands.registerCommand(command, async (resource?: vscode.Uri) => {

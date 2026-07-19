@@ -3,6 +3,21 @@ import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-the
 import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
+import {
+  DEFAULT_EXPORT_SETTINGS,
+  normalizeExportProfiles,
+  normalizeExportSettings,
+  type ExportProfile,
+  type ExportSettings,
+  type ExportSourceMetadata,
+} from './exportSettings';
+import {
+  artifactDataBase64,
+  prepareSvg,
+  renderExportArtifact,
+  renderExportPreview,
+  type ExportArtifact,
+} from './exportRenderer';
 import { describeMermaidError } from './mermaidError';
 import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
@@ -11,6 +26,7 @@ import type {
   MermaidEditorMode,
   PersistedPreviewState,
   PreviewConfiguration,
+  SerializedExportArtifact,
   WebviewToExtensionMessage,
 } from './protocol';
 import { formatByteLength } from './renderPolicy';
@@ -62,11 +78,31 @@ const zoomStatus = element<HTMLElement>('zoom-status');
 const largeFileLabel = element<HTMLElement>('large-file-label');
 const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
-const saveButton = element<HTMLButtonElement>('save-svg');
+const exportOpenButton = element<HTMLButtonElement>('export-open');
 const themeSelect = element<HTMLSelectElement>('diagram-theme');
 const themePicker = element<HTMLElement>('theme-picker');
 const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
 const editorLayoutLabel = element<HTMLElement>('editor-layout-label');
+const exportDialog = element<HTMLDialogElement>('export-dialog');
+const exportForm = element<HTMLFormElement>('export-form');
+const exportPreviewImage = element<HTMLImageElement>('export-preview-image');
+const exportPreviewSpinner = element<HTMLElement>('export-preview-spinner');
+const exportPreviewMetrics = element<HTMLElement>('export-preview-metrics');
+const exportPreviewError = element<HTMLElement>('export-preview-error');
+const exportProfileSelect = element<HTMLSelectElement>('export-profile');
+const exportProfileName = element<HTMLInputElement>('export-profile-name');
+const exportProfileDelete = element<HTMLButtonElement>('export-profile-delete');
+const exportFormat = element<HTMLSelectElement>('export-format');
+const exportTheme = element<HTMLSelectElement>('export-theme');
+const exportScale = element<HTMLInputElement>('export-scale');
+const exportDpi = element<HTMLInputElement>('export-dpi');
+const exportMargin = element<HTMLInputElement>('export-margin');
+const exportBackground = element<HTMLSelectElement>('export-background');
+const exportBackgroundColor = element<HTMLInputElement>('export-background-color');
+const exportNameTemplate = element<HTMLInputElement>('export-name-template');
+const exportOptimize = element<HTMLInputElement>('export-optimize');
+const exportMetadata = element<HTMLInputElement>('export-metadata');
+const exportSvgOriginal = element<HTMLInputElement>('export-svg-original');
 
 let configuration = DEFAULT_CONFIGURATION;
 let zoom = initialState.zoom;
@@ -80,6 +116,7 @@ let naturalHeight = 600;
 let lastSvg = '';
 let latestRequest = 0;
 let latestSource = '';
+let latestSourceUri = '';
 let latestVersion = -1;
 let latestByteLength = 0;
 let pendingDocument = false;
@@ -91,6 +128,12 @@ let lastColorScheme = vscodeColorScheme();
 let minimapScale = 1;
 let minimapOffsetX = 0;
 let minimapOffsetY = 0;
+let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
+let exportProfiles: ExportProfile[] = [];
+let exportPreviewTimer: number | undefined;
+let exportPreviewGeneration = 0;
+let exportJob = Promise.resolve();
+let exportDialogRequested = false;
 
 themeSelect.value = diagramTheme;
 updateThemePicker();
@@ -115,6 +158,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     }
     case 'document':
       fileName.textContent = message.fileName;
+      latestSourceUri = message.sourceUri;
       latestVersion = message.version;
       latestByteLength = message.byteLength;
       updateFileSize(message.byteLength);
@@ -139,6 +183,43 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       editorMode = message.mode;
       updateEditorMode();
       break;
+    case 'exportConfiguration':
+      exportSettings = normalizeExportSettings(message.settings);
+      exportProfiles = normalizeExportProfiles(message.profiles);
+      renderExportProfileOptions();
+      if (!exportDialog.open) {
+        writeExportForm(exportSettings);
+      }
+      break;
+    case 'showExportDialog':
+      openExportDialog();
+      break;
+    case 'batchExportFile':
+      queueExportJob(async () => {
+        try {
+          const artifact = await createArtifact(
+            message.source,
+            message.sourceUri,
+            message.fileName,
+            message.settings,
+          );
+          vscode.postMessage({
+            type: 'batchExportResult',
+            artifact: serializeArtifact(artifact),
+            batchId: message.batchId,
+            fileId: message.fileId,
+            relativeDirectory: message.relativeDirectory,
+          });
+        } catch (error: unknown) {
+          vscode.postMessage({
+            type: 'batchExportError',
+            batchId: message.batchId,
+            fileId: message.fileId,
+            message: errorMessageOf(error),
+          });
+        }
+      });
+      break;
   }
 });
 
@@ -158,11 +239,33 @@ bindButton('copy-svg', () => {
     vscode.postMessage({ type: 'copySvg', svg: lastSvg });
   }
 });
-bindButton('save-svg', () => {
-  if (lastSvg) {
-    vscode.postMessage({ type: 'saveSvg', svg: lastSvg });
+bindButton('export-open', openExportDialog);
+bindButton('export-close', closeExportDialog);
+bindButton('export-profile-save', saveExportProfile);
+bindButton('export-profile-delete', deleteExportProfile);
+bindButton('export-copy-svg-original', copyOriginalSvg);
+bindButton('export-copy-svg-optimized', copyOptimizedSvg);
+bindButton('export-copy-png', copyPng);
+bindButton('export-folder', exportFolder);
+bindButton('export-save', saveExport);
+
+exportForm.addEventListener('submit', (event) => event.preventDefault());
+exportDialog.addEventListener('click', (event) => {
+  if (event.target === exportDialog) {
+    closeExportDialog();
   }
 });
+exportProfileSelect.addEventListener('change', applySelectedExportProfile);
+for (const control of Array.from(exportForm.querySelectorAll('input, select'))) {
+  if (
+    control === exportProfileSelect ||
+    control === exportProfileName
+  ) {
+    continue;
+  }
+  control.addEventListener('input', handleExportSettingsChanged);
+  control.addEventListener('change', handleExportSettingsChanged);
+}
 
 themeSelect.addEventListener('change', () => {
   if (!isDiagramTheme(themeSelect.value)) {
@@ -279,7 +382,7 @@ async function renderLatest(): Promise<void> {
     lastSvg = '';
     diagramSize.textContent = '—';
     copyButton.disabled = true;
-    saveButton.disabled = true;
+    exportOpenButton.disabled = true;
     showState('empty');
     renderStatus.textContent = 'Empty file';
     vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion });
@@ -295,16 +398,7 @@ async function renderLatest(): Promise<void> {
   try {
     await mermaidExtensionsReady;
     throwIfCancelled(controller.signal, request);
-    mermaid.initialize({
-      deterministicIds: true,
-      deterministicIDSeed: 'mermaid-preview-offline',
-      startOnLoad: false,
-      securityLevel: 'strict',
-      theme: resolvedDiagramTheme(),
-      fontFamily: getComputedStyle(document.body).fontFamily,
-      flowchart: { htmlLabels: false, useMaxWidth: false },
-      sequence: { useMaxWidth: false },
-    });
+    initializeMermaid(resolvedDiagramTheme());
 
     await mermaid.parse(source);
     throwIfCancelled(controller.signal, request);
@@ -323,7 +417,11 @@ async function renderLatest(): Promise<void> {
     refreshMinimapDiagram(svg);
     showState('diagram');
     copyButton.disabled = false;
-    saveButton.disabled = false;
+    exportOpenButton.disabled = false;
+    if (exportDialogRequested) {
+      exportDialogRequested = false;
+      openExportDialog();
+    }
     if (autoFit) {
       fitDiagram();
     } else {
@@ -345,7 +443,7 @@ async function renderLatest(): Promise<void> {
       lastSvg = '';
       diagramSize.textContent = '—';
       copyButton.disabled = true;
-      saveButton.disabled = true;
+      exportOpenButton.disabled = true;
       displayError(error, source);
       renderStatus.textContent = 'Syntax error';
       showState('error');
@@ -604,6 +702,350 @@ function updateThemePicker(): void {
   const label = selectedOption?.textContent?.trim() || diagramTheme;
   themePicker.title = `Diagram theme: ${label}`;
   themePicker.setAttribute('aria-label', `Diagram theme: ${label}`);
+}
+
+function openExportDialog(): void {
+  if (!lastSvg || !latestSource) {
+    exportDialogRequested = true;
+    return;
+  }
+  renderExportProfileOptions();
+  writeExportForm(exportSettings);
+  if (!exportDialog.open) {
+    exportDialog.showModal();
+  }
+  scheduleExportPreview();
+}
+
+function closeExportDialog(): void {
+  if (exportPreviewTimer !== undefined) {
+    window.clearTimeout(exportPreviewTimer);
+    exportPreviewTimer = undefined;
+  }
+  exportPreviewGeneration += 1;
+  if (exportDialog.open) {
+    exportDialog.close();
+  }
+}
+
+function writeExportForm(settingsValue: ExportSettings): void {
+  const settings = normalizeExportSettings(settingsValue);
+  exportFormat.value = settings.format;
+  exportTheme.value = settings.theme;
+  exportScale.value = String(settings.scale);
+  exportDpi.value = String(settings.dpi);
+  exportMargin.value = String(settings.margin);
+  exportBackground.value = settings.background;
+  exportBackgroundColor.value = settings.backgroundColor;
+  exportNameTemplate.value = settings.fileNameTemplate;
+  exportOptimize.checked = settings.optimizeSvg;
+  exportMetadata.checked = settings.includeMetadata;
+  exportSvgOriginal.checked = settings.svgVariant === 'original';
+  updateExportFieldAvailability();
+}
+
+function readExportForm(): ExportSettings {
+  return normalizeExportSettings({
+    background: exportBackground.value,
+    backgroundColor: exportBackgroundColor.value,
+    dpi: Number(exportDpi.value),
+    fileNameTemplate: exportNameTemplate.value,
+    format: exportFormat.value,
+    includeMetadata: exportMetadata.checked,
+    margin: Number(exportMargin.value),
+    optimizeSvg: exportOptimize.checked,
+    scale: Number(exportScale.value),
+    svgVariant: exportSvgOriginal.checked ? 'original' : 'optimized',
+    theme: exportTheme.value,
+  });
+}
+
+function handleExportSettingsChanged(): void {
+  exportSettings = readExportForm();
+  exportProfileSelect.value = '';
+  exportProfileDelete.disabled = true;
+  updateExportFieldAvailability();
+  scheduleExportPreview();
+}
+
+function updateExportFieldAvailability(): void {
+  const isOriginalSvg = exportFormat.value === 'svg' && exportSvgOriginal.checked;
+  exportBackgroundColor.disabled = exportBackground.value !== 'color' || isOriginalSvg;
+  exportScale.disabled = exportFormat.value === 'svg';
+  exportDpi.disabled = exportFormat.value === 'svg';
+  exportMargin.disabled = isOriginalSvg;
+  exportBackground.disabled = isOriginalSvg;
+  exportOptimize.disabled = isOriginalSvg;
+  exportMetadata.disabled = isOriginalSvg;
+  exportSvgOriginal.disabled = exportFormat.value !== 'svg';
+}
+
+function renderExportProfileOptions(): void {
+  const selected = exportProfileSelect.value;
+  exportProfileSelect.replaceChildren(new Option('Custom settings', ''));
+  for (const profile of exportProfiles) {
+    exportProfileSelect.add(new Option(profile.name, profile.id));
+  }
+  exportProfileSelect.value = exportProfiles.some((profile) => profile.id === selected)
+    ? selected
+    : '';
+  exportProfileDelete.disabled = !exportProfileSelect.value;
+}
+
+function applySelectedExportProfile(): void {
+  const profile = exportProfiles.find((entry) => entry.id === exportProfileSelect.value);
+  exportProfileDelete.disabled = !profile;
+  if (!profile) {
+    exportProfileName.value = '';
+    return;
+  }
+  exportProfileName.value = profile.name;
+  exportSettings = normalizeExportSettings(profile.settings);
+  writeExportForm(exportSettings);
+  scheduleExportPreview();
+}
+
+function saveExportProfile(): void {
+  const selectedId = exportProfileSelect.value;
+  const name = exportProfileName.value.trim() || `Export profile ${exportProfiles.length + 1}`;
+  const profile: ExportProfile = {
+    id: selectedId || crypto.randomUUID(),
+    name,
+    settings: readExportForm(),
+  };
+  const index = exportProfiles.findIndex((entry) => entry.id === profile.id);
+  if (index >= 0) {
+    exportProfiles[index] = profile;
+  } else {
+    exportProfiles.push(profile);
+  }
+  exportProfiles = normalizeExportProfiles(exportProfiles);
+  vscode.postMessage({ type: 'saveExportProfiles', profiles: exportProfiles });
+  renderExportProfileOptions();
+  exportProfileSelect.value = profile.id;
+  exportProfileDelete.disabled = false;
+  renderStatus.textContent = `Export profile “${profile.name}” saved`;
+}
+
+function deleteExportProfile(): void {
+  const selectedId = exportProfileSelect.value;
+  if (!selectedId) {
+    return;
+  }
+  exportProfiles = exportProfiles.filter((entry) => entry.id !== selectedId);
+  vscode.postMessage({ type: 'saveExportProfiles', profiles: exportProfiles });
+  exportProfileName.value = '';
+  renderExportProfileOptions();
+  renderStatus.textContent = 'Export profile deleted';
+}
+
+function scheduleExportPreview(): void {
+  exportPreviewGeneration += 1;
+  if (exportPreviewTimer !== undefined) {
+    window.clearTimeout(exportPreviewTimer);
+  }
+  exportPreviewSpinner.hidden = false;
+  exportPreviewError.hidden = true;
+  exportPreviewTimer = window.setTimeout(() => {
+    exportPreviewTimer = undefined;
+    const generation = exportPreviewGeneration;
+    queueExportJob(async () => {
+      if (!exportDialog.open || generation !== exportPreviewGeneration) {
+        return;
+      }
+      try {
+        const settings = readExportForm();
+        const svg = await renderSvgForExport(latestSource, settings.theme);
+        const preview = await renderExportPreview({
+          fileName: fileName.textContent || 'diagram.mmd',
+          metadata: currentExportMetadata(),
+          settings,
+          svg,
+        });
+        if (generation !== exportPreviewGeneration) {
+          return;
+        }
+        exportPreviewImage.src = preview.dataUrl;
+        exportPreviewMetrics.textContent =
+          `${preview.width.toLocaleString()} × ${preview.height.toLocaleString()} px · ` +
+          `${settings.dpi} DPI · ${settings.format.toUpperCase()}`;
+        exportPreviewSpinner.hidden = true;
+      } catch (error: unknown) {
+        if (generation === exportPreviewGeneration) {
+          showExportError(error);
+        }
+      }
+    });
+  }, 180);
+}
+
+function saveExport(): void {
+  queueExportJob(async () => {
+    setExportBusy(true);
+    try {
+      const artifact = await createArtifact(
+        latestSource,
+        latestSourceUri,
+        fileName.textContent || 'diagram.mmd',
+        readExportForm(),
+      );
+      vscode.postMessage({ type: 'saveExport', artifact: serializeArtifact(artifact) });
+      renderStatus.textContent = `${artifact.format.toUpperCase()} ready to save`;
+    } catch (error: unknown) {
+      showExportError(error);
+    } finally {
+      setExportBusy(false);
+    }
+  });
+}
+
+function exportFolder(): void {
+  exportSettings = readExportForm();
+  vscode.postMessage({ type: 'exportFolder', settings: exportSettings });
+}
+
+function copyOriginalSvg(): void {
+  if (lastSvg) {
+    vscode.postMessage({ type: 'copySvg', svg: lastSvg });
+  }
+}
+
+function copyOptimizedSvg(): void {
+  queueExportJob(async () => {
+    try {
+      const settings = normalizeExportSettings({
+        ...readExportForm(),
+        format: 'svg',
+        optimizeSvg: true,
+        svgVariant: 'optimized',
+      });
+      const svg = await renderSvgForExport(latestSource, settings.theme);
+      const prepared = prepareSvg(svg, settings, currentExportMetadata());
+      vscode.postMessage({ type: 'copySvg', svg: prepared.source });
+    } catch (error: unknown) {
+      showExportError(error);
+    }
+  });
+}
+
+function copyPng(): void {
+  queueExportJob(async () => {
+    setExportBusy(true);
+    try {
+      const artifact = await createArtifact(
+        latestSource,
+        latestSourceUri,
+        fileName.textContent || 'diagram.mmd',
+        normalizeExportSettings({ ...readExportForm(), format: 'png' }),
+      );
+      if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+        throw new Error('Image clipboard access is unavailable in this VS Code version.');
+      }
+      const blob = new Blob([Uint8Array.from(artifact.bytes).buffer], { type: 'image/png' });
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      renderStatus.textContent = 'PNG copied to the clipboard';
+    } catch (error: unknown) {
+      showExportError(error);
+    } finally {
+      setExportBusy(false);
+    }
+  });
+}
+
+async function createArtifact(
+  source: string,
+  sourceUri: string,
+  sourceFileName: string,
+  rawSettings: ExportSettings,
+): Promise<ExportArtifact> {
+  const settings = normalizeExportSettings(rawSettings);
+  const svg = await renderSvgForExport(source, settings.theme);
+  return renderExportArtifact({
+    fileName: sourceFileName,
+    metadata: {
+      exportedAt: new Date().toISOString(),
+      fileName: sourceFileName,
+      sourceUri,
+    },
+    settings,
+    svg,
+  });
+}
+
+async function renderSvgForExport(source: string, theme: DiagramTheme): Promise<string> {
+  const resolvedTheme = resolveDiagramTheme(theme, vscodeColorScheme());
+  if (source === latestSource && resolvedTheme === resolvedDiagramTheme() && lastSvg) {
+    return lastSvg;
+  }
+  const renderId = `mermaid-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  try {
+    await mermaidExtensionsReady;
+    initializeMermaid(resolvedTheme);
+    await mermaid.parse(source);
+    return (await mermaid.render(renderId, source)).svg;
+  } finally {
+    cleanupFailedRender(renderId);
+  }
+}
+
+function currentExportMetadata(): ExportSourceMetadata {
+  return {
+    exportedAt: new Date().toISOString(),
+    fileName: fileName.textContent || 'diagram.mmd',
+    sourceUri: latestSourceUri,
+  };
+}
+
+function serializeArtifact(artifact: ExportArtifact): SerializedExportArtifact {
+  return {
+    dataBase64: artifactDataBase64(artifact),
+    fileName: artifact.fileName,
+    format: artifact.format,
+    height: artifact.height,
+    mimeType: artifact.mimeType,
+    width: artifact.width,
+  };
+}
+
+function setExportBusy(busy: boolean): void {
+  for (const id of [
+    'export-save',
+    'export-folder',
+    'export-copy-svg-original',
+    'export-copy-svg-optimized',
+    'export-copy-png',
+  ]) {
+    element<HTMLButtonElement>(id).disabled = busy;
+  }
+  exportPreviewSpinner.hidden = !busy;
+}
+
+function showExportError(error: unknown): void {
+  exportPreviewSpinner.hidden = true;
+  exportPreviewError.hidden = false;
+  exportPreviewError.textContent = errorMessageOf(error);
+  renderStatus.textContent = 'Export failed';
+}
+
+function errorMessageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function queueExportJob(task: () => Promise<void>): void {
+  exportJob = exportJob.then(task, task);
+}
+
+function initializeMermaid(theme: Exclude<DiagramTheme, 'adaptive'>): void {
+  mermaid.initialize({
+    deterministicIds: true,
+    deterministicIDSeed: 'mermaid-preview-offline',
+    startOnLoad: false,
+    securityLevel: 'strict',
+    theme,
+    fontFamily: getComputedStyle(document.body).fontFamily,
+    flowchart: { htmlLabels: false, useMaxWidth: false },
+    sequence: { useMaxWidth: false },
+  });
 }
 
 function refreshDocument(): void {

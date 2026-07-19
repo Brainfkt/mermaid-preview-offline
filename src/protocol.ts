@@ -1,3 +1,5 @@
+import type { ExportProfile, ExportSettings } from './exportSettings';
+
 export const DIAGRAM_THEMES = [
   'adaptive',
   'default',
@@ -35,6 +37,7 @@ export type ExtensionToWebviewMessage =
       type: 'document';
       source: string;
       fileName: string;
+      sourceUri: string;
       version: number;
       byteLength: number;
       isLargeFile: boolean;
@@ -49,7 +52,28 @@ export type ExtensionToWebviewMessage =
       type: 'restoreViewState';
       state: PersistedPreviewState;
     }
-  | { type: 'editorMode'; mode: MermaidEditorMode };
+  | { type: 'editorMode'; mode: MermaidEditorMode }
+  | { type: 'exportConfiguration'; profiles: ExportProfile[]; settings: ExportSettings }
+  | { type: 'showExportDialog' }
+  | {
+      type: 'batchExportFile';
+      batchId: string;
+      fileId: string;
+      fileName: string;
+      relativeDirectory: string;
+      settings: ExportSettings;
+      source: string;
+      sourceUri: string;
+    };
+
+export interface SerializedExportArtifact {
+  dataBase64: string;
+  fileName: string;
+  format: 'svg' | 'png' | 'webp' | 'pdf';
+  height: number;
+  mimeType: string;
+  width: number;
+}
 
 export type WebviewToExtensionMessage =
   | { type: 'ready'; hasPersistedState: boolean }
@@ -68,4 +92,15 @@ export type WebviewToExtensionMessage =
   | { type: 'clearDiagnostic'; version: number }
   | { type: 'viewState'; state: PersistedPreviewState }
   | { type: 'copySvg'; svg: string }
-  | { type: 'saveSvg'; svg: string };
+  | { type: 'saveSvg'; svg: string }
+  | { type: 'saveExport'; artifact: SerializedExportArtifact }
+  | { type: 'saveExportProfiles'; profiles: ExportProfile[] }
+  | { type: 'exportFolder'; settings: ExportSettings }
+  | {
+      type: 'batchExportResult';
+      artifact: SerializedExportArtifact;
+      batchId: string;
+      fileId: string;
+      relativeDirectory: string;
+    }
+  | { type: 'batchExportError'; batchId: string; fileId: string; message: string };

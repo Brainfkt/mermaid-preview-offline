@@ -16,7 +16,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
   const title = escapeHtml(options.title);
   const csp = [
     "default-src 'none'",
-    `img-src ${options.cspSource} data:`,
+    `img-src ${options.cspSource} data: blob:`,
     `style-src ${options.cspSource} 'unsafe-inline'`,
     `script-src 'nonce-${options.nonce}'`,
     "connect-src 'none'",
@@ -61,7 +61,10 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       </label>
       <span class="divider" aria-hidden="true"></span>
       <button class="button button--quiet" id="copy-svg" type="button" disabled>Copy SVG</button>
-      <button class="button button--quiet" id="save-svg" type="button" disabled>Save SVG</button>
+      <button class="button button--accent button--export" id="export-open" type="button" disabled>
+        ${icon('export')}
+        <span>Export</span>
+      </button>
       <span class="metadata-chip" id="large-file-label" hidden></span>
       <span class="divider" aria-hidden="true"></span>
       <button class="button button--icon" id="fullscreen" type="button" title="Toggle full screen" aria-label="Toggle full screen">
@@ -112,6 +115,109 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     </aside>
   </main>
 
+  <dialog class="export-dialog glass-surface" id="export-dialog" aria-labelledby="export-title">
+    <form class="export-panel" id="export-form" method="dialog">
+      <header class="export-panel__header">
+        <div>
+          <h1 id="export-title">Professional export</h1>
+          <p>Preview and export the current diagram with a reusable profile.</p>
+        </div>
+        <button class="button button--icon" id="export-close" type="button" aria-label="Close export dialog">×</button>
+      </header>
+
+      <div class="export-panel__body">
+        <section class="export-preview" aria-label="Export preview">
+          <div class="export-preview__canvas" id="export-preview-canvas">
+            <img id="export-preview-image" alt="Preview of the exported Mermaid diagram">
+            <span class="spinner" id="export-preview-spinner" aria-hidden="true"></span>
+          </div>
+          <p class="export-preview__metrics" id="export-preview-metrics">Preparing preview…</p>
+          <p class="export-preview__error" id="export-preview-error" hidden></p>
+        </section>
+
+        <section class="export-controls" aria-label="Export settings">
+          <div class="profile-row">
+            <select id="export-profile" aria-label="Saved export profile">
+              <option value="">Custom settings</option>
+            </select>
+            <input id="export-profile-name" type="text" maxlength="80" placeholder="Profile name" aria-label="Export profile name">
+            <button class="button" id="export-profile-save" type="button">Save</button>
+            <button class="button button--danger" id="export-profile-delete" type="button" disabled>Delete</button>
+          </div>
+
+          <div class="export-fields">
+            <label class="field">
+              <span>Format</span>
+              <select id="export-format">
+                <option value="png">PNG</option>
+                <option value="webp">WebP</option>
+                <option value="pdf">PDF</option>
+                <option value="svg">SVG</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Export theme</span>
+              <select id="export-theme">
+                <option value="default">Default</option>
+                <option value="dark">Dark</option>
+                <option value="forest">Forest</option>
+                <option value="neutral">Neutral</option>
+                <option value="base">Base</option>
+                <option value="adaptive">Adaptive</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Scale factor</span>
+              <input id="export-scale" type="number" min="0.25" max="8" step="0.25">
+            </label>
+            <label class="field">
+              <span>Resolution (DPI)</span>
+              <input id="export-dpi" type="number" min="72" max="600" step="1">
+            </label>
+            <label class="field">
+              <span>Margin (px)</span>
+              <input id="export-margin" type="number" min="0" max="512" step="1">
+            </label>
+            <label class="field">
+              <span>Background</span>
+              <select id="export-background">
+                <option value="transparent">Transparent</option>
+                <option value="color">Color</option>
+              </select>
+            </label>
+            <label class="field field--color">
+              <span>Background color</span>
+              <input id="export-background-color" type="color" value="#ffffff">
+            </label>
+            <label class="field field--wide">
+              <span>File name template</span>
+              <input id="export-name-template" type="text" spellcheck="false" value="{name}-{theme}@{scale}x.{format}">
+              <small>{name}, {format}, {theme}, {scale}, {dpi}, {date}, {time}, {ext}</small>
+            </label>
+          </div>
+
+          <div class="export-options">
+            <label><input id="export-optimize" type="checkbox" checked> Optimize SVG automatically</label>
+            <label><input id="export-metadata" type="checkbox" checked> Include source metadata</label>
+            <label><input id="export-svg-original" type="checkbox"> Export the original SVG unchanged</label>
+          </div>
+        </section>
+      </div>
+
+      <footer class="export-panel__footer">
+        <div class="export-panel__copy-actions">
+          <button class="button" id="export-copy-svg-original" type="button">Copy original SVG</button>
+          <button class="button" id="export-copy-svg-optimized" type="button">Copy optimized SVG</button>
+          <button class="button" id="export-copy-png" type="button">Copy PNG</button>
+        </div>
+        <div class="export-panel__save-actions">
+          <button class="button" id="export-folder" type="button">Export folder…</button>
+          <button class="button button--accent" id="export-save" type="button">Save export…</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
   <footer class="statusbar">
     <span id="file-name">Mermaid</span>
     <span id="file-size">0 B</span>
@@ -126,8 +232,9 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
 </html>`;
 }
 
-function icon(name: 'fullscreen' | 'layout' | 'palette' | 'refresh'): string {
+function icon(name: 'export' | 'fullscreen' | 'layout' | 'palette' | 'refresh'): string {
   const paths: Record<typeof name, string> = {
+    export: '<path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 19h14"/>',
     fullscreen: '<path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/>',
     layout: '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 10h17M11 10v10"/>',
     palette:
