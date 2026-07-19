@@ -7,6 +7,7 @@ import {
 import { MermaidEditorLayoutController } from './editorLayoutController';
 import { MERMAID_EXPORT_TASK_TYPE, MermaidExportTaskProvider } from './exportTaskProvider';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
+import { MermaidProjectFeatures } from './projectFeatures';
 import type { MermaidEditorMode } from './protocol';
 
 const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
@@ -14,6 +15,11 @@ const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
 const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
 const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
+const NEW_DIAGRAM_COMMAND = 'mermaidPreviewOffline.newDiagram';
+const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
+const GENERATE_FROM_TEMPLATE_COMMAND = 'mermaidPreviewOffline.generateFromTemplate';
+const COMPARE_GIT_VERSIONS_COMMAND = 'mermaidPreviewOffline.compareGitVersions';
+const PREVIEW_VISUAL_DIFF_COMMAND = 'mermaidPreviewOffline.previewVisualDiff';
 const MODE_COMMANDS: ReadonlyArray<[string, MermaidEditorMode]> = [
   ['mermaidPreviewOffline.openPreviewOnly', 'preview'],
   ['mermaidPreviewOffline.openSourceOnly', 'source'],
@@ -29,9 +35,11 @@ export function activate(context: vscode.ExtensionContext): void {
   );
   const provider = new MermaidPreviewProvider(context, diagnostics, layoutController);
   const exportTaskProvider = new MermaidExportTaskProvider(context);
+  const projectFeatures = new MermaidProjectFeatures(context);
 
   context.subscriptions.push(
     layoutController,
+    projectFeatures,
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {
       supportsMultipleEditorsPerDocument: false,
       webviewOptions: { retainContextWhenHidden: true },
@@ -65,6 +73,21 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       await layoutController.applyMode(uri, 'preview');
       await provider.showExportDialog(uri);
+    }),
+    vscode.commands.registerCommand(NEW_DIAGRAM_COMMAND, async () => {
+      await projectFeatures.showGallery('templates');
+    }),
+    vscode.commands.registerCommand(BROWSE_EXAMPLES_COMMAND, async () => {
+      await projectFeatures.showGallery('examples');
+    }),
+    vscode.commands.registerCommand(GENERATE_FROM_TEMPLATE_COMMAND, async () => {
+      await projectFeatures.showGallery('templates');
+    }),
+    vscode.commands.registerCommand(COMPARE_GIT_VERSIONS_COMMAND, async (resource?: vscode.Uri) => {
+      await projectFeatures.compareGitVersions(resource);
+    }),
+    vscode.commands.registerCommand(PREVIEW_VISUAL_DIFF_COMMAND, async () => {
+      await projectFeatures.previewActiveEditorDiff();
     }),
     ...MODE_COMMANDS.map(([command, mode]) =>
       vscode.commands.registerCommand(command, async (resource?: vscode.Uri) => {
