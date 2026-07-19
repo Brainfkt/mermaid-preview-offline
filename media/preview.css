@@ -172,6 +172,18 @@ select:focus-visible {
   background: var(--vscode-button-hoverBackground);
 }
 
+.button--danger {
+  color: var(--preview-danger);
+}
+
+.button--export {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-inline: 8px;
+  font-size: 11px;
+}
+
 .divider {
   width: 1px;
   height: 18px;
@@ -472,6 +484,216 @@ select:focus-visible {
   gap: 8px;
 }
 
+.export-dialog {
+  width: min(1040px, calc(100vw - 28px));
+  max-width: none;
+  height: min(720px, calc(100vh - 28px));
+  max-height: none;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 0;
+  color: var(--vscode-editor-foreground);
+  background: color-mix(in srgb, var(--vscode-editor-background) 97%, transparent);
+}
+
+.export-dialog::backdrop {
+  background: color-mix(in srgb, #000 48%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.export-panel {
+  display: grid;
+  height: 100%;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.export-panel__header,
+.export-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-color: var(--preview-border);
+  padding: 12px 16px;
+}
+
+.export-panel__header {
+  border-bottom: 1px solid var(--preview-border);
+}
+
+.export-panel__header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+}
+
+.export-panel__header p {
+  margin: 3px 0 0;
+  color: var(--preview-muted);
+  font-size: 11px;
+}
+
+#export-close {
+  font-size: 19px;
+}
+
+.export-panel__body {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(330px, 0.8fr);
+}
+
+.export-preview {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  border-right: 1px solid var(--preview-border);
+  padding: 16px;
+}
+
+.export-preview__canvas {
+  position: relative;
+  display: grid;
+  min-height: 240px;
+  overflow: auto;
+  place-items: center;
+  border: 1px solid var(--preview-border);
+  border-radius: 9px;
+  padding: 20px;
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #e9e9e9 25%, transparent 25%),
+    linear-gradient(-45deg, #e9e9e9 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e9e9e9 75%),
+    linear-gradient(-45deg, transparent 75%, #e9e9e9 75%);
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+}
+
+.export-preview__canvas img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px color-mix(in srgb, #000 18%, transparent));
+}
+
+.export-preview__canvas .spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.export-preview__canvas .spinner[hidden] {
+  display: none;
+}
+
+.export-preview__metrics,
+.export-preview__error {
+  margin: 10px 0 0;
+  color: var(--preview-muted);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  text-align: center;
+}
+
+.export-preview__error {
+  color: var(--preview-danger);
+}
+
+.export-preview__error[hidden] {
+  display: none;
+}
+
+.export-controls {
+  min-width: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(110px, 1fr) auto auto;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.profile-row select,
+.profile-row input,
+.field input,
+.field select {
+  min-width: 0;
+  height: 30px;
+  border: 1px solid var(--vscode-input-border, var(--preview-border));
+  border-radius: 5px;
+  padding: 3px 7px;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  font: inherit;
+  font-size: 12px;
+}
+
+.export-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  color: var(--preview-muted);
+  font-size: 11px;
+}
+
+.field--wide {
+  grid-column: 1 / -1;
+}
+
+.field small {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--preview-muted) 75%, transparent);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field--color input {
+  width: 100%;
+  padding: 3px;
+}
+
+.export-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  color: var(--preview-muted);
+  font-size: 11px;
+}
+
+.export-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.export-panel__footer {
+  flex-wrap: wrap;
+  border-top: 1px solid var(--preview-border);
+}
+
+.export-panel__copy-actions,
+.export-panel__save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .statusbar {
   z-index: 2;
   position: absolute;
@@ -579,6 +801,48 @@ body.vscode-high-contrast-light .glass-surface {
   #file-size,
   #diagram-size {
     display: none;
+  }
+
+  .export-dialog {
+    width: calc(100vw - 12px);
+    height: calc(100vh - 12px);
+  }
+
+  .export-panel__body {
+    display: block;
+    overflow: auto;
+  }
+
+  .export-preview {
+    height: 320px;
+    border-right: 0;
+    border-bottom: 1px solid var(--preview-border);
+  }
+
+  .export-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-row select,
+  .profile-row input {
+    grid-column: 1 / -1;
+  }
+
+  .field--wide {
+    grid-column: auto;
+  }
+
+  .export-panel__footer {
+    align-items: stretch;
+  }
+
+  .export-panel__copy-actions,
+  .export-panel__save-actions {
+    width: 100%;
   }
 }
 
