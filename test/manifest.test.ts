@@ -5,6 +5,7 @@ import { test } from 'node:test';
 
 interface ExtensionManifest {
   activationEvents: string[];
+  bin: Record<string, string>;
   contributes: {
     commands: Array<{ command: string; title: string }>;
     configuration: {
@@ -25,6 +26,11 @@ interface ExtensionManifest {
       viewType: string;
     }>;
     snippets: Array<{ language: string; path: string }>;
+    taskDefinitions: Array<{
+      properties: Record<string, unknown>;
+      required: string[];
+      type: string;
+    }>;
     menus: Record<string, Array<{ command: string; when: string }>>;
   };
   dependencies: Record<string, string>;
@@ -66,6 +72,7 @@ void test('preview commands expose all four native editor layouts', () => {
     'mermaidPreviewOffline.chooseEditorLayout',
     ...layoutCommands,
     'mermaidPreviewOffline.configureDefaultEditor',
+    'mermaidPreviewOffline.export',
   ]) {
     assert.ok(commands.includes(command));
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
@@ -80,6 +87,7 @@ void test('preview commands expose all four native editor layouts', () => {
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
   }
   assert.ok(manifest.activationEvents.includes('onLanguage:mermaid'));
+  assert.ok(manifest.activationEvents.includes('onTaskType:mermaid-export'));
   const explorerCommands = (manifest.contributes.menus['explorer/context'] ?? []).map(
     (entry) => entry.command,
   );
@@ -88,6 +96,26 @@ void test('preview commands expose all four native editor layouts', () => {
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
+});
+
+void test('professional export is exposed to the UI, tasks, and offline CLI', () => {
+  assert.equal(manifest.bin.mpo, './bin/mpo.cjs');
+  const task = manifest.contributes.taskDefinitions[0];
+  assert.equal(task?.type, 'mermaid-export');
+  assert.deepEqual(task?.required, ['source']);
+  for (const property of [
+    'source',
+    'output',
+    'format',
+    'theme',
+    'scale',
+    'dpi',
+    'margin',
+    'background',
+    'nameTemplate',
+  ]) {
+    assert.ok(property in (task?.properties ?? {}));
+  }
 });
 
 void test('Mermaid contributes language snippets for advanced editing', () => {
@@ -126,6 +154,17 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
     'base',
   ]);
   assert.equal(properties['mermaidPreviewOffline.diagramTheme']?.scope, 'window');
+  assert.deepEqual(properties['mermaidPreviewOffline.export.format']?.enum, [
+    'svg',
+    'png',
+    'webp',
+    'pdf',
+  ]);
+  assert.equal(properties['mermaidPreviewOffline.export.scale']?.default, 1);
+  assert.equal(properties['mermaidPreviewOffline.export.dpi']?.default, 144);
+  assert.equal(properties['mermaidPreviewOffline.export.margin']?.default, 24);
+  assert.equal(properties['mermaidPreviewOffline.export.optimizeSvg']?.default, true);
+  assert.equal(properties['mermaidPreviewOffline.export.includeMetadata']?.default, true);
 });
 
 void test('the extension can run in local and remote VS Code extension hosts', () => {

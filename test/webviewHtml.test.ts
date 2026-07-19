@@ -17,6 +17,7 @@ void test('la webview interdit les connexions et les contenus exécutables dista
   assert.match(html, /object-src 'none'/u);
   assert.match(html, /frame-src 'none'/u);
   assert.match(html, /script-src 'nonce-fixed-nonce'/u);
+  assert.match(html, /img-src vscode-webview:\/\/test-source data: blob:/u);
   assert.doesNotMatch(html, /https?:\/\//u);
 });
 
@@ -41,10 +42,33 @@ void test('the compact toolbar exposes controls in the requested order', () => {
     'id="refresh"',
     'id="diagram-theme"',
     'id="copy-svg"',
-    'id="save-svg"',
+    'id="export-open"',
   ].map((marker) => html.indexOf(marker));
   assert.ok(controlOrder.every((position) => position >= 0));
   assert.deepEqual(controlOrder, [...controlOrder].sort((left, right) => left - right));
+});
+
+void test('v0.5 professional export exposes preview, profiles, formats, and batch actions', () => {
+  for (const marker of [
+    'id="export-dialog"',
+    'id="export-preview-image"',
+    'id="export-profile"',
+    'id="export-format"',
+    'value="png"',
+    'value="webp"',
+    'value="pdf"',
+    'id="export-scale"',
+    'id="export-dpi"',
+    'id="export-margin"',
+    'id="export-background"',
+    'id="export-name-template"',
+    'id="export-copy-svg-original"',
+    'id="export-copy-svg-optimized"',
+    'id="export-copy-png"',
+    'id="export-folder"',
+  ]) {
+    assert.match(html, new RegExp(marker, 'u'));
+  }
 });
 
 void test('layout, refresh, and theme controls stay compact and the footer is unframed', () => {

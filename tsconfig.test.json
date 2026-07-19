@@ -10,6 +10,7 @@
   },
   "include": [
     "src/localImages.ts",
+    "src/exportSettings.ts",
     "src/mermaidError.ts",
     "src/mermaidLanguage.ts",
     "src/previewState.ts",
