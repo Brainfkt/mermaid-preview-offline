@@ -116,6 +116,8 @@ use **Reopen Editor With...** → **Text Editor**.
 - Direct PNG clipboard copy, recursive folder export, and a task-ready offline CLI.
 - Configurable DPI, scale, margin, transparent or colored background, export
   theme, metadata, and file name templates.
+- Diagram Studio with eight customizable templates and all 43 bundled examples.
+- Rendered Git comparisons with side-by-side and color-coded overlay views.
 - Dark, light, and high-contrast VS Code theme support.
 - Mermaid syntax highlighting for `.mmd` and `.mermaid` files.
 - Mermaid `11.16.0` bundled and pinned for reproducible rendering.
@@ -190,6 +192,25 @@ In a Mermaid text editor, use **Mermaid: Insert Node or Link**, **Mermaid:
 Generate Missing Identifiers**, **Mermaid: Rename Identifier**, or **Mermaid:
 Format Document** from the Command Palette or editor context menu.
 
+## Diagram Studio and visual Git diffs
+
+Run **Mermaid Preview: New Diagram from Template…** to open Diagram Studio.
+Choose one of eight templates, customize its fields, inspect the live rendered
+result, optionally edit the generated Mermaid source, and create the file in the
+workspace. **Mermaid Preview: Browse Example Gallery…** switches directly to a
+searchable visual catalog of all 43 examples shipped with the extension.
+
+For an existing `.mmd` or `.mermaid` file, run **Mermaid Preview: Compare Git
+Versions Visually…** from the Command Palette or Explorer context menu. Select
+the before and after revisions, including the current working tree, then compare
+their rendered diagrams side by side or as a color-coded overlay. The view also
+shows added, changed, and removed source-line counts and provides synchronized
+zoom.
+
+When a Mermaid file is already open in VS Code's text diff editor, select
+**Mermaid Preview: Preview Diff Visually** from the editor title bar to render
+the existing before and after sides without choosing the revisions again.
+
 ## Offline CLI and VS Code tasks
 
 The repository includes a Node.js 22 CLI that uses an installed Chrome,
@@ -242,6 +263,7 @@ Rendering happens inside a restricted VS Code webview. The extension:
 - loads executable resources only from the installed VSIX;
 - runs Mermaid with `securityLevel: strict`;
 - contains no telemetry or analytics;
+- reads Git revisions only through the built-in local VS Code Git extension;
 - rejects absolute image paths and paths outside the workspace;
 - writes outside the current document only after an explicit save, folder export,
   task, or CLI invocation.

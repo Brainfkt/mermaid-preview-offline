@@ -64,62 +64,25 @@
 - [x] Exporter avec un thème différent de celui de VS Code.
 - [x] Ajouter un nom de fichier configurable par modèle.
 
-## v0.6 — Thèmes et personnalisation
+## v0.6 — Gestion de projet et productivité
 
-- [ ] Ajouter un sélecteur de thème Mermaid dans la barre d’outils.
-- [ ] Fournir plusieurs thèmes intégrés.
-- [ ] Prévisualiser instantanément les couleurs modifiées.
-- [ ] Enregistrer des thèmes au niveau utilisateur ou workspace.
-- [ ] Importer et exporter des thèmes JSON.
-- [ ] Définir un thème différent selon le type de diagramme.
-- [ ] Personnaliser la police, la taille du texte et l’espacement.
-- [ ] Charger des polices locales de manière sécurisée.
-- [ ] Ajouter des packs d’icônes hors ligne optionnels.
-- [ ] Enregistrer des packs Iconify personnalisés.
-- [ ] Supporter des icônes SVG locales personnalisées.
-- [ ] Configurer la couleur du canvas et de la grille.
-- [ ] Ajouter un mode d’impression à contraste renforcé.
-- [ ] Respecter le réglage VS Code de réduction des animations.
+- [x] Créer un nouveau diagramme depuis une galerie de modèles.
+- [x] Ajouter un explorateur visuel des exemples Mermaid.
+- [x] Générer un fichier Mermaid depuis un modèle personnalisable.
+- [x] Afficher les différences visuelles entre deux versions Git.
+- [x] Générer un aperçu avant/après dans l’éditeur de diff.
 
-## v0.7 — Gestion de projet et productivité
-
-- [ ] Créer un nouveau diagramme depuis une galerie de modèles.
-- [ ] Ajouter un explorateur visuel des exemples Mermaid.
-- [ ] Générer un fichier Mermaid depuis un modèle personnalisable.
-- [ ] Afficher toutes les miniatures Mermaid d’un dossier.
-- [ ] Ajouter une vue Gallery pour parcourir un projet.
-- [ ] Générer un index HTML de tous les diagrammes.
-- [ ] Détecter les liens et images locales manquants.
-- [ ] Renommer ou déplacer les ressources sans casser les références.
-- [ ] Ajouter des favoris et diagrammes récents.
-- [ ] Épingler certains aperçus.
-- [ ] Ajouter des tags et descriptions dans le frontmatter.
-- [ ] Rechercher dans les titres, nœuds et métadonnées.
-- [ ] Appliquer une configuration Mermaid commune au workspace.
-- [ ] Autoriser une configuration spécifique par fichier.
-- [ ] Ajouter des profils de projet.
-- [ ] Afficher les différences visuelles entre deux versions Git.
-- [ ] Générer un aperçu avant/après dans l’éditeur de diff.
-- [ ] Ajouter une commande « Export changed diagrams ».
-- [ ] Vérifier tous les diagrammes avant un commit.
-- [ ] Fournir une tâche CI hors ligne pour valider et exporter les diagrammes.
-
-## v0.8 — Markdown et documentation
+## v0.7 — Markdown et documentation
 
 - [ ] Prévisualiser le bloc Mermaid sous le curseur dans un fichier Markdown.
 - [ ] Afficher tous les blocs Mermaid d’un document Markdown.
-- [ ] Exporter les diagrammes d’un README.
 - [ ] Remplacer les blocs Mermaid par des images lors d’un export.
 - [ ] Supporter les blocs Mermaid dans MDX.
 - [ ] Supporter les blocs Mermaid dans AsciiDoc.
 - [ ] Naviguer du diagramme vers son bloc source.
-- [ ] Mettre à jour uniquement le bloc modifié.
-- [ ] Générer une documentation HTML statique complète.
-- [ ] Ajouter des légendes et textes alternatifs aux exports.
 - [ ] Vérifier que chaque diagramme possède une description accessible.
-- [ ] Générer automatiquement une table des diagrammes du projet.
 
-## v0.9 — Accessibilité et internationalisation
+## v0.8 — Accessibilité et internationalisation
 
 - [ ] Rendre toute la barre d’outils accessible au clavier.
 - [ ] Ajouter des labels complets pour les lecteurs d’écran.
@@ -136,7 +99,7 @@
 - [ ] Localiser les commandes, paramètres, erreurs et écrans d’accueil.
 - [ ] Ajouter une documentation accessible pour chaque raccourci.
 
-## v0.10 — Performance, sécurité et fiabilité
+## v0.9 — Performance, sécurité et fiabilité
 
 - [ ] Déplacer le rendu dans un worker dédié.
 - [ ] Charger Mermaid et ses plug-ins à la demande.
