@@ -5,6 +5,7 @@ import {
   MermaidPreviewProvider,
 } from './mermaidPreviewProvider';
 import { MermaidEditorLayoutController } from './editorLayoutController';
+import { MermaidDocumentationFeatures } from './documentationFeatures';
 import { MERMAID_EXPORT_TASK_TYPE, MermaidExportTaskProvider } from './exportTaskProvider';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
 import { MermaidProjectFeatures } from './projectFeatures';
@@ -20,6 +21,9 @@ const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
 const GENERATE_FROM_TEMPLATE_COMMAND = 'mermaidPreviewOffline.generateFromTemplate';
 const COMPARE_GIT_VERSIONS_COMMAND = 'mermaidPreviewOffline.compareGitVersions';
 const PREVIEW_VISUAL_DIFF_COMMAND = 'mermaidPreviewOffline.previewVisualDiff';
+const PREVIEW_DOCUMENTATION_BLOCK_COMMAND = 'mermaidPreviewOffline.previewDocumentationBlock';
+const PREVIEW_DOCUMENTATION_COMMAND = 'mermaidPreviewOffline.previewDocumentation';
+const EXPORT_DOCUMENTATION_COMMAND = 'mermaidPreviewOffline.exportDocumentation';
 const MODE_COMMANDS: ReadonlyArray<[string, MermaidEditorMode]> = [
   ['mermaidPreviewOffline.openPreviewOnly', 'preview'],
   ['mermaidPreviewOffline.openSourceOnly', 'source'],
@@ -36,10 +40,12 @@ export function activate(context: vscode.ExtensionContext): void {
   const provider = new MermaidPreviewProvider(context, diagnostics, layoutController);
   const exportTaskProvider = new MermaidExportTaskProvider(context);
   const projectFeatures = new MermaidProjectFeatures(context);
+  const documentationFeatures = new MermaidDocumentationFeatures(context);
 
   context.subscriptions.push(
     layoutController,
     projectFeatures,
+    documentationFeatures,
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {
       supportsMultipleEditorsPerDocument: false,
       webviewOptions: { retainContextWhenHidden: true },
@@ -89,6 +95,24 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(PREVIEW_VISUAL_DIFF_COMMAND, async () => {
       await projectFeatures.previewActiveEditorDiff();
     }),
+    vscode.commands.registerCommand(
+      PREVIEW_DOCUMENTATION_BLOCK_COMMAND,
+      async (resource?: vscode.Uri) => {
+        await documentationFeatures.previewBlockUnderCursor(resource);
+      },
+    ),
+    vscode.commands.registerCommand(
+      PREVIEW_DOCUMENTATION_COMMAND,
+      async (resource?: vscode.Uri) => {
+        await documentationFeatures.previewAllBlocks(resource);
+      },
+    ),
+    vscode.commands.registerCommand(
+      EXPORT_DOCUMENTATION_COMMAND,
+      async (resource?: vscode.Uri) => {
+        await documentationFeatures.exportDocument(resource);
+      },
+    ),
     ...MODE_COMMANDS.map(([command, mode]) =>
       vscode.commands.registerCommand(command, async (resource?: vscode.Uri) => {
         await applyEditorMode(layoutController, mode, resource);

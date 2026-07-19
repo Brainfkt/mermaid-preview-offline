@@ -1,6 +1,4 @@
 import { Buffer } from 'node:buffer';
-import process from 'node:process';
-
 import * as vscode from 'vscode';
 
 import { isEditorMode } from './editorLayoutController';
@@ -13,7 +11,7 @@ import {
   type ExportProfile,
   type ExportSettings,
 } from './exportSettings';
-import { imageMimeType, inlineLocalImages, type LoadedLocalImage } from './localImages';
+import { inlineLocalImages } from './localImages';
 import type { MermaidDiagnosticStore } from './languageFeatures';
 import { isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
@@ -24,7 +22,7 @@ import type {
 } from './protocol';
 import { effectiveRefreshDelay } from './renderPolicy';
 import { createNonce, createWebviewHtml } from './webviewHtml';
-import { isUriWithin } from './workspacePaths';
+import { loadWorkspaceImage } from './workspaceImages';
 
 export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 
@@ -131,7 +129,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       const documentSource = document.getText();
       const byteLength = Buffer.byteLength(documentSource, 'utf8');
       const source = await inlineLocalImages(documentSource, (reference) =>
-        this.loadLocalImage(document.uri, reference),
+        loadWorkspaceImage(document.uri, reference),
       );
       if (
         disposed ||
@@ -470,7 +468,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     try {
       const sourceText = new TextDecoder().decode(await vscode.workspace.fs.readFile(file.uri));
       const source = await inlineLocalImages(sourceText, (reference) =>
-        this.loadLocalImage(file.uri, reference),
+        loadWorkspaceImage(file.uri, reference),
       );
       const delivered = await session.webview.postMessage({
         type: 'batchExportFile',
@@ -591,37 +589,6 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     this.diagnostics.setRender(document.uri, diagnostic);
   }
 
-  private async loadLocalImage(
-    documentUri: vscode.Uri,
-    reference: string,
-  ): Promise<LoadedLocalImage | undefined> {
-    const mimeType = imageMimeType(reference);
-    const relativePath = reference.split(/[?#]/u, 1)[0];
-    if (!mimeType || !relativePath) {
-      return undefined;
-    }
-
-    try {
-      const segments = relativePath
-        .replaceAll('\\', '/')
-        .split('/')
-        .map((segment) => decodeURIComponent(segment));
-      const documentDirectory = vscode.Uri.joinPath(documentUri, '..');
-      const resourceUri = vscode.Uri.joinPath(documentDirectory, ...segments);
-      const workspaceRoot =
-        vscode.workspace.getWorkspaceFolder(documentUri)?.uri ?? documentDirectory;
-      if (!isUriWithin(workspaceRoot, resourceUri, process.platform !== 'win32')) {
-        return undefined;
-      }
-
-      return {
-        bytes: await vscode.workspace.fs.readFile(resourceUri),
-        mimeType,
-      };
-    } catch {
-      return undefined;
-    }
-  }
 }
 
 function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
@@ -643,7 +610,7 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   };
 }
 
-function readExportConfiguration(resource: vscode.Uri): ExportSettings {
+export function readExportConfiguration(resource: vscode.Uri): ExportSettings {
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.export', resource);
   return normalizeExportSettings({
     background: configuration.get<unknown>('background', DEFAULT_EXPORT_SETTINGS.background),
