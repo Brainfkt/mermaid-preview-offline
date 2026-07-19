@@ -1,8 +1,8 @@
 {
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
-  "description": "Instant, private Mermaid diagram preview in VS Code. Live rendering, zoom, syntax errors and SVG export—100% offline, with no account or telemetry.",
-  "version": "0.4.0",
+  "description": "Instant, private Mermaid diagram preview and professional PNG, WebP, PDF, and SVG export—100% offline in VS Code.",
+  "version": "0.5.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -23,7 +23,11 @@
     "theme": "dark"
   },
   "engines": {
+    "node": ">=22",
     "vscode": "^1.96.0"
+  },
+  "bin": {
+    "mpo": "./bin/mpo.cjs"
   },
   "extensionKind": [
     "workspace",
@@ -76,6 +80,8 @@
     "onCommand:mermaidPreviewOffline.insertElement",
     "onCommand:mermaidPreviewOffline.generateMissingIds",
     "onCommand:mermaidPreviewOffline.renameIdentifier",
+    "onCommand:mermaidPreviewOffline.export",
+    "onTaskType:mermaid-export",
     "onLanguage:mermaid"
   ],
   "contributes": {
@@ -181,6 +187,11 @@
         "command": "mermaidPreviewOffline.renameIdentifier",
         "title": "Mermaid: Rename Identifier",
         "icon": "$(edit)"
+      },
+      {
+        "command": "mermaidPreviewOffline.export",
+        "title": "Mermaid Preview: Export Diagram…",
+        "icon": "$(export)"
       }
     ],
     "menus": {
@@ -209,6 +220,11 @@
           "command": "mermaidPreviewOffline.configureDefaultEditor",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
           "group": "mermaidPreviewOffline@20"
+        },
+        {
+          "command": "mermaidPreviewOffline.export",
+          "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "mermaidPreviewOffline@21"
         }
       ],
       "editor/title": [
@@ -216,6 +232,11 @@
           "command": "mermaidPreviewOffline.chooseEditorLayout",
           "when": "editorLangId == mermaid || activeCustomEditorId == brainfkt.mermaidPreviewOffline",
           "group": "navigation@8"
+        },
+        {
+          "command": "mermaidPreviewOffline.export",
+          "when": "activeCustomEditorId == brainfkt.mermaidPreviewOffline",
+          "group": "navigation@9"
         }
       ],
       "editor/context": [
@@ -241,6 +262,85 @@
         }
       ]
     },
+    "taskDefinitions": [
+      {
+        "type": "mermaid-export",
+        "required": [
+          "source"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "description": "Mermaid file or folder to export. Supports ${workspaceFolder}, ${file}, and ${fileDirname}."
+          },
+          "output": {
+            "type": "string",
+            "description": "Output file or folder."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "svg",
+              "png",
+              "webp",
+              "pdf"
+            ],
+            "default": "png"
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "adaptive",
+              "default",
+              "dark",
+              "forest",
+              "neutral",
+              "base"
+            ],
+            "default": "default"
+          },
+          "scale": {
+            "type": "number",
+            "minimum": 0.25,
+            "maximum": 8,
+            "default": 1
+          },
+          "dpi": {
+            "type": "number",
+            "minimum": 72,
+            "maximum": 600,
+            "default": 144
+          },
+          "margin": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 512,
+            "default": 24
+          },
+          "background": {
+            "type": "string",
+            "description": "transparent or a #rrggbb color.",
+            "default": "transparent"
+          },
+          "nameTemplate": {
+            "type": "string",
+            "default": "{name}-{theme}@{scale}x.{format}"
+          },
+          "optimizeSvg": {
+            "type": "boolean",
+            "default": true
+          },
+          "includeMetadata": {
+            "type": "boolean",
+            "default": true
+          },
+          "browser": {
+            "type": "string",
+            "description": "Optional path to a Chrome, Chromium, or Edge executable for the offline renderer."
+          }
+        }
+      }
+    ],
     "configuration": {
       "title": "Mermaid Preview Offline",
       "properties": {
@@ -300,6 +400,91 @@
           "default": "adaptive",
           "scope": "window",
           "description": "Mermaid color theme shared by every preview in the current workspace."
+        },
+        "mermaidPreviewOffline.export.format": {
+          "type": "string",
+          "enum": [
+            "svg",
+            "png",
+            "webp",
+            "pdf"
+          ],
+          "default": "png",
+          "scope": "resource",
+          "description": "Default professional export format."
+        },
+        "mermaidPreviewOffline.export.theme": {
+          "type": "string",
+          "enum": [
+            "adaptive",
+            "default",
+            "dark",
+            "forest",
+            "neutral",
+            "base"
+          ],
+          "default": "default",
+          "scope": "resource",
+          "description": "Default export theme, independent from the preview theme."
+        },
+        "mermaidPreviewOffline.export.scale": {
+          "type": "number",
+          "default": 1,
+          "minimum": 0.25,
+          "maximum": 8,
+          "scope": "resource",
+          "description": "Default export scale factor."
+        },
+        "mermaidPreviewOffline.export.dpi": {
+          "type": "number",
+          "default": 144,
+          "minimum": 72,
+          "maximum": 600,
+          "scope": "resource",
+          "description": "Default raster and PDF export resolution in DPI."
+        },
+        "mermaidPreviewOffline.export.margin": {
+          "type": "number",
+          "default": 24,
+          "minimum": 0,
+          "maximum": 512,
+          "scope": "resource",
+          "description": "Default margin around exported diagrams in CSS pixels."
+        },
+        "mermaidPreviewOffline.export.background": {
+          "type": "string",
+          "enum": [
+            "transparent",
+            "color"
+          ],
+          "default": "transparent",
+          "scope": "resource",
+          "description": "Use a transparent or colored export background. PDFs always have an opaque page."
+        },
+        "mermaidPreviewOffline.export.backgroundColor": {
+          "type": "string",
+          "default": "#ffffff",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "scope": "resource",
+          "description": "Background color used when the export background is set to color."
+        },
+        "mermaidPreviewOffline.export.fileNameTemplate": {
+          "type": "string",
+          "default": "{name}-{theme}@{scale}x.{format}",
+          "scope": "resource",
+          "description": "Export file name template. Supports {name}, {format}, {theme}, {scale}, {dpi}, {date}, {time}, and {ext}."
+        },
+        "mermaidPreviewOffline.export.optimizeSvg": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Optimize generated SVG before saving or rasterizing it."
+        },
+        "mermaidPreviewOffline.export.includeMetadata": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "description": "Embed the source file name, URI, and export timestamp in supported outputs."
         }
       }
     }
