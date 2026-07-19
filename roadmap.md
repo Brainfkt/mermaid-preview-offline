@@ -46,32 +46,28 @@
 
 ## v0.5 — Export professionnel
 
-- [ ] Exporter en PNG.
-- [ ] Exporter en WebP.
-- [ ] Exporter en PDF.
-- [ ] Copier directement une image PNG dans le presse-papiers.
-- [ ] Configurer la résolution et le facteur d’échelle.
-- [ ] Choisir un fond transparent ou coloré.
-- [ ] Définir les marges autour du diagramme.
-- [ ] Exporter uniquement la zone sélectionnée.
-- [ ] Exporter tous les fichiers Mermaid d’un dossier.
-- [ ] Ajouter une commande d’export utilisable dans les tâches VS Code.
-- [ ] Fournir une CLI d’export hors ligne.
-- [ ] Exporter une page HTML autonome.
-- [ ] Intégrer les images, icônes, styles et polices dans les exports.
-- [ ] Prévisualiser le résultat avant l’export.
-- [ ] Mémoriser des profils d’export.
-- [ ] Copier le SVG optimisé ou le SVG original.
-- [ ] Optimiser automatiquement les SVG exportés.
-- [ ] Ajouter les métadonnées du fichier source dans l’export.
-- [ ] Exporter avec un thème différent de celui de VS Code.
-- [ ] Ajouter un nom de fichier configurable par modèle.
+- [x] Exporter en PNG.
+- [x] Exporter en WebP.
+- [x] Exporter en PDF.
+- [x] Copier directement une image PNG dans le presse-papiers.
+- [x] Configurer la résolution et le facteur d’échelle.
+- [x] Choisir un fond transparent ou coloré.
+- [x] Définir les marges autour du diagramme.
+- [x] Exporter tous les fichiers Mermaid d’un dossier.
+- [x] Ajouter une commande d’export utilisable dans les tâches VS Code.
+- [x] Fournir une CLI d’export hors ligne.
+- [x] Prévisualiser le résultat avant l’export.
+- [x] Mémoriser des profils d’export.
+- [x] Copier le SVG optimisé ou le SVG original.
+- [x] Optimiser automatiquement les SVG exportés.
+- [x] Ajouter les métadonnées du fichier source dans l’export.
+- [x] Exporter avec un thème différent de celui de VS Code.
+- [x] Ajouter un nom de fichier configurable par modèle.
 
 ## v0.6 — Thèmes et personnalisation
 
 - [ ] Ajouter un sélecteur de thème Mermaid dans la barre d’outils.
 - [ ] Fournir plusieurs thèmes intégrés.
-- [ ] Créer un éditeur visuel de variables de thème.
 - [ ] Prévisualiser instantanément les couleurs modifiées.
 - [ ] Enregistrer des thèmes au niveau utilisateur ou workspace.
 - [ ] Importer et exporter des thèmes JSON.
@@ -84,7 +80,6 @@
 - [ ] Configurer la couleur du canvas et de la grille.
 - [ ] Ajouter un mode d’impression à contraste renforcé.
 - [ ] Respecter le réglage VS Code de réduction des animations.
-- [ ] Prévisualiser simultanément un diagramme dans plusieurs thèmes.
 
 ## v0.7 — Gestion de projet et productivité
 
