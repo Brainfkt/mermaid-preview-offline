@@ -321,8 +321,8 @@ never overwritten.
 
 ## Offline CLI and VS Code tasks
 
-The repository includes a Node.js 22 CLI that uses an installed Chrome,
-Chromium, or Edge executable as its local rendering engine. It never contacts a
+The repository includes a Node.js 22 CLI that uses Chrome, Chromium, or Edge
+120 or newer as its local rendering engine. It never contacts a
 remote service.
 
 ```bash
