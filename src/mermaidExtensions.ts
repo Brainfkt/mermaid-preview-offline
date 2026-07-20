@@ -1,5 +1,7 @@
 import mermaid from 'mermaid';
 
+import { installOfflineFont } from './offlineFont';
+
 let iconPacksRegistered = false;
 let zenUmlRegistration: Promise<void> | undefined;
 
@@ -24,6 +26,7 @@ export function registerOfflineIconPacks(): void {
 /** Load external renderers only when their syntax is actually used. */
 export async function prepareMermaidExtensions(source: string): Promise<void> {
   registerOfflineIconPacks();
+  await installOfflineFont();
   if (!/^\s*zenuml\b/iu.test(source)) {
     return;
   }

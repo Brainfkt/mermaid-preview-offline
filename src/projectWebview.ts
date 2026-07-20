@@ -8,6 +8,7 @@ import {
   type DiagramTemplateField,
 } from './diagramTemplates';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { OFFLINE_FONT_STACK } from './offlineFont';
 import type { LineDiffSummary } from './visualDiff';
 
 interface VsCodeApi {
@@ -421,7 +422,9 @@ function initializeMermaid(): void {
     document.body.classList.contains('vscode-high-contrast');
   mermaid.initialize({
     deterministicIds: true,
+    deterministicIDSeed: 'mermaid-preview-offline-project',
     flowchart: { htmlLabels: true, useMaxWidth: false },
+    fontFamily: OFFLINE_FONT_STACK,
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
     sequence: { useMaxWidth: false },

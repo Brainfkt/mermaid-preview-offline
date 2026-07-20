@@ -2,6 +2,7 @@ import mermaid from 'mermaid';
 
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { OFFLINE_FONT_STACK } from './offlineFont';
 import type {
   DocumentationPreviewBlock,
   DocumentationWebviewToExtensionMessage,
@@ -226,6 +227,7 @@ function initializeMermaid(theme: DiagramTheme): void {
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline-documentation',
     flowchart: { htmlLabels: false, useMaxWidth: false },
+    fontFamily: OFFLINE_FONT_STACK,
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
     sequence: { useMaxWidth: false },

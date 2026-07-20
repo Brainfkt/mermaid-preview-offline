@@ -135,6 +135,7 @@ function page(options: ProjectWebviewHtmlOptions, nonce: string, body: string): 
     "default-src 'none'",
     `img-src ${options.cspSource} data: blob:`,
     `style-src ${options.cspSource} 'unsafe-inline'`,
+    'font-src data:',
     `script-src ${options.cspSource} 'nonce-${nonce}'`,
     "connect-src 'none'",
     "object-src 'none'",

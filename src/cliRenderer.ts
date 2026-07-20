@@ -3,6 +3,7 @@ import mermaid from 'mermaid';
 import { normalizeExportSettings, type ExportSettings } from './exportSettings';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { OFFLINE_FONT_STACK } from './offlineFont';
 import type { SerializedExportArtifact } from './protocol';
 
 export interface CliRenderRequest {
@@ -34,7 +35,7 @@ window.mermaidOfflineCli = {
         startOnLoad: false,
         securityLevel: 'strict',
         theme: settings.theme === 'adaptive' ? 'default' : settings.theme,
-        fontFamily: 'Arial, Helvetica, sans-serif',
+        fontFamily: OFFLINE_FONT_STACK,
         flowchart: { htmlLabels: false, useMaxWidth: false },
         sequence: { useMaxWidth: false },
       });

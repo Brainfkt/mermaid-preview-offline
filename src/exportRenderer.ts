@@ -6,6 +6,7 @@ import {
   type ExportSettings,
   type ExportSourceMetadata,
 } from './exportSettings';
+import { offlineFontFaceCss, OFFLINE_FONT_STACK } from './offlineFont';
 
 export interface ExportArtifact {
   bytes: Uint8Array;
@@ -130,6 +131,12 @@ export function prepareSvg(
   );
   root.setAttribute('width', formatNumber(size.width + margin * 2));
   root.setAttribute('height', formatNumber(size.height + margin * 2));
+
+  const fontStyle = documentNode.createElementNS('http://www.w3.org/2000/svg', 'style');
+  fontStyle.setAttribute('data-mermaid-offline-font', 'true');
+  fontStyle.textContent = `${offlineFontFaceCss()}` +
+    `text,tspan,foreignObject,foreignObject *{font-family:${OFFLINE_FONT_STACK}!important;}`;
+  root.insertBefore(fontStyle, root.firstChild);
 
   if (settings.background === 'color') {
     const background = documentNode.createElementNS('http://www.w3.org/2000/svg', 'rect');

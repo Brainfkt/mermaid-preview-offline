@@ -41,6 +41,7 @@ export type ExtensionToWebviewMessage =
       version: number;
       byteLength: number;
       isLargeFile: boolean;
+      renderBlockedReason?: string;
     }
   | {
       type: 'documentChanged';
