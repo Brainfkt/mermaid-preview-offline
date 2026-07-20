@@ -74,6 +74,44 @@ void test('the Marketplace icon is a high-resolution PNG', () => {
   assert.ok(icon.readUInt32BE(20) >= 256);
 });
 
+void test('repository screenshots do not inflate the installed VSIX', () => {
+  const ignore = readFileSync(resolve(root, '.vscodeignore'), 'utf8');
+  assert.match(ignore, /^media\/screenshots\/\*\*$/mu);
+  assert.doesNotMatch(ignore, /^media\/\*\*$/mu);
+  assert.equal(existsSync(resolve(root, manifest.icon)), true);
+});
+
+void test('README and user-guide screenshot references resolve to publishable captures', () => {
+  const documents = ['README.md', 'docs/USER_GUIDE.md', 'docs/USER_GUIDE.fr.md'];
+  const referenced = new Set<string>();
+  for (const document of documents) {
+    const contents = readFileSync(resolve(root, document), 'utf8');
+    for (const match of contents.matchAll(/media\/screenshots\/([a-z0-9-]+\.png)/giu)) {
+      const fileName = match[1];
+      assert.ok(fileName, `${document} contains an empty screenshot reference`);
+      referenced.add(fileName);
+      assert.equal(
+        existsSync(resolve(root, 'media', 'screenshots', fileName)),
+        true,
+        `${document} references a missing screenshot: ${fileName}`,
+      );
+    }
+  }
+
+  assert.ok(referenced.size >= 16);
+  for (const staleOrPrivate of [
+    'CLI.png',
+    'gallery-examples.png',
+    'icon-packs.png',
+    'icons-image-local.png',
+    'mindmap-zoomed.png',
+    'pie-with-source.png',
+    'split-view.png',
+  ]) {
+    assert.equal(referenced.has(staleOrPrivate), false, `${staleOrPrivate} should not be published`);
+  }
+});
+
 void test('les workflows CI, release et Marketplace sont présents', () => {
   for (const workflow of ['ci.yml', 'release.yml', 'publish-marketplace.yml']) {
     assert.equal(existsSync(resolve(root, '.github', 'workflows', workflow)), true);
