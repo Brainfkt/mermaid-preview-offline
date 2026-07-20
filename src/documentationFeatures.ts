@@ -16,6 +16,11 @@ import type {
   DocumentationWebviewToExtensionMessage,
 } from './documentationProtocol';
 import { createDocumentationWebviewHtml } from './documentationWebviewHtml';
+import {
+  fileUrisReferToSamePath,
+  rangeAtOffset,
+  transformTextOffset,
+} from './documentationTracking';
 import { sanitizeFileName, type ExportFormat } from './exportSettings';
 import { inlineLocalImages } from './localImages';
 import { readExportConfiguration } from './mermaidPreviewProvider';
@@ -25,7 +30,7 @@ import { loadWorkspaceImage } from './workspaceImages';
 interface PreviewContext {
   kind: DocumentationKind;
   mode: DocumentationPreviewMode;
-  selectedBlockIndex?: number;
+  selectedBlockAnchorOffset?: number;
   uri: vscode.Uri;
 }
 
@@ -56,6 +61,15 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     this.disposables.push(
       vscode.workspace.onDidChangeTextDocument((event) => {
         if (event.document.uri.toString() === this.previewContext?.uri.toString()) {
+          if (
+            this.previewContext.mode === 'cursor' &&
+            this.previewContext.selectedBlockAnchorOffset !== undefined
+          ) {
+            this.previewContext.selectedBlockAnchorOffset = transformTextOffset(
+              this.previewContext.selectedBlockAnchorOffset,
+              event.contentChanges,
+            );
+          }
           this.schedulePreviewRefresh();
         }
       }),
@@ -94,7 +108,10 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     this.previewContext = {
       kind,
       mode: 'cursor',
-      selectedBlockIndex: selected.index,
+      selectedBlockAnchorOffset:
+        editor?.document.uri.toString() === document.uri.toString()
+          ? document.offsetAt(editor.selection.active)
+          : selected.startOffset,
       uri: document.uri,
     };
     await this.showPreview(document);
@@ -130,7 +147,10 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       title: `Export ${blocks.length} Mermaid block${blocks.length === 1 ? '' : 's'} as ${exportFormat.toUpperCase()}`,
     });
     if (!target) return;
-    if (target.toString() === document.uri.toString()) {
+    if (
+      target.toString() === document.uri.toString() ||
+      fileUrisReferToSamePath(document.uri, target)
+    ) {
       void vscode.window.showErrorMessage(
         'Choose a different file so the Mermaid source document is not overwritten.',
       );
@@ -302,8 +322,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const generation = ++this.refreshGeneration;
     const blocks = extractMermaidBlocks(document.getText(), context.kind);
     this.previewBlocks = blocks;
+    const selectedBlock = context.selectedBlockAnchorOffset === undefined
+      ? undefined
+      : rangeAtOffset(blocks, context.selectedBlockAnchorOffset);
     const visibleBlocks = context.mode === 'cursor'
-      ? blocks.filter((block) => block.index === context.selectedBlockIndex)
+      ? selectedBlock ? [selectedBlock] : []
       : blocks;
     const preparedBlocks = await mapWithConcurrency(visibleBlocks, 4, async (block) => ({
       endLine: block.endLine,

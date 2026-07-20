@@ -122,9 +122,10 @@ export function documentationImageReference(
   label: string,
 ): string {
   const safeLabel = label.replaceAll(']', '\\]');
+  const safePath = encodeDocumentationPath(relativePath);
   return kind === 'asciidoc'
-    ? `image::${relativePath}[${safeLabel}]`
-    : `![${safeLabel}](${encodeDocumentationPath(relativePath)})`;
+    ? `image::${safePath}[${safeLabel}]`
+    : `![${safeLabel}](${safePath})`;
 }
 
 function extractMarkdownBlocks(
@@ -137,7 +138,7 @@ function extractMarkdownBlocks(
     if (!line) continue;
     const opening = /^ {0,3}(`{3,}|~{3,})(.*)$/u.exec(line.text);
     const marker = opening?.[1];
-    if (!marker || !isMermaidFenceInfo(opening?.[2] ?? '')) continue;
+    if (!marker) continue;
 
     let closingIndex = lineIndex + 1;
     while (closingIndex < lines.length) {
@@ -155,19 +156,23 @@ function extractMarkdownBlocks(
     const endOffset = hasClosingFence
       ? (lines[closingIndex]?.contentEnd ?? text.length)
       : text.length;
-    blocks.push(createBlock({
-      endLine,
-      endOffset,
-      indent: /^\s*/u.exec(line.text)?.[0] ?? '',
-      index: blocks.length,
-      source: text.slice(sourceStartOffset, sourceEndOffset),
-      sourceEndLine: Math.max(sourceStartLine, endLine - 1),
-      sourceEndOffset,
-      sourceStartLine,
-      sourceStartOffset,
-      startLine: lineIndex,
-      startOffset: line.start,
-    }));
+    if (isMermaidFenceInfo(opening?.[2] ?? '')) {
+      blocks.push(createBlock({
+        endLine,
+        endOffset,
+        indent: /^\s*/u.exec(line.text)?.[0] ?? '',
+        index: blocks.length,
+        source: text.slice(sourceStartOffset, sourceEndOffset),
+        sourceEndLine: Math.max(sourceStartLine, endLine - 1),
+        sourceEndOffset,
+        sourceStartLine,
+        sourceStartOffset,
+        startLine: lineIndex,
+        startOffset: line.start,
+      }));
+    }
+    // Fenced code is literal. Skip every complete or unterminated fence,
+    // including non-Mermaid examples that contain a Mermaid fence as text.
     lineIndex = endLine;
   }
   return blocks;
@@ -182,14 +187,15 @@ function extractAsciiDocBlocks(
     const line = lines[lineIndex];
     if (!line) continue;
     const attributes = /^\s*\[([^\x5d]+)\]\s*$/u.exec(line.text)?.[1];
-    if (!attributes || !isMermaidAsciiDocAttributes(attributes)) continue;
-
-    let delimiterIndex = lineIndex + 1;
-    while (delimiterIndex < lines.length && !lines[delimiterIndex]?.text.trim()) {
+    let delimiterIndex = lineIndex;
+    if (attributes) {
       delimiterIndex += 1;
+      while (delimiterIndex < lines.length && !lines[delimiterIndex]?.text.trim()) {
+        delimiterIndex += 1;
+      }
     }
     const delimiter = lines[delimiterIndex]?.text.trim() ?? '';
-    if (!/^(?:-{4,}|\.{4,})$/u.test(delimiter)) continue;
+    if (!isAsciiDocBlockDelimiter(delimiter)) continue;
 
     let closingIndex = delimiterIndex + 1;
     while (closingIndex < lines.length && lines[closingIndex]?.text.trim() !== delimiter) {
@@ -207,19 +213,28 @@ function extractAsciiDocBlocks(
     const endOffset = hasClosingDelimiter
       ? (lines[closingIndex]?.contentEnd ?? text.length)
       : text.length;
-    blocks.push(createBlock({
-      endLine,
-      endOffset,
-      indent: /^\s*/u.exec(line.text)?.[0] ?? '',
-      index: blocks.length,
-      source: text.slice(sourceStartOffset, sourceEndOffset),
-      sourceEndLine: Math.max(sourceStartLine, endLine - 1),
-      sourceEndOffset,
-      sourceStartLine,
-      sourceStartOffset,
-      startLine: lineIndex,
-      startOffset: line.start,
-    }));
+    if (
+      attributes &&
+      /^(?:-{4,}|\.{4,})$/u.test(delimiter) &&
+      isMermaidAsciiDocAttributes(attributes)
+    ) {
+      blocks.push(createBlock({
+        endLine,
+        endOffset,
+        indent: /^\s*/u.exec(line.text)?.[0] ?? '',
+        index: blocks.length,
+        source: text.slice(sourceStartOffset, sourceEndOffset),
+        sourceEndLine: Math.max(sourceStartLine, endLine - 1),
+        sourceEndOffset,
+        sourceStartLine,
+        sourceStartOffset,
+        startLine: lineIndex,
+        startOffset: line.start,
+      }));
+    }
+    // Delimited AsciiDoc blocks are literal at this level. Skipping all block
+    // kinds prevents examples such as [source,asciidoc] from leaking nested
+    // Mermaid declarations into the document preview/export.
     lineIndex = endLine;
   }
   return blocks;
@@ -262,10 +277,17 @@ function isMermaidAsciiDocAttributes(value: string): boolean {
     .some((attribute) => attribute === 'mermaid');
 }
 
+function isAsciiDocBlockDelimiter(value: string): boolean {
+  return /^(?:--|-{4,}|\.{4,}|={4,}|_{4,}|\*{4,}|\+{4,}|\/{4,}|\|={3,}|,={3,})$/u
+    .test(value);
+}
+
 function encodeDocumentationPath(value: string): string {
   return value
     .split('/')
-    .map((segment) => encodeURIComponent(segment))
+    .map((segment) => encodeURIComponent(segment).replace(/[!'()*]/gu, (character) =>
+      `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+    ))
     .join('/');
 }
 
