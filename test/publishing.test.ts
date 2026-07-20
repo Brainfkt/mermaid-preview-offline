@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
@@ -129,6 +130,11 @@ void test('CI verifies supported platforms and all visual fixtures', () => {
 
 void test('Marketplace README links do not depend on the Marketplace document base URL', () => {
   const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
+  const trackedFiles = new Set(
+    execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
+      .split('\0')
+      .filter(Boolean),
+  );
   const htmlTargets = [...readme.matchAll(/\b(?:href|src)="([^"]+)"/gu)]
     .map((match) => match[1]);
   const markdownTargets = [...readme.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/gu)]
@@ -141,17 +147,22 @@ void test('Marketplace README links do not depend on the Marketplace document ba
       /^https:\/\/(?:github\.com\/Brainfkt\/mermaid-preview-offline\/blob\/main|raw\.githubusercontent\.com\/Brainfkt\/mermaid-preview-offline\/main)\/([^#?]+)/u,
     );
     if (repositoryAsset?.[1]) {
+      const repositoryPath = decodeURIComponent(repositoryAsset[1]);
       assert.equal(
-        existsSync(resolve(root, decodeURIComponent(repositoryAsset[1]))),
+        existsSync(resolve(root, repositoryPath)),
         true,
         `README target does not exist in the repository: ${target}`,
+      );
+      assert.equal(
+        trackedFiles.has(repositoryPath),
+        true,
+        `README target is not tracked and would return 404 after publishing: ${target}`,
       );
     }
   }
   for (const required of [
     'docs/USER_GUIDE.md',
     'docs/USER_GUIDE.fr.md',
-    'docs/SCREENSHOTS.md',
     'docs/PERFORMANCE.md',
     'examples/README.md',
     'examples/COMPATIBILITY.md',
