@@ -297,11 +297,14 @@ function readSvgSize(svg: string): { height: number; width: number } {
   return { height: size.height, width: size.width };
 }
 
-function parseSvg(svg: string): { documentNode: Document; root: Element } {
+function parseSvg(svg: string): { documentNode: Document; root: SVGSVGElement } {
   const parser = new DOMParser();
   const xmlDocument = parser.parseFromString(svg, 'image/svg+xml');
   if (!xmlDocument.querySelector('parsererror') && xmlDocument.documentElement.localName === 'svg') {
-    return { documentNode: xmlDocument, root: xmlDocument.documentElement };
+    return {
+      documentNode: xmlDocument,
+      root: xmlDocument.documentElement as unknown as SVGSVGElement,
+    };
   }
   const htmlDocument = parser.parseFromString(svg, 'text/html');
   const recoveredRoot = htmlDocument.querySelector('svg');

@@ -187,9 +187,10 @@ even though their bundled examples are validated.
 
 ### ZenUML
 
-The official `@mermaid-js/mermaid-zenuml` plug-in is registered from the local
-extension bundle. Start a diagram with `zenuml`; no runtime download is needed.
-See `examples/41-zenuml.mmd`.
+The official `@mermaid-js/mermaid-zenuml` plug-in is included in the local
+extension bundle and loaded on demand when a ZenUML diagram is rendered. Start
+a diagram with `zenuml`; no runtime download is needed. See
+`examples/41-zenuml.mmd`.
 
 ### Iconify icons
 
@@ -247,8 +248,10 @@ dialog can separately copy original SVG, optimized SVG, or PNG.
   `{scale}`, `{dpi}`, `{date}`, `{time}`, and `{ext}`.
 - **Optimize SVG:** simplify the prepared vector output before saving or
   rasterizing it.
-- **Include metadata:** add source name, source URI, and export time to supported
-  outputs.
+- **Include metadata:** opt in to adding the source name, source URI, and export
+  time to supported outputs. It is off by default so repeated optimized SVG
+  exports can remain byte-reproducible. PNG, WebP, and PDF remain visually
+  stable, but their encoding can vary with the local Chromium version.
 - **Original SVG:** preserve Mermaid's original vector output when SVG is the
   selected format.
 
@@ -297,7 +300,8 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--profile <json>` | Load export settings from a JSON profile. |
 | `--original-svg` | Keep SVG output unchanged. |
 | `--no-optimize` | Disable SVG optimization. |
-| `--no-metadata` | Omit source metadata. |
+| `--metadata` | Include source and export metadata (opt in; disabled by default). |
+| `--no-metadata` | Explicitly omit source and export metadata, including when a profile enables it. |
 | `--browser <path>` | Use a specific Chrome, Chromium, or Edge executable. |
 | `--json` | Print machine-readable results. |
 | `-h, --help` | Show all options. |
@@ -330,7 +334,7 @@ that provide a compatible browser.
       "background": "#ffffff",
       "nameTemplate": "{name}.{format}",
       "optimizeSvg": true,
-      "includeMetadata": true
+      "includeMetadata": false
     }
   ]
 }
@@ -349,7 +353,7 @@ that provide a compatible browser.
 | `background` | `transparent` | `transparent` or a `#rrggbb` color. |
 | `nameTemplate` | `{name}-{theme}@{scale}x.{format}` | Output naming template. |
 | `optimizeSvg` | `true` | Optimize generated SVG. |
-| `includeMetadata` | `true` | Include supported metadata. |
+| `includeMetadata` | `false` | Opt in to supported metadata; leave off for reproducible optimized SVG. |
 | `browser` | Auto-detected | Optional browser executable path. |
 
 ## Diagram Studio and generators
@@ -512,7 +516,7 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Resource-level six-digit color used by `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Resource-level naming tokens. |
 | `mermaidPreviewOffline.export.optimizeSvg` | `true` | Resource-level SVG optimization default. |
-| `mermaidPreviewOffline.export.includeMetadata` | `true` | Resource-level metadata default. |
+| `mermaidPreviewOffline.export.includeMetadata` | `false` | Resource-level metadata opt-in; leave off for reproducible optimized SVG. |
 
 Example workspace settings:
 

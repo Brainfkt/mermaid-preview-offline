@@ -81,8 +81,17 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 ## Reproductibilité et plateformes
 
 - Les identifiants Mermaid utilisent des seeds déterministes selon le contexte.
+- Les exports SVG optimisés normalisent les identifiants internes et leurs
+  références dans un ordre déterministe.
+- Les métadonnées de source et d’heure sont désactivées par défaut ; elles
+  restent disponibles en opt-in lorsque la traçabilité prime sur la
+  reproductibilité octet par octet du SVG optimisé.
 - Une police locale embarquée fixe les métriques de texte des aperçus et des
   exports optimisés sur macOS, Windows et Linux.
+- À source et réglages identiques, le SVG optimisé sans métadonnées vise une
+  sortie octet par octet reproductible. Les exports PNG, WebP et PDF restent
+  visuellement stables, mais leurs octets peuvent varier avec la version et le
+  codec du navigateur Chromium installé localement.
 - Le rendu, les chunks, ZenUML, Iconify, les images intégrées et la police ne
   nécessitent aucun téléchargement à l’exécution.
 - Le pipeline CI exécute la vérification sur macOS, Windows et Linux, puis les
@@ -92,7 +101,7 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 87/87 réussis.
+- Tests unitaires et d’intégration : 88/88 réussis.
 - Build de production : réussi, 14,21 Mio sur le budget de 20 Mio.
 - Package VSIX : réussi, 189 fichiers, 6,49 Mio compressés.
 - Cohérence du lockfile en mode npm hors ligne : réussie.

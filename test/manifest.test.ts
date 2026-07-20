@@ -181,6 +181,10 @@ void test('professional export is exposed to the UI, tasks, and offline CLI', ()
   ]) {
     assert.ok(property in (task?.properties ?? {}));
   }
+  const metadataProperty = task?.properties.includeMetadata as
+    | { default?: unknown }
+    | undefined;
+  assert.equal(metadataProperty?.default, false);
 });
 
 void test('Mermaid contributes language snippets for advanced editing', () => {

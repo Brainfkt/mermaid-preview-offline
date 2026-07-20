@@ -85,13 +85,13 @@
 
 - [x] Stabiliser toutes les commandes et tous les paramètres.
 - [x] Garantir la restauration complète des sessions.
-- [x] Garantir l’export identique sur macOS, Windows et Linux.
+- [x] Stabiliser le rendu des exports sur macOS, Windows et Linux.
 - [x] Couvrir chaque diagramme pris en charge par un test visuel.
 - [x] Fournir une documentation complète et localisée.
 - [x] Inclure une galerie de modèles professionnels.
 - [x] Publier des engagements clairs de confidentialité et de compatibilité.
 - [x] Atteindre une ouverture instantanée sur les diagrammes courants.
-- [x] Garantir des exports autonomes et reproductibles.
+- [x] Garantir des exports autonomes et des SVG optimisés reproductibles.
 - [x] Génération d’ERD depuis un schéma SQL local.
 - [x] Génération d’un graphe de dépendances depuis `package.json`.
 - [x] Inviter dans l'app à laisser un avis sur le marketplace.

@@ -78,9 +78,9 @@ losing the selected layout.
 ## Bundled assets work offline too
 
 The official ZenUML plug-in and the Iconify `logos` and
-`material-icon-theme` collections are registered from the local bundle. Relative
-images inside the workspace are converted to `data:` URIs, so exported SVGs stay
-portable and do not depend on local file paths.
+`material-icon-theme` collections are bundled locally and loaded only when a
+diagram uses them. Relative images inside the workspace are converted to `data:`
+URIs, so exported SVGs stay portable and do not depend on local file paths.
 
 ![Bundled Iconify icons and a workspace image rendered locally in two VS Code previews](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icons-image-local.png)
 
@@ -200,7 +200,7 @@ and current limitations.
 | `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Set the color used when the export background is `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Build output names from export tokens. |
 | `mermaidPreviewOffline.export.optimizeSvg` | `true` | Optimize SVG before saving or rasterizing it. |
-| `mermaidPreviewOffline.export.includeMetadata` | `true` | Add source and export metadata to supported outputs. |
+| `mermaidPreviewOffline.export.includeMetadata` | `false` | Opt in to source and export metadata; keep it off for reproducible optimized SVG. |
 
 The Mermaid file context menu exposes all four layouts. **Mermaid Preview:
 Configure Default Editor** switches `.mmd` and `.mermaid` files between the

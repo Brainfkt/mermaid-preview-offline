@@ -207,9 +207,10 @@ ont été validés.
 
 ### ZenUML
 
-Le plug-in officiel `@mermaid-js/mermaid-zenuml` est enregistré depuis le bundle
-local de l’extension. Commencez un diagramme par `zenuml` ; aucun téléchargement
-n’est nécessaire pendant l’exécution. Consultez `examples/41-zenuml.mmd`.
+Le plug-in officiel `@mermaid-js/mermaid-zenuml` est inclus dans le bundle local
+de l’extension et chargé à la demande lors du rendu d’un diagramme ZenUML.
+Commencez un diagramme par `zenuml` ; aucun téléchargement n’est nécessaire
+pendant l’exécution. Consultez `examples/41-zenuml.mmd`.
 
 ### Icônes Iconify
 
@@ -270,8 +271,11 @@ SVG optimisé ou le PNG.
   `{scale}`, `{dpi}`, `{date}`, `{time}` et `{ext}`.
 - **Optimize SVG:** simplifie la sortie vectorielle préparée avant son
   enregistrement ou sa conversion matricielle.
-- **Include metadata:** ajoute le nom de la source, son URI et l’heure d’export
-  aux formats compatibles.
+- **Include metadata:** active explicitement l’ajout du nom de la source, de son
+  URI et de l’heure d’export aux formats compatibles. Cette option est désactivée
+  par défaut afin que les SVG optimisés répétés restent reproductibles octet par
+  octet. PNG, WebP et PDF restent visuellement stables, mais leur encodage peut
+  varier selon la version locale de Chromium.
 - **Original SVG:** conserve la sortie vectorielle Mermaid originale lorsque
   SVG est le format sélectionné.
 
@@ -321,7 +325,8 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--profile <json>` | Charge les réglages d’export depuis un profil JSON. |
 | `--original-svg` | Conserve la sortie SVG inchangée. |
 | `--no-optimize` | Désactive l’optimisation SVG. |
-| `--no-metadata` | Omet les métadonnées de la source. |
+| `--metadata` | Inclut les métadonnées de source et d’export (opt-in, désactivé par défaut). |
+| `--no-metadata` | Omet explicitement les métadonnées de source et d’export, y compris si un profil les active. |
 | `--browser <path>` | Utilise un exécutable Chrome, Chromium ou Edge précis. |
 | `--json` | Affiche des résultats lisibles par une machine. |
 | `-h, --help` | Affiche toutes les options. |
@@ -355,7 +360,7 @@ dans les environnements CI qui disposent d’un navigateur compatible.
       "background": "#ffffff",
       "nameTemplate": "{name}.{format}",
       "optimizeSvg": true,
-      "includeMetadata": true
+      "includeMetadata": false
     }
   ]
 }
@@ -374,7 +379,7 @@ dans les environnements CI qui disposent d’un navigateur compatible.
 | `background` | `transparent` | `transparent` ou une couleur `#rrggbb`. |
 | `nameTemplate` | `{name}-{theme}@{scale}x.{format}` | Modèle de nommage de sortie. |
 | `optimizeSvg` | `true` | Optimise le SVG généré. |
-| `includeMetadata` | `true` | Inclut les métadonnées prises en charge. |
+| `includeMetadata` | `false` | Active les métadonnées prises en charge ; laisser désactivé pour un SVG optimisé reproductible. |
 | `browser` | Détection automatique | Chemin facultatif de l’exécutable du navigateur. |
 
 ## Diagram Studio et générateurs
@@ -543,7 +548,7 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Couleur à six chiffres par ressource utilisée par `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Jetons de nommage par ressource. |
 | `mermaidPreviewOffline.export.optimizeSvg` | `true` | Valeur d’optimisation SVG par ressource. |
-| `mermaidPreviewOffline.export.includeMetadata` | `true` | Valeur des métadonnées par ressource. |
+| `mermaidPreviewOffline.export.includeMetadata` | `false` | Opt-in des métadonnées par ressource ; laisser désactivé pour un SVG optimisé reproductible. |
 
 Exemple de réglages d’espace de travail :
 

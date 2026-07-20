@@ -64,11 +64,11 @@ nécessaires.
 
 La version du tag doit correspondre exactement à `package.json` :
 
-Pour publier la v0.3.0 préparée dans le manifeste :
+Pour publier la v1.0.0 préparée dans le manifeste :
 
 ```bash
-git tag v0.3.0
-git push origin main v0.3.0
+git tag v1.0.0
+git push origin main v1.0.0
 ```
 
 Pour les versions suivantes, mettre à jour `package.json`, `package-lock.json`

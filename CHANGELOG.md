@@ -17,6 +17,8 @@
   raster canvas memory, and worst-case visual/source diff algorithms;
 - embedded a deterministic local font in optimized SVG, PNG, WebP, and PDF
   exports for stable text metrics across macOS, Windows, and Linux;
+- normalized internal IDs and references in optimized SVG output, and made
+  source and export metadata opt-in by default for reproducible optimized SVG;
 - completed and localized the user guide, documented every command and setting,
   and added a prioritized 36-shot README and user-guide capture plan;
 - replaced Marketplace-relative README links with absolute GitHub and raw-file
