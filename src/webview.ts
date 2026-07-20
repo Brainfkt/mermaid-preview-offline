@@ -396,6 +396,8 @@ async function renderLatest(): Promise<void> {
 
   const request = latestRequest;
   const source = latestSource;
+  const fontFamily = configuration.diagramFontFamily;
+  const theme = resolvedDiagramTheme();
   const controller = new AbortController();
   activeRenderController = controller;
   rendering = true;
@@ -418,9 +420,9 @@ async function renderLatest(): Promise<void> {
   const renderId = `mermaid-preview-${request}`;
 
   try {
-    await prepareMermaidExtensions(source, configuration.diagramFontFamily);
+    await prepareMermaidExtensions(source, fontFamily);
     throwIfCancelled(controller.signal, request);
-    initializeMermaid(resolvedDiagramTheme());
+    initializeMermaid(theme, fontFamily);
 
     const { svg } = await mermaid.render(renderId, source);
     throwIfCancelled(controller.signal, request);
@@ -428,8 +430,8 @@ async function renderLatest(): Promise<void> {
     diagram.innerHTML = svg;
     diagram.dataset.version = String(latestVersion);
     lastSvg = svg;
-    lastSvgFontFamily = configuration.diagramFontFamily;
-    lastSvgTheme = resolvedDiagramTheme();
+    lastSvgFontFamily = fontFamily;
+    lastSvgTheme = theme;
     const svgElement = diagram.querySelector('svg');
     if (!svgElement) {
       throw new Error('Mermaid did not produce an SVG element.');
@@ -899,10 +901,11 @@ function scheduleExportPreview(): void {
       }
       try {
         const settings = readExportForm();
-        const svg = await renderSvgForExport(latestSource, settings.theme);
+        const fontFamily = configuration.diagramFontFamily;
+        const svg = await renderSvgForExport(latestSource, settings.theme, fontFamily);
         const preview = await renderExportPreview({
           fileName: fileName.textContent || 'diagram.mmd',
-          fontFamily: configuration.diagramFontFamily,
+          fontFamily,
           metadata: currentExportMetadata(),
           settings,
           svg,
@@ -964,12 +967,13 @@ function copyOptimizedSvg(): void {
         optimizeSvg: true,
         svgVariant: 'optimized',
       });
-      const svg = await renderSvgForExport(latestSource, settings.theme);
+      const fontFamily = configuration.diagramFontFamily;
+      const svg = await renderSvgForExport(latestSource, settings.theme, fontFamily);
       const prepared = prepareSvg(
         svg,
         settings,
         currentExportMetadata(),
-        configuration.diagramFontFamily,
+        fontFamily,
       );
       vscode.postMessage({ type: 'copySvg', svg: prepared.source });
     } catch (error: unknown) {
@@ -1009,10 +1013,11 @@ async function createArtifact(
   rawSettings: ExportSettings,
 ): Promise<ExportArtifact> {
   const settings = normalizeExportSettings(rawSettings);
-  const svg = await renderSvgForExport(source, settings.theme);
+  const fontFamily = configuration.diagramFontFamily;
+  const svg = await renderSvgForExport(source, settings.theme, fontFamily);
   return renderExportArtifact({
     fileName: sourceFileName,
-    fontFamily: configuration.diagramFontFamily,
+    fontFamily,
     metadata: {
       exportedAt: new Date().toISOString(),
       fileName: sourceFileName,
@@ -1023,20 +1028,24 @@ async function createArtifact(
   });
 }
 
-async function renderSvgForExport(source: string, theme: DiagramTheme): Promise<string> {
+async function renderSvgForExport(
+  source: string,
+  theme: DiagramTheme,
+  fontFamily: PreviewConfiguration['diagramFontFamily'],
+): Promise<string> {
   const resolvedTheme = resolveDiagramTheme(theme, vscodeColorScheme());
   if (
     source === latestSource &&
     resolvedTheme === lastSvgTheme &&
-    configuration.diagramFontFamily === lastSvgFontFamily &&
+    fontFamily === lastSvgFontFamily &&
     lastSvg
   ) {
     return lastSvg;
   }
   const renderId = `mermaid-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
-    await prepareMermaidExtensions(source, configuration.diagramFontFamily);
-    initializeMermaid(resolvedTheme);
+    await prepareMermaidExtensions(source, fontFamily);
+    initializeMermaid(resolvedTheme, fontFamily);
     return (await mermaid.render(renderId, source)).svg;
   } finally {
     cleanupFailedRender(renderId);
@@ -1090,14 +1099,17 @@ function queueExportJob(task: () => Promise<void>): void {
   exportJob = exportJob.then(task, task);
 }
 
-function initializeMermaid(theme: Exclude<DiagramTheme, 'adaptive'>): void {
+function initializeMermaid(
+  theme: Exclude<DiagramTheme, 'adaptive'>,
+  fontFamily: PreviewConfiguration['diagramFontFamily'],
+): void {
   mermaid.initialize({
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline',
     startOnLoad: false,
     securityLevel: 'strict',
     theme,
-    fontFamily: resolvedDiagramFontStack(configuration.diagramFontFamily),
+    fontFamily: resolvedDiagramFontStack(fontFamily),
     flowchart: { htmlLabels: false, useMaxWidth: false },
     sequence: { useMaxWidth: false },
   });

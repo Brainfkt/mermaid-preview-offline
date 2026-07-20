@@ -10,7 +10,7 @@ de la version 1.0.
 | Indicateur | v0.7 | v1.0 | Évolution |
 |---|---:|---:|---:|
 | JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,37 Mio | −76 % |
-| VSIX final | 20 913 638 octets | 6 931 757 octets | −67 % |
+| VSIX final | 20 913 638 octets | 6 931 821 octets | −67 % |
 | Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
 | Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
 | Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
