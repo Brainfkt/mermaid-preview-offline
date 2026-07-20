@@ -124,6 +124,7 @@ export function prepareSvg(
   }
 
   const { documentNode, root } = parseSvg(originalSvg);
+  normalizeSvgIds(root);
 
   const size = svgElementSize(root);
   const margin = settings.margin;
@@ -174,6 +175,42 @@ export function optimizeSvg(svg: string): string {
     .replace(/>\s+</gu, '><')
     .replace(/\s+\/?>/gu, (match) => match.replace(/^\s+/u, ''))
     .trim();
+}
+
+function normalizeSvgIds(root: SVGSVGElement): void {
+  const idMap = new Map<string, string>();
+  const identified = [root, ...Array.from(root.querySelectorAll<SVGElement>('[id]'))]
+    .filter((element) => element.id.length > 0);
+  identified.forEach((element, index) => {
+    const previous = element.id;
+    const stable = `mermaid-offline-${index + 1}`;
+    if (!idMap.has(previous)) idMap.set(previous, stable);
+    element.id = stable;
+  });
+
+  const replaceHashReferences = (value: string): string => value
+    .replace(/url\(#([^)]+)\)/gu, (match, id: string) => {
+      const stable = idMap.get(id);
+      return stable ? `url(#${stable})` : match;
+    })
+    .replace(/#([A-Za-z_][\w:-]*)/gu, (match, id: string) => {
+      const stable = idMap.get(id);
+      return stable ? `#${stable}` : match;
+    });
+  for (const element of [root, ...Array.from(root.querySelectorAll<SVGElement>('*'))]) {
+    for (const attribute of Array.from(element.attributes)) {
+      let value = replaceHashReferences(attribute.value);
+      if (attribute.name === 'aria-labelledby' || attribute.name === 'aria-describedby') {
+        value = value.split(/\s+/u).map((id) => idMap.get(id) ?? id).join(' ');
+      } else if (attribute.name === 'begin' || attribute.name === 'end') {
+        value = value.replace(/^([A-Za-z_][\w:-]*)(?=\.)/u, (id) => idMap.get(id) ?? id);
+      }
+      if (value !== attribute.value) element.setAttribute(attribute.name, value);
+    }
+  }
+  root.querySelectorAll('style').forEach((style) => {
+    if (style.textContent) style.textContent = replaceHashReferences(style.textContent);
+  });
 }
 
 export function artifactDataBase64(artifact: ExportArtifact): string {
