@@ -137,6 +137,16 @@ void test('Marketplace README links do not depend on the Marketplace document ba
   assert.ok(targets.length > 0);
   for (const target of targets) {
     assert.match(target ?? '', /^https:\/\//u, `Marketplace-relative README target: ${target}`);
+    const repositoryAsset = target?.match(
+      /^https:\/\/(?:github\.com\/Brainfkt\/mermaid-preview-offline\/blob\/main|raw\.githubusercontent\.com\/Brainfkt\/mermaid-preview-offline\/main)\/([^#?]+)/u,
+    );
+    if (repositoryAsset?.[1]) {
+      assert.equal(
+        existsSync(resolve(root, decodeURIComponent(repositoryAsset[1]))),
+        true,
+        `README target does not exist in the repository: ${target}`,
+      );
+    }
   }
   for (const required of [
     'docs/USER_GUIDE.md',
