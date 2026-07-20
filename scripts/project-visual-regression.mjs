@@ -168,6 +168,9 @@ console.log(`Project visual regression passed: ${DIAGRAM_TEMPLATES.length} templ
 
 function injectHarness(html, stub) {
   const projectModule = `<script type="module" nonce="${nonce}" src="${script}"></script>`;
+  if (!html.includes(projectModule)) {
+    throw new Error('Could not locate the project module in the visual harness HTML.');
+  }
   return html.replace(
     projectModule,
     `${stub}${projectModule}`,

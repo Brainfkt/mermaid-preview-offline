@@ -126,3 +126,30 @@ void test('CI verifies supported platforms and all visual fixtures', () => {
   assert.match(workflow, /npm run test:visual/u);
   assert.match(workflow, /Render 43 examples in 3 themes/u);
 });
+
+void test('Marketplace README links do not depend on the Marketplace document base URL', () => {
+  const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
+  const htmlTargets = [...readme.matchAll(/\b(?:href|src)="([^"]+)"/gu)]
+    .map((match) => match[1]);
+  const markdownTargets = [...readme.matchAll(/!?\[[^\]]*\]\(([^)]+)\)/gu)]
+    .map((match) => match[1]);
+  const targets = [...htmlTargets, ...markdownTargets];
+  assert.ok(targets.length > 0);
+  for (const target of targets) {
+    assert.match(target ?? '', /^https:\/\//u, `Marketplace-relative README target: ${target}`);
+  }
+  for (const required of [
+    'docs/USER_GUIDE.md',
+    'docs/SCREENSHOTS.md',
+    'docs/PERFORMANCE.md',
+    'examples/README.md',
+    'examples/COMPATIBILITY.md',
+    'roadmap.md',
+  ]) {
+    assert.match(
+      readme,
+      new RegExp(`https://github\\.com/Brainfkt/mermaid-preview-offline/blob/main/${required.replaceAll('.', '\\.')}`, 'u'),
+    );
+  }
+  assert.doesNotMatch(readme, /(?:href|src)="(?:\.\/|\.\.\/|\/)/u);
+});

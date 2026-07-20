@@ -451,6 +451,9 @@ const runner = `<script nonce="${nonce}">
 </script>`;
 
 const webviewModule = `<script type="module" nonce="${nonce}" src="${webviewScript}"></script>`;
+if (!html.includes(webviewModule)) {
+  throw new Error('Could not locate the preview module in the visual harness HTML.');
+}
 html = html.replace(webviewModule, `${stub}${webviewModule}${runner}`);
 const harnessPath = join(outputDirectory, 'harness.html');
 writeFileSync(harnessPath, html);

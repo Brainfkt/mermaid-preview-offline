@@ -441,7 +441,7 @@
           },
           "includeMetadata": {
             "type": "boolean",
-            "default": true
+            "default": false
           },
           "browser": {
             "type": "string",
@@ -591,9 +591,9 @@
         },
         "mermaidPreviewOffline.export.includeMetadata": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "scope": "resource",
-          "description": "Embed the source file name, URI, and export timestamp in supported outputs."
+          "description": "Embed the source file name, URI, and export timestamp in supported outputs. Disabled by default for reproducible files."
         }
       }
     }

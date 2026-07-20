@@ -229,7 +229,7 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
   assert.equal(properties['mermaidPreviewOffline.export.dpi']?.default, 144);
   assert.equal(properties['mermaidPreviewOffline.export.margin']?.default, 24);
   assert.equal(properties['mermaidPreviewOffline.export.optimizeSvg']?.default, true);
-  assert.equal(properties['mermaidPreviewOffline.export.includeMetadata']?.default, true);
+  assert.equal(properties['mermaidPreviewOffline.export.includeMetadata']?.default, false);
 });
 
 void test('the extension can run in local and remote VS Code extension hosts', () => {

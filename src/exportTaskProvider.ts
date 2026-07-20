@@ -143,6 +143,7 @@ function taskArguments(
     ? substituteVariables(definition.browser, workspacePath, activeUri)
     : undefined);
   if (definition.optimizeSvg === false) args.push('--no-optimize');
+  if (definition.includeMetadata === true) args.push('--metadata');
   if (definition.includeMetadata === false) args.push('--no-metadata');
   return args;
 }

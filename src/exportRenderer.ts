@@ -58,7 +58,11 @@ export async function renderExportArtifact(input: ExportRenderInput): Promise<Ex
   const prepared = prepareSvg(input.svg, settings, input.metadata);
   const raster = await rasterizeSvg(prepared, settings);
   if (settings.format === 'pdf') {
-    const bytes = await canvasToPdf(raster.canvas, settings.dpi, input.metadata);
+    const bytes = await canvasToPdf(
+      raster.canvas,
+      settings.dpi,
+      settings.includeMetadata ? input.metadata : undefined,
+    );
     return {
       bytes,
       fileName,
@@ -324,7 +328,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, mimeType: string, quality?: num
 async function canvasToPdf(
   canvas: HTMLCanvasElement,
   dpi: number,
-  metadata: ExportSourceMetadata,
+  metadata: ExportSourceMetadata | undefined,
 ): Promise<Uint8Array> {
   const jpeg = await canvasToBlob(canvas, 'image/jpeg', 0.96);
   const jpegBytes = new Uint8Array(await jpeg.arrayBuffer());
@@ -332,10 +336,12 @@ async function canvasToPdf(
   const heightPoints = (canvas.height / dpi) * 72;
   const content = `q ${formatNumber(widthPoints)} 0 0 ${formatNumber(heightPoints)} 0 0 cm /Im0 Do Q`;
   const info = [
-    `/Title (${escapePdfString(metadata.fileName)})`,
     '/Creator (Mermaid Preview Offline)',
-    `/Subject (${escapePdfString(metadata.sourceUri ?? metadata.fileName)})`,
-    `/CreationDate (D:${pdfDate(metadata.exportedAt)})`,
+    ...(metadata ? [
+      `/Title (${escapePdfString(metadata.fileName)})`,
+      `/Subject (${escapePdfString(metadata.sourceUri ?? metadata.fileName)})`,
+      `/CreationDate (D:${pdfDate(metadata.exportedAt)})`,
+    ] : []),
   ].join(' ');
   const objects: Uint8Array[] = [
     textEncoder.encode('<< /Type /Catalog /Pages 2 0 R >>'),

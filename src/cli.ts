@@ -166,6 +166,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
       }
       case '--original-svg': settingsValue.svgVariant = 'original'; break;
       case '--no-optimize': settingsValue.optimizeSvg = false; break;
+      case '--metadata': settingsValue.includeMetadata = true; break;
       case '--no-metadata': settingsValue.includeMetadata = false; break;
       case '--browser': browser = takeValue(); break;
       case '--profile': profile = takeValue(); break;
@@ -535,7 +536,8 @@ Options:
       --profile <json>       Read export settings from a JSON profile
       --original-svg         Keep SVG output unchanged
       --no-optimize          Disable SVG optimization
-      --no-metadata          Omit source metadata
+      --metadata             Include source metadata and export time
+      --no-metadata          Omit metadata, including from a loaded profile
       --browser <path>       Chrome, Chromium, or Edge executable
       --json                 Print a machine-readable result
   -h, --help                 Show this help

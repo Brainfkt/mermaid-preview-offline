@@ -43,7 +43,7 @@ export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
   dpi: 144,
   fileNameTemplate: '{name}-{theme}@{scale}x.{format}',
   format: 'png',
-  includeMetadata: true,
+  includeMetadata: false,
   margin: 24,
   optimizeSvg: true,
   scale: 1,
