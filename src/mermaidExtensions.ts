@@ -27,7 +27,7 @@ export function registerOfflineIconPacks(): void {
 export async function prepareMermaidExtensions(source: string): Promise<void> {
   registerOfflineIconPacks();
   await installOfflineFont();
-  if (!/^\s*zenuml\b/iu.test(source)) {
+  if (!/^\s*zenuml\b/imu.test(source)) {
     return;
   }
   zenUmlRegistration ??= import('@mermaid-js/mermaid-zenuml').then(async ({ default: zenUml }) => {

@@ -19,7 +19,9 @@ async function loadOfflineFont(): Promise<void> {
   if (!document.querySelector('style[data-mermaid-offline-font]')) {
     const style = document.createElement('style');
     style.dataset.mermaidOfflineFont = 'true';
-    style.textContent = offlineFontFaceCss();
+    style.textContent = `${offlineFontFaceCss()}` +
+      `svg text,svg tspan,svg foreignObject,svg foreignObject *{` +
+      `font-family:${OFFLINE_FONT_STACK}!important;}`;
     document.head.append(style);
   }
   if ('fonts' in document) {

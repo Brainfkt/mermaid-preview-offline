@@ -59,7 +59,7 @@ Légende :
 
 | Élément | Prise en charge | Mise en œuvre | Exemple validé |
 |---|:---:|---|---|
-| Plug-in officiel ZenUML | ✅ | `@mermaid-js/mermaid-zenuml` est inclus et enregistré au démarrage | [`41-zenuml.mmd`](41-zenuml.mmd) |
+| Plug-in officiel ZenUML | ✅ | `@mermaid-js/mermaid-zenuml` est inclus et chargé à la demande | [`41-zenuml.mmd`](41-zenuml.mmd) |
 | Pack Iconify `logos` | ✅ | 2 091 icônes sont incluses dans le bundle | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
 | Pack Iconify `material-icon-theme` | ✅ | 1 174 icônes et les associations TreeView sont incluses | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
 | Images locales relatives | ✅ | Le fichier est lu dans l'espace de travail et incorporé en `data:` | [`43-local-image.mmd`](43-local-image.mmd) |

@@ -296,8 +296,8 @@ actifs et signale chaque échec sans écraser les fichiers sources.
 ## CLI hors ligne
 
 Le dépôt et l’extension empaquetée incluent l’outil de rendu en ligne de commande
-`mpo`. Il nécessite Node.js 22 et un exécutable Chrome, Chromium ou Edge
-installé ; aucun service de rendu distant n’est utilisé.
+`mpo`. Il nécessite Node.js 22 et Chrome, Chromium ou Edge 120 ou plus récent ;
+aucun service de rendu distant n’est utilisé.
 
 ```bash
 npm ci

@@ -272,7 +272,7 @@ individual failures without overwriting the source files.
 ## Offline CLI
 
 The repository and packaged extension include the `mpo` command-line renderer.
-It requires Node.js 22 and an installed Chrome, Chromium, or Edge executable; no
+It requires Node.js 22 and Chrome, Chromium, or Edge 120 or newer; no
 remote rendering service is used.
 
 ```bash
