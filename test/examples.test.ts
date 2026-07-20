@@ -122,6 +122,8 @@ void test('visual harnesses use real time and deterministic bundled font metrics
 
   assert.match(browserHarness, /--remote-debugging-pipe/u);
   assert.match(browserHarness, /readHarnessResult/u);
+  assert.match(browserHarness, /browser\.once\('close'/u);
+  assert.match(browserHarness, /maxRetries: 10/u);
   assert.match(previewHarness, /diagramFontFamily: 'noto-sans'/u);
   assert.match(previewHarness, /\['19-mindmap\.mmd', 0\.25\]/u);
   assert.doesNotMatch(previewHarness, /--virtual-time-budget|--dump-dom/u);

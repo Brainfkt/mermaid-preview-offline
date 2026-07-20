@@ -34,6 +34,7 @@ export async function runBrowserHarness({
     ],
     { stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'] },
   );
+  const browserClosed = new Promise((resolvePromise) => browser.once('close', resolvePromise));
   browser.stderr?.resume();
   let client;
   try {
@@ -45,8 +46,13 @@ export async function runBrowserHarness({
     );
   } finally {
     client?.close();
-    await stopBrowser(browser);
-    rmSync(temporaryDirectory, { force: true, recursive: true });
+    await stopBrowser(browser, browserClosed);
+    rmSync(temporaryDirectory, {
+      force: true,
+      maxRetries: 10,
+      recursive: true,
+      retryDelay: 100,
+    });
   }
 }
 
@@ -99,15 +105,20 @@ async function readHarnessResult(client, harnessPath, resultElementId, windowSiz
   return JSON.parse(value);
 }
 
-async function stopBrowser(browser) {
-  if (browser.exitCode !== null) return;
-  const exited = new Promise((resolvePromise) => browser.once('exit', resolvePromise));
-  browser.kill('SIGTERM');
-  await Promise.race([exited, delay(2_000)]);
-  if (browser.exitCode === null) {
+async function stopBrowser(browser, browserClosed) {
+  if (browser.exitCode === null && browser.signalCode === null) browser.kill('SIGTERM');
+  if (await closesWithin(browserClosed, 2_000)) return;
+  if (browser.exitCode === null && browser.signalCode === null) {
     browser.kill('SIGKILL');
-    await Promise.race([exited, delay(2_000)]);
   }
+  await closesWithin(browserClosed, 2_000);
+}
+
+async function closesWithin(browserClosed, milliseconds) {
+  return Promise.race([
+    browserClosed.then(() => true),
+    delay(milliseconds).then(() => false),
+  ]);
 }
 
 function stringProperty(value, key) {
