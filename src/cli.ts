@@ -17,6 +17,7 @@ import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
+import { CdpClient, withTimeout } from './cdpClient';
 import {
   DEFAULT_EXPORT_SETTINGS,
   EXPORT_FORMATS,
@@ -45,15 +46,6 @@ interface CliOptions {
 interface RenderFile {
   relativeDirectory: string;
   uri: string;
-}
-
-interface CdpResponse {
-  error?: { message?: string };
-  id?: number;
-  method?: string;
-  params?: unknown;
-  result?: Record<string, unknown>;
-  sessionId?: string;
 }
 
 interface BrowserSession {
@@ -225,46 +217,31 @@ async function startBrowser(preferredExecutable?: string): Promise<BrowserSessio
       '--no-first-run',
       '--no-default-browser-check',
       '--allow-file-access-from-files',
-      '--remote-debugging-port=0',
+      '--remote-debugging-pipe',
       `--user-data-dir=${join(temporaryDirectory, 'profile')}`,
       'about:blank',
     ],
-    { stdio: ['ignore', 'ignore', 'pipe'] },
+    { stdio: ['ignore', 'ignore', 'pipe', 'pipe', 'pipe'] },
   );
+  browserProcess.stderr?.resume();
+  let client: CdpClient | undefined;
   try {
-    const websocketUrl = await devtoolsWebsocketUrl(browserProcess);
-    const client = await CdpClient.connect(websocketUrl);
-    const target = await client.send('Target.createTarget', { url: 'about:blank' });
-    const targetId = stringProperty(target, 'targetId');
-    const attached = await client.send('Target.attachToTarget', { flatten: true, targetId });
-    const sessionId = stringProperty(attached, 'sessionId');
-    await client.send('Page.enable', {}, sessionId);
-    await client.send('Runtime.enable', {}, sessionId);
-    await client.send('Network.enable', {}, sessionId);
-    await client.send('Network.setBlockedURLs', {
-      urls: ['http://*', 'https://*', 'ftp://*', 'ws://*', 'wss://*'],
-    }, sessionId);
-    const loaded = client.waitFor('Page.loadEventFired', sessionId);
-    await client.send('Page.navigate', { url: pathToFileURL(rendererHtml).toString() }, sessionId);
-    await loaded;
-    const installed = await client.send(
-      'Runtime.evaluate',
-      { expression: "typeof window.mermaidOfflineCli?.render === 'function'", returnByValue: true },
-      sessionId,
+    const connectedClient = CdpClient.connect(browserProcess);
+    client = connectedClient;
+    const sessionId = await withTimeout(
+      initializeBrowserRenderer(connectedClient, rendererHtml),
+      15_000,
+      'Chromium did not initialize its debugging connection within 15 seconds.',
     );
-    const installedResult = isRecord(installed.result) ? installed.result : undefined;
-    if (installed.exceptionDetails || installedResult?.value !== true) {
-      throw new Error(`Could not initialize the browser renderer: ${JSON.stringify(installed.exceptionDetails)}`);
-    }
     return {
       async close(): Promise<void> {
-        client.close();
+        connectedClient.close();
         await stopBrowser(browserProcess);
         await rm(temporaryDirectory, { force: true, recursive: true });
       },
       async render(request): Promise<SerializedExportArtifact> {
         const expression = `window.mermaidOfflineCli.render(${JSON.stringify(request)})`;
-        const response = await client.send(
+        const response = await connectedClient.send(
           'Runtime.evaluate',
           { awaitPromise: true, expression, returnByValue: true },
           sessionId,
@@ -281,103 +258,40 @@ async function startBrowser(preferredExecutable?: string): Promise<BrowserSessio
       },
     };
   } catch (error: unknown) {
+    client?.close();
     await stopBrowser(browserProcess);
     await rm(temporaryDirectory, { force: true, recursive: true });
     throw error;
   }
 }
 
-class CdpClient {
-  private nextId = 1;
-  private readonly pending = new Map<number, {
-    reject(error: Error): void;
-    resolve(value: Record<string, unknown>): void;
-  }>();
-  private readonly waiters: Array<{
-    method: string;
-    resolve(): void;
-    sessionId?: string;
-  }> = [];
-
-  private constructor(private readonly socket: WebSocket) {
-    socket.addEventListener('message', (event) => this.receive(String(event.data)));
-    socket.addEventListener('close', () => {
-      for (const pending of this.pending.values()) pending.reject(new Error('Browser connection closed.'));
-      this.pending.clear();
-    });
+async function initializeBrowserRenderer(
+  client: CdpClient,
+  rendererHtml: string,
+): Promise<string> {
+  const target = await client.send('Target.createTarget', { url: 'about:blank' });
+  const targetId = stringProperty(target, 'targetId');
+  const attached = await client.send('Target.attachToTarget', { flatten: true, targetId });
+  const sessionId = stringProperty(attached, 'sessionId');
+  await client.send('Page.enable', {}, sessionId);
+  await client.send('Runtime.enable', {}, sessionId);
+  await client.send('Network.enable', {}, sessionId);
+  await client.send('Network.setBlockedURLs', {
+    urls: ['http://*', 'https://*', 'ftp://*', 'ws://*', 'wss://*'],
+  }, sessionId);
+  const loaded = client.waitFor('Page.loadEventFired', sessionId);
+  await client.send('Page.navigate', { url: pathToFileURL(rendererHtml).toString() }, sessionId);
+  await loaded;
+  const installed = await client.send(
+    'Runtime.evaluate',
+    { expression: "typeof window.mermaidOfflineCli?.render === 'function'", returnByValue: true },
+    sessionId,
+  );
+  const installedResult = isRecord(installed.result) ? installed.result : undefined;
+  if (installed.exceptionDetails || installedResult?.value !== true) {
+    throw new Error(`Could not initialize the browser renderer: ${JSON.stringify(installed.exceptionDetails)}`);
   }
-
-  public static async connect(url: string): Promise<CdpClient> {
-    const socket = new WebSocket(url);
-    await new Promise<void>((resolvePromise, reject) => {
-      socket.addEventListener('open', () => resolvePromise(), { once: true });
-      socket.addEventListener('error', () => reject(new Error('Could not connect to Chromium.')), { once: true });
-    });
-    return new CdpClient(socket);
-  }
-
-  public close(): void {
-    this.socket.close();
-  }
-
-  public send(
-    method: string,
-    params: Record<string, unknown> = {},
-    sessionId?: string,
-  ): Promise<Record<string, unknown>> {
-    const id = this.nextId;
-    this.nextId += 1;
-    return new Promise((resolvePromise, reject) => {
-      this.pending.set(id, { reject, resolve: resolvePromise });
-      this.socket.send(JSON.stringify({ id, method, params, sessionId }));
-    });
-  }
-
-  public waitFor(method: string, sessionId?: string): Promise<void> {
-    return new Promise((resolvePromise) => {
-      this.waiters.push({ method, resolve: resolvePromise, sessionId });
-    });
-  }
-
-  private receive(rawMessage: string): void {
-    const message = JSON.parse(rawMessage) as CdpResponse;
-    if (message.id !== undefined) {
-      const pending = this.pending.get(message.id);
-      if (!pending) return;
-      this.pending.delete(message.id);
-      if (message.error) pending.reject(new Error(message.error.message ?? 'Browser protocol error.'));
-      else pending.resolve(message.result ?? {});
-      return;
-    }
-    if (!message.method) return;
-    const index = this.waiters.findIndex(
-      (waiter) => waiter.method === message.method && waiter.sessionId === message.sessionId,
-    );
-    if (index >= 0) this.waiters.splice(index, 1)[0]?.resolve();
-  }
-}
-
-async function devtoolsWebsocketUrl(browser: ChildProcess): Promise<string> {
-  return new Promise((resolvePromise, reject) => {
-    let output = '';
-    const timeout = setTimeout(() => reject(new Error('Chromium did not expose a debugging endpoint.')), 15_000);
-    browser.stderr?.on('data', (chunk: Buffer) => {
-      output += chunk.toString('utf8');
-      const match = /DevTools listening on (ws:\/\/[^\s]+)/u.exec(output);
-      if (match?.[1]) {
-        clearTimeout(timeout);
-        resolvePromise(match[1]);
-      }
-    });
-    browser.once('exit', (code) => {
-      clearTimeout(timeout);
-      reject(new Error(`Chromium exited before rendering (code ${String(code)}).`));
-    });
-    browser.once('error', (error) => {
-      clearTimeout(timeout);
-      reject(error);
-    });
-  });
+  return sessionId;
 }
 
 async function stopBrowser(browser: ChildProcess): Promise<void> {

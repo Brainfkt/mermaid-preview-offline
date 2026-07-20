@@ -7,6 +7,10 @@ import {
   type ExportSourceMetadata,
 } from './exportSettings';
 import { offlineFontFaceCss, OFFLINE_FONT_STACK } from './offlineFont';
+import {
+  replaceSvgAttributeIdReferences,
+  replaceSvgStyleIdReferences,
+} from './svgIdReferences';
 
 export interface ExportArtifact {
   bytes: Uint8Array;
@@ -188,28 +192,16 @@ function normalizeSvgIds(root: SVGSVGElement): void {
     element.id = stable;
   });
 
-  const replaceHashReferences = (value: string): string => value
-    .replace(/url\(#([^)]+)\)/gu, (match, id: string) => {
-      const stable = idMap.get(id);
-      return stable ? `url(#${stable})` : match;
-    })
-    .replace(/#([A-Za-z_][\w:-]*)/gu, (match, id: string) => {
-      const stable = idMap.get(id);
-      return stable ? `#${stable}` : match;
-    });
   for (const element of [root, ...Array.from(root.querySelectorAll<SVGElement>('*'))]) {
     for (const attribute of Array.from(element.attributes)) {
-      let value = replaceHashReferences(attribute.value);
-      if (attribute.name === 'aria-labelledby' || attribute.name === 'aria-describedby') {
-        value = value.split(/\s+/u).map((id) => idMap.get(id) ?? id).join(' ');
-      } else if (attribute.name === 'begin' || attribute.name === 'end') {
-        value = value.replace(/^([A-Za-z_][\w:-]*)(?=\.)/u, (id) => idMap.get(id) ?? id);
-      }
+      const value = replaceSvgAttributeIdReferences(attribute.name, attribute.value, idMap);
       if (value !== attribute.value) element.setAttribute(attribute.name, value);
     }
   }
   root.querySelectorAll('style').forEach((style) => {
-    if (style.textContent) style.textContent = replaceHashReferences(style.textContent);
+    if (style.textContent) {
+      style.textContent = replaceSvgStyleIdReferences(style.textContent, idMap);
+    }
   });
 }
 

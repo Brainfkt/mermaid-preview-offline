@@ -9,6 +9,10 @@ import {
 } from './diagramTemplates';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import { OFFLINE_FONT_STACK } from './offlineFont';
+import {
+  replaceSvgAttributeIdReferences,
+  replaceSvgStyleIdReferences,
+} from './svgIdReferences';
 import type { LineDiffSummary } from './visualDiff';
 
 interface VsCodeApi {
@@ -363,22 +367,16 @@ function copyRenderedDiagram(
     idMap.set(previous, next);
     node.id = next;
   }
-  const replaceReference = (value: string): string => {
-    const direct = /^#(.+)$/u.exec(value)?.[1];
-    if (direct) return `#${idMap.get(direct) ?? direct}`;
-    return value.replace(/url\(#([^)]+)\)/gu, (match, id: string) => {
-      const replacement = idMap.get(id);
-      return replacement ? `url(#${replacement})` : match;
-    });
-  };
   for (const node of Array.from(target.querySelectorAll('*'))) {
     for (const attribute of Array.from(node.attributes)) {
-      const value = replaceReference(attribute.value);
-      if (value !== attribute.value) node.setAttribute(attribute.name, value);
+      const value = replaceSvgAttributeIdReferences(attribute.name, attribute.value, idMap);
+      if (value !== attribute.value) attribute.value = value;
     }
   }
   target.querySelectorAll('style').forEach((style) => {
-    if (style.textContent) style.textContent = replaceReference(style.textContent);
+    if (style.textContent) {
+      style.textContent = replaceSvgStyleIdReferences(style.textContent, idMap);
+    }
   });
   target.hidden = source.hidden;
 }

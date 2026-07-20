@@ -25,7 +25,7 @@ export const DEFAULT_LOCAL_IMAGE_LIMITS: Readonly<LocalImageInliningLimits> = {
 
 const IMAGE_REFERENCE = /(\bimg\s*:\s*)(["'])([^"'\r\n]+)\2/gu;
 const URI_SCHEME = /^[a-z][a-z\d+.-]*:/iu;
-const EMBEDDED_IMAGE = /^data:image\/[a-z\d.+-]+;base64,[a-z\d+/=\s]+$/iu;
+const EMBEDDED_IMAGE = /^data:image\/[a-z\d.+-]+(?:;[a-z\d.+-]+=[^,;\s]+)*(?:;base64,[a-z\d+/=\s]+|,[^\s]*)$/iu;
 
 export async function inlineLocalImages(
   source: string,
