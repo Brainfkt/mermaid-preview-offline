@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { readFile, rm } from 'node:fs/promises';
+import { readFile, readdir, rm, stat } from 'node:fs/promises';
 
 const production = process.argv.includes('--production');
 const zenUmlRemoteFontFace =
@@ -47,6 +47,7 @@ await Promise.all([
     entryNames: '[name]',
     format: 'esm',
     logLevel: 'info',
+    loader: { '.woff2': 'dataurl' },
     minify: true,
     outdir: 'dist',
     platform: 'browser',
@@ -67,3 +68,26 @@ await Promise.all([
     target: 'node22',
   }),
 ]);
+
+const browserJavaScriptBytes = await javascriptBytes('dist');
+const browserBundleBudget = 20 * 1024 * 1024;
+if (browserJavaScriptBytes > browserBundleBudget) {
+  throw new Error(
+    `Browser bundles use ${(browserJavaScriptBytes / 1024 / 1024).toFixed(2)} MiB, ` +
+    `above the ${(browserBundleBudget / 1024 / 1024).toFixed(0)} MiB release budget.`,
+  );
+}
+console.log(`Browser JavaScript budget: ${(browserJavaScriptBytes / 1024 / 1024).toFixed(2)} / 20 MiB`);
+
+async function javascriptBytes(directory) {
+  let bytes = 0;
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) {
+      bytes += await javascriptBytes(path);
+    } else if (entry.name.endsWith('.js') && !['cli.js', 'extension.js'].includes(entry.name)) {
+      bytes += (await stat(path)).size;
+    }
+  }
+  return bytes;
+}
