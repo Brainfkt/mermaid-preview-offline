@@ -20,7 +20,12 @@ import type {
   SerializedExportArtifact,
   WebviewToExtensionMessage,
 } from './protocol';
-import { effectiveRefreshDelay } from './renderPolicy';
+import {
+  effectiveRefreshDelay,
+  MAX_RENDER_SOURCE_BYTES,
+  renderBlockReason,
+} from './renderPolicy';
+import { recordEligibleReviewSession } from './reviewPrompt';
 import { createNonce, createWebviewHtml } from './webviewHtml';
 import { loadWorkspaceImage } from './workspaceImages';
 
@@ -28,6 +33,10 @@ export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 
 const VIEW_STATE_KEY_PREFIX = 'mermaidPreviewOffline.viewState.';
 const EXPORT_PROFILES_KEY = 'mermaidPreviewOffline.exportProfiles';
+const REVIEW_PROMPT_KEY = 'mermaidPreviewOffline.reviewPrompt';
+const MARKETPLACE_REVIEW_URI = vscode.Uri.parse(
+  'https://marketplace.visualstudio.com/items?itemName=brainfkt.mermaid-preview-offline#review-details',
+);
 
 interface BatchFile {
   fileId: string;
@@ -40,7 +49,9 @@ interface BatchSession {
   completed: number;
   failures: string[];
   files: BatchFile[];
+  nextIndex: number;
   outputDirectory: vscode.Uri;
+  pendingFile?: BatchFile;
   settings: ExportSettings;
   total: number;
   webview: vscode.Webview;
@@ -51,6 +62,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   private readonly readyPanels = new Set<string>();
   private readonly pendingExportDialogs = new Set<string>();
   private readonly batchSessions = new Map<string, BatchSession>();
+  private reviewPromptQueue = Promise.resolve();
 
   public constructor(
     private readonly context: vscode.ExtensionContext,
@@ -90,6 +102,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     let documentTimer: NodeJS.Timeout | undefined;
     let stateTimer: NodeJS.Timeout | undefined;
     let pendingState: PersistedPreviewState | undefined;
+    let dirtyWhileHidden = false;
+    let lastDocumentLoadError = '';
+    let reviewSessionRecorded = false;
     const panelRegistration = this.layoutController.registerPanel(document.uri, webviewPanel);
     const panelKey = document.uri.toString();
     this.panels.set(panelKey, webviewPanel);
@@ -124,13 +139,20 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       if (disposed || generation !== documentGeneration) {
         return;
       }
+      if (!webviewPanel.visible) {
+        dirtyWhileHidden = true;
+        return;
+      }
 
       const version = document.version;
       const documentSource = document.getText();
       const byteLength = Buffer.byteLength(documentSource, 'utf8');
-      const source = await inlineLocalImages(documentSource, (reference) =>
-        loadWorkspaceImage(document.uri, reference),
-      );
+      const blockedReason = renderBlockReason(byteLength);
+      const source = blockedReason
+        ? ''
+        : await inlineLocalImages(documentSource, (reference) =>
+            loadWorkspaceImage(document.uri, reference),
+          );
       if (
         disposed ||
         generation !== documentGeneration ||
@@ -140,6 +162,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       }
 
       const currentConfiguration = configuration();
+      dirtyWhileHidden = false;
+      lastDocumentLoadError = '';
       await webview.postMessage({
         type: 'document',
         source,
@@ -148,7 +172,20 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         version,
         byteLength,
         isLargeFile: byteLength >= currentConfiguration.largeFileThresholdBytes,
+        renderBlockedReason: blockedReason,
       });
+    };
+
+    const deliverDocument = async (generation: number): Promise<void> => {
+      try {
+        await sendDocument(generation);
+      } catch (error: unknown) {
+        const message = errorMessageOf(error);
+        if (!disposed && generation === documentGeneration && message !== lastDocumentLoadError) {
+          lastDocumentLoadError = message;
+          void vscode.window.showWarningMessage(`Mermaid preview: ${message}`);
+        }
+      }
     };
 
     const queueDocument = (delay?: number): void => {
@@ -157,12 +194,17 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       if (documentTimer) {
         clearTimeout(documentTimer);
       }
+      if (!webviewPanel.visible) {
+        documentTimer = undefined;
+        dirtyWhileHidden = true;
+        return;
+      }
       const currentConfiguration = configuration();
-      const byteLength = Buffer.byteLength(document.getText(), 'utf8');
+      const byteLength = estimatedDocumentByteLength(document);
       const timeout = delay ?? effectiveRefreshDelay(byteLength, currentConfiguration);
       documentTimer = setTimeout(() => {
         documentTimer = undefined;
-        void sendDocument(generation);
+        void deliverDocument(generation);
       }, timeout);
     };
 
@@ -191,12 +233,15 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           clearTimeout(documentTimer);
           documentTimer = undefined;
         }
-        void webview.postMessage({
-          type: 'documentChanged',
-          fileName: fileNameOf(document.uri),
-          version: document.version,
-          byteLength: Buffer.byteLength(document.getText(), 'utf8'),
-        });
+        dirtyWhileHidden = !webviewPanel.visible;
+        if (webviewPanel.visible) {
+          void webview.postMessage({
+            type: 'documentChanged',
+            fileName: fileNameOf(document.uri),
+            version: document.version,
+            byteLength: estimatedDocumentByteLength(document),
+          });
+        }
       } else {
         queueDocument();
       }
@@ -221,6 +266,19 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         void this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
       } else {
         void this.layoutController.saveCurrentRatio(document.uri, true);
+      }
+      if (event.webviewPanel.visible && dirtyWhileHidden) {
+        if (configuration().refreshMode === 'manual') {
+          dirtyWhileHidden = false;
+          void webview.postMessage({
+            type: 'documentChanged',
+            fileName: fileNameOf(document.uri),
+            version: document.version,
+            byteLength: estimatedDocumentByteLength(document),
+          });
+        } else {
+          queueDocument(0);
+        }
       }
     });
 
@@ -276,6 +334,10 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'clearDiagnostic':
           if (message.version === document.version) {
             this.diagnostics.clearRender(document.uri);
+            if (!reviewSessionRecorded) {
+              reviewSessionRecorded = true;
+              void this.recordEligibleReviewSession();
+            }
           }
           break;
         case 'viewState':
@@ -332,6 +394,34 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
   private exportProfiles(): ExportProfile[] {
     return normalizeExportProfiles(this.context.globalState.get(EXPORT_PROFILES_KEY));
+  }
+
+  private async recordEligibleReviewSession(): Promise<void> {
+    const record = async (): Promise<void> => {
+      const decision = recordEligibleReviewSession(
+        this.context.globalState.get(REVIEW_PROMPT_KEY),
+      );
+      await this.context.globalState.update(REVIEW_PROMPT_KEY, decision.state);
+      if (!decision.shouldPrompt) {
+        return;
+      }
+      const french = vscode.env.language.toLowerCase().startsWith('fr');
+      const reviewLabel = french ? 'Laisser un avis' : 'Leave a review';
+      const dismissLabel = french ? 'Non merci' : 'No thanks';
+      const selection = await vscode.window.showInformationMessage(
+        french
+          ? 'Vous appréciez Mermaid Preview Offline ? Un avis sur la Marketplace aide le projet.'
+          : 'Enjoying Mermaid Preview Offline? A Marketplace review helps the project.',
+        reviewLabel,
+        dismissLabel,
+      );
+      if (selection === reviewLabel) {
+        await vscode.env.openExternal(MARKETPLACE_REVIEW_URI);
+      }
+    };
+    const queued = this.reviewPromptQueue.then(record, record);
+    this.reviewPromptQueue = queued.then(() => undefined, () => undefined);
+    await queued;
   }
 
   private async broadcastExportConfiguration(): Promise<void> {
@@ -419,6 +509,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       completed: 0,
       failures: [],
       files,
+      nextIndex: 0,
       outputDirectory,
       settings: normalizeExportSettings(rawSettings),
       total: files.length,
@@ -460,12 +551,24 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     if (!session) {
       return;
     }
-    const file = session.files.shift();
+    if (session.pendingFile) {
+      return;
+    }
+    const file = session.files[session.nextIndex];
     if (!file) {
       this.finishBatchExport(batchId, session);
       return;
     }
+    session.nextIndex += 1;
+    session.pendingFile = file;
     try {
+      const metadata = await vscode.workspace.fs.stat(file.uri);
+      if (metadata.size > MAX_RENDER_SOURCE_BYTES) {
+        throw new Error(
+          `Source exceeds the ${Math.round(MAX_RENDER_SOURCE_BYTES / (1024 * 1024))} MB ` +
+          'batch-render limit.',
+        );
+      }
       const sourceText = new TextDecoder().decode(await vscode.workspace.fs.readFile(file.uri));
       const source = await inlineLocalImages(sourceText, (reference) =>
         loadWorkspaceImage(file.uri, reference),
@@ -486,6 +589,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     } catch (error: unknown) {
       session.failures.push(`${file.fileName}: ${errorMessageOf(error)}`);
       session.completed += 1;
+      session.pendingFile = undefined;
       await this.sendNextBatchFile(batchId);
     }
   }
@@ -497,9 +601,17 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     if (!session) {
       return;
     }
+    const pendingFile = session.pendingFile;
+    if (
+      !pendingFile ||
+      message.fileId !== pendingFile.fileId ||
+      message.relativeDirectory !== pendingFile.relativeDirectory
+    ) {
+      return;
+    }
     try {
-      const directory = message.relativeDirectory
-        ? vscode.Uri.joinPath(session.outputDirectory, ...message.relativeDirectory.split('/'))
+      const directory = pendingFile.relativeDirectory
+        ? vscode.Uri.joinPath(session.outputDirectory, ...pendingFile.relativeDirectory.split('/'))
         : session.outputDirectory;
       await vscode.workspace.fs.createDirectory(directory);
       const fileName = sanitizeFileName(message.artifact.fileName);
@@ -509,8 +621,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       const target = await nonConflictingUri(directory, fileName);
       await vscode.workspace.fs.writeFile(target, decodeBase64(message.artifact.dataBase64));
     } catch (error: unknown) {
-      session.failures.push(`${message.fileId}: ${errorMessageOf(error)}`);
+      session.failures.push(`${pendingFile.fileName}: ${errorMessageOf(error)}`);
     }
+    session.pendingFile = undefined;
     session.completed += 1;
     await this.sendNextBatchFile(message.batchId);
   }
@@ -524,7 +637,12 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     if (!session) {
       return;
     }
-    session.failures.push(`${fileId}: ${message}`);
+    const pendingFile = session.pendingFile;
+    if (!pendingFile || fileId !== pendingFile.fileId) {
+      return;
+    }
+    session.failures.push(`${pendingFile.fileName}: ${message}`);
+    session.pendingFile = undefined;
     session.completed += 1;
     await this.sendNextBatchFile(batchId);
   }
@@ -657,6 +775,14 @@ function fileNameOf(uri: vscode.Uri): string {
   return decodeURIComponent(uri.path.split('/').pop() ?? uri.path);
 }
 
+function estimatedDocumentByteLength(document: vscode.TextDocument): number {
+  const lastLine = document.lineAt(Math.max(0, document.lineCount - 1));
+  const utf16Length = document.offsetAt(lastLine.rangeIncludingLineBreak.end);
+  // Twice the UTF-16 length is a cheap, stable scheduling heuristic. The settled
+  // delivery computes the exact UTF-8 length once, without a second source copy.
+  return utf16Length * 2;
+}
+
 function decodeBase64(value: string): Uint8Array {
   return Uint8Array.from(Buffer.from(value, 'base64'));
 }
@@ -769,7 +895,7 @@ function isSerializedExportArtifact(value: unknown): value is SerializedExportAr
   const artifact = value as Partial<Record<keyof SerializedExportArtifact, unknown>>;
   return (
     typeof artifact.dataBase64 === 'string' &&
-    artifact.dataBase64.length <= 800_000_000 &&
+    artifact.dataBase64.length <= 192_000_000 &&
     typeof artifact.fileName === 'string' &&
     (artifact.format === 'svg' ||
       artifact.format === 'png' ||
