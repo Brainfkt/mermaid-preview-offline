@@ -1,10 +1,8 @@
-import { icons as logosIcons } from '@iconify-json/logos';
-import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-theme';
-import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
 import { normalizeExportSettings, type ExportSettings } from './exportSettings';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
+import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import type { SerializedExportArtifact } from './protocol';
 
 export interface CliRenderRequest {
@@ -22,18 +20,14 @@ declare global {
   }
 }
 
-mermaid.registerIconPacks([
-  { name: logosIcons.prefix, icons: logosIcons },
-  { name: materialIconThemeIcons.prefix, icons: materialIconThemeIcons },
-]);
-const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
+registerOfflineIconPacks();
 
 window.mermaidOfflineCli = {
   async render(request: CliRenderRequest): Promise<SerializedExportArtifact> {
     const settings = normalizeExportSettings(request.settings);
     const renderId = `mermaid-cli-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     try {
-      await mermaidExtensionsReady;
+      await prepareMermaidExtensions(request.source);
       mermaid.initialize({
         deterministicIds: true,
         deterministicIDSeed: 'mermaid-preview-offline-cli',
@@ -44,7 +38,6 @@ window.mermaidOfflineCli = {
         flowchart: { htmlLabels: false, useMaxWidth: false },
         sequence: { useMaxWidth: false },
       });
-      await mermaid.parse(request.source);
       const { svg } = await mermaid.render(renderId, request.source);
       const artifact = await renderExportArtifact({
         fileName: request.fileName,

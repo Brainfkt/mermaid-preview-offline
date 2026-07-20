@@ -1,7 +1,17 @@
 import { spawn, type ChildProcess } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import { existsSync } from 'node:fs';
-import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  realpath,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
 import process from 'node:process';
@@ -14,8 +24,14 @@ import {
   sanitizeFileName,
   type ExportSettings,
 } from './exportSettings';
-import { imageMimeType, inlineLocalImages } from './localImages';
+import {
+  assertOfflineImageReferences,
+  DEFAULT_LOCAL_IMAGE_LIMITS,
+  imageMimeType,
+  inlineLocalImages,
+} from './localImages';
 import type { SerializedExportArtifact } from './protocol';
+import { MAX_RENDER_SOURCE_BYTES } from './renderPolicy';
 
 interface CliOptions {
   browser?: string;
@@ -59,7 +75,7 @@ async function main(): Promise<void> {
   const options = await parseArguments(process.argv.slice(2));
   const inputPath = resolve(options.input);
   const inputStats = await stat(inputPath);
-  const inputRoot = inputStats.isDirectory() ? inputPath : dirname(inputPath);
+  const inputRoot = await realpath(inputStats.isDirectory() ? inputPath : dirname(inputPath));
   const files = inputStats.isDirectory()
     ? await collectMermaidFiles(inputPath)
     : [{ relativeDirectory: '', uri: inputPath }];
@@ -90,7 +106,7 @@ async function main(): Promise<void> {
       });
       const target = outputPathFor(output, files.length, file, artifact.fileName);
       await mkdir(dirname(target), { recursive: true });
-      await writeFile(target, Buffer.from(artifact.dataBase64, 'base64'));
+      await writeOutputFile(target, Buffer.from(artifact.dataBase64, 'base64'));
       exported.push({ height: artifact.height, output: target, width: artifact.width });
       if (!options.json) {
         console.log(`${target} (${artifact.width} × ${artifact.height})`);
@@ -110,7 +126,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
     process.exit(0);
   }
   if (args.includes('--version') || args.includes('-v')) {
-    console.log('0.5.0');
+    console.log(await packageVersion());
     process.exit(0);
   }
   const settingsValue: Record<string, unknown> = { ...DEFAULT_EXPORT_SETTINGS };
@@ -182,7 +198,16 @@ async function startBrowser(preferredExecutable?: string): Promise<BrowserSessio
   }
   const temporaryDirectory = await mkdtemp(join(tmpdir(), 'mermaid-preview-offline-'));
   const rendererHtml = join(temporaryDirectory, 'renderer.html');
-  await writeFile(rendererHtml, '<!doctype html><html><body></body></html>', 'utf8');
+  const rendererScriptUri = pathToFileURL(join(__dirname, 'cli-renderer.js')).toString();
+  await writeFile(
+    rendererHtml,
+    '<!doctype html><html><head>' +
+      '<meta http-equiv="Content-Security-Policy" content="' +
+      "default-src 'none'; img-src data: blob:; style-src 'unsafe-inline'; " +
+      "font-src data:; script-src 'self' file:; connect-src 'none'; object-src 'none'; frame-src 'none'" +
+      `"></head><body><script type="module" src="${rendererScriptUri}"></script></body></html>`,
+    'utf8',
+  );
   const browserProcess = spawn(
     executable,
     [
@@ -206,16 +231,20 @@ async function startBrowser(preferredExecutable?: string): Promise<BrowserSessio
     const sessionId = stringProperty(attached, 'sessionId');
     await client.send('Page.enable', {}, sessionId);
     await client.send('Runtime.enable', {}, sessionId);
+    await client.send('Network.enable', {}, sessionId);
+    await client.send('Network.setBlockedURLs', {
+      urls: ['http://*', 'https://*', 'ftp://*', 'ws://*', 'wss://*'],
+    }, sessionId);
     const loaded = client.waitFor('Page.loadEventFired', sessionId);
     await client.send('Page.navigate', { url: pathToFileURL(rendererHtml).toString() }, sessionId);
     await loaded;
-    const rendererSource = await readFile(join(__dirname, 'cli-renderer.js'), 'utf8');
     const installed = await client.send(
       'Runtime.evaluate',
-      { expression: rendererSource, returnByValue: false },
+      { expression: "typeof window.mermaidOfflineCli?.render === 'function'", returnByValue: true },
       sessionId,
     );
-    if (installed.exceptionDetails) {
+    const installedResult = isRecord(installed.result) ? installed.result : undefined;
+    if (installed.exceptionDetails || installedResult?.value !== true) {
       throw new Error(`Could not initialize the browser renderer: ${JSON.stringify(installed.exceptionDetails)}`);
     }
     return {
@@ -387,19 +416,33 @@ async function collectMermaidFiles(root: string, directory = root): Promise<Rend
 }
 
 async function loadSourceWithImages(file: string, root: string): Promise<string> {
+  const sourceMetadata = await stat(file);
+  if (sourceMetadata.size > MAX_RENDER_SOURCE_BYTES) {
+    throw new Error(
+      `Source file exceeds the ${Math.round(MAX_RENDER_SOURCE_BYTES / (1024 * 1024))} MB ` +
+      `render limit: ${file}`,
+    );
+  }
   const source = await readFile(file, 'utf8');
-  return inlineLocalImages(source, async (referenceValue) => {
+  assertOfflineImageReferences(source, { allowRelative: true });
+  const inlined = await inlineLocalImages(source, async (referenceValue) => {
     const mimeType = imageMimeType(referenceValue);
     const relativePath = referenceValue.split(/[?#]/u, 1)[0];
     if (!mimeType || !relativePath) return undefined;
-    const resource = resolve(dirname(file), decodeURIComponent(relativePath));
-    if (!isPathInside(root, resource)) return undefined;
     try {
+      const resource = await realpath(resolve(dirname(file), decodeURIComponent(relativePath)));
+      if (!isPathInside(root, resource)) return undefined;
+      const metadata = await stat(resource);
+      if (!metadata.isFile() || metadata.size > DEFAULT_LOCAL_IMAGE_LIMITS.maxImageBytes) {
+        return undefined;
+      }
       return { bytes: await readFile(resource), mimeType };
     } catch {
       return undefined;
     }
   });
+  assertOfflineImageReferences(inlined);
+  return inlined;
 }
 
 function outputPathFor(
@@ -420,6 +463,35 @@ function outputPathFor(
 function isPathInside(root: string, candidate: string): boolean {
   const relativePath = relative(resolve(root), resolve(candidate));
   return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
+}
+
+async function writeOutputFile(target: string, bytes: Uint8Array): Promise<void> {
+  try {
+    const existing = await lstat(target);
+    if (existing.isSymbolicLink()) {
+      throw new Error(`Refusing to write an export through a symbolic link: ${target}`);
+    }
+    if (!existing.isFile()) {
+      throw new Error(`The export destination is not a regular file: ${target}`);
+    }
+  } catch (error: unknown) {
+    if (!isNodeError(error) || error.code !== 'ENOENT') throw error;
+  }
+  await writeFile(target, bytes);
+}
+
+async function packageVersion(): Promise<string> {
+  const manifest = JSON.parse(
+    await readFile(join(__dirname, '..', 'package.json'), 'utf8'),
+  ) as unknown;
+  if (!isRecord(manifest) || typeof manifest.version !== 'string') {
+    throw new Error('The extension package version is unavailable.');
+  }
+  return manifest.version;
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error;
 }
 
 function isSerializedExportArtifact(value: unknown): value is SerializedExportArtifact {
