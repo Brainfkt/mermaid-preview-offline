@@ -129,11 +129,25 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
     console.log(await packageVersion());
     process.exit(0);
   }
+  let profile: string | undefined;
+  for (let index = 0; index < args.length; index += 1) {
+    if (args[index] === '--profile') {
+      const value = args[index + 1];
+      if (!value) throw new Error('Missing value after --profile.');
+      profile = value;
+      index += 1;
+    }
+  }
   const settingsValue: Record<string, unknown> = { ...DEFAULT_EXPORT_SETTINGS };
+  if (profile) {
+    const profileValue = JSON.parse(await readFile(resolve(profile), 'utf8')) as unknown;
+    Object.assign(settingsValue, isRecord(profileValue) && 'settings' in profileValue
+      ? profileValue.settings
+      : profileValue);
+  }
   let input = '';
   let output: string | undefined;
   let browser: string | undefined;
-  let profile: string | undefined;
   let json = false;
 
   for (let index = 0; index < args.length; index += 1) {
@@ -176,12 +190,6 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
   }
   if (!input) {
     throw new Error(`An input file or folder is required.\n\n${usage()}`);
-  }
-  if (profile) {
-    const profileValue = JSON.parse(await readFile(resolve(profile), 'utf8')) as unknown;
-    Object.assign(settingsValue, isRecord(profileValue) && 'settings' in profileValue
-      ? profileValue.settings
-      : profileValue);
   }
   if (!EXPORT_FORMATS.some((format) => format === settingsValue.format)) {
     throw new Error(`Unsupported format: ${String(settingsValue.format)}`);
