@@ -257,7 +257,7 @@ SVG output portable.
 
 Use a path inside the current workspace, for example:
 
-```mermaid
+```text
 flowchart LR
   logo@{ img: "assets/logo.svg", label: "Local logo" }
 ```

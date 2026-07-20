@@ -112,6 +112,18 @@ void test('README and user-guide screenshot references resolve to publishable ca
   }
 });
 
+void test('workspace-local image examples stay literal on GitHub', () => {
+  for (const guide of ['docs/USER_GUIDE.md', 'docs/USER_GUIDE.fr.md']) {
+    const contents = readFileSync(resolve(root, guide), 'utf8');
+    assert.match(contents, /```text\s+flowchart LR\s+logo@\{ img: "assets\/logo\.svg"/u);
+    assert.doesNotMatch(
+      contents,
+      /```mermaid\s+flowchart LR\s+logo@\{ img: "assets\/logo\.svg"/u,
+      `${guide} must not ask GitHub to render a workspace-local image`,
+    );
+  }
+});
+
 void test('les workflows CI, release et Marketplace sont présents', () => {
   for (const workflow of ['ci.yml', 'release.yml', 'publish-marketplace.yml']) {
     assert.equal(existsSync(resolve(root, '.github', 'workflows', workflow)), true);

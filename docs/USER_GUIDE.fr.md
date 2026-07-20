@@ -279,7 +279,7 @@ AVIF, BMP et ICO. Le SVG enregistré reste ainsi portable.
 
 Utilisez un chemin situé dans l’espace de travail actuel, par exemple :
 
-```mermaid
+```text
 flowchart LR
   logo@{ img: "assets/logo.svg", label: "Local logo" }
 ```
