@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="media/icon.png" alt="Mermaid Preview Offline logo" width="112">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/icon.png" alt="Mermaid Preview Offline logo" width="112">
 </p>
 
-<h1 align="center">Mermaid Preview — 100% Offline</h1>
+<h1 align="center">Mermaid Preview Offline 1.0</h1>
 
 <p align="center">
   A fast, private Mermaid preview built into VS Code.<br>
@@ -19,14 +19,16 @@
 <p align="center">
   <a href="https://marketplace.visualstudio.com/items?itemName=brainfkt.mermaid-preview-offline"><strong>Install from the Marketplace</strong></a>
   ·
-  <a href="examples/README.md">Browse 43 examples</a>
+  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md">User guide</a>
   ·
-  <a href="examples/COMPATIBILITY.md">Compatibility matrix</a>
+  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/README.md">Browse 43 examples</a>
   ·
-  <a href="roadmap.md">Roadmap</a>
+  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/COMPATIBILITY.md">Compatibility matrix</a>
+  ·
+  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/roadmap.md">Roadmap</a>
 </p>
 
-![A Mermaid pie chart preview and its source open side by side in VS Code](media/screenshots/pie-with-source.png)
+![A Mermaid pie chart preview and its source open side by side in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/pie-with-source.png)
 
 <p align="center"><em>Edit the source and see the locally rendered preview update beside it.</em></p>
 
@@ -64,14 +66,14 @@ per file. Selecting another Mermaid source tab immediately replaces the
 companion preview, while the extension keeps a single source/preview pair for
 the active document.
 
-![Sankey and block diagrams open in two VS Code editor groups](media/screenshots/split-view.png)
+![Sankey and block diagrams open in two VS Code editor groups](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/split-view.png)
 
 Large diagrams remain easy to inspect with fit-to-window, incremental zoom,
 drag-to-pan navigation, and a draggable minimap that appears only when the
 diagram exceeds the viewport. The active editor group can be maximized without
 losing the selected layout.
 
-![A zoomed Mermaid mindmap beside its source in VS Code](media/screenshots/mindmap-zoomed.png)
+![A zoomed Mermaid mindmap beside its source in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/mindmap-zoomed.png)
 
 ## Bundled assets work offline too
 
@@ -80,7 +82,7 @@ The official ZenUML plug-in and the Iconify `logos` and
 images inside the workspace are converted to `data:` URIs, so exported SVGs stay
 portable and do not depend on local file paths.
 
-![Bundled Iconify icons and a workspace image rendered locally in two VS Code previews](media/screenshots/icons-image-local.png)
+![Bundled Iconify icons and a workspace image rendered locally in two VS Code previews](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icons-image-local.png)
 
 ## Get started
 
@@ -120,6 +122,8 @@ use **Reopen Editor With...** → **Text Editor**.
 - Configurable DPI, scale, margin, transparent or colored background, export
   theme, metadata, and file name templates.
 - Diagram Studio with eight customizable templates and all 43 bundled examples.
+- Local SQL-schema generation of Mermaid entity-relationship diagrams.
+- Local `package.json` dependency-graph generation.
 - Rendered Git comparisons with side-by-side and color-coded overlay views.
 - Preview the Mermaid block under the cursor in Markdown, MDX, or AsciiDoc.
 - Render every Mermaid block in a live document view with source navigation.
@@ -132,6 +136,10 @@ use **Reopen Editor With...** → **Text Editor**.
 - Relative SVG, PNG, JPEG, GIF, WebP, AVIF, BMP, and ICO images embedded as
   data URIs.
 - No telemetry, analytics, remote fonts, or runtime downloads.
+- Fixed memory guardrails for very large sources, local-image sets, and raster
+  exports, with actionable messages instead of unbounded work.
+- A single, optional Marketplace review prompt only after five successful
+  preview sessions—never after every edit or render.
 - Adaptive handling for large files and cancellation of obsolete renders.
 - Workspace-aware local assets in multi-root and remote workspaces.
 
@@ -149,11 +157,11 @@ families and capabilities, including:
 | Quadrant | C4 | Packet | Treemap and Wardley Map |
 | Venn | ZenUML | Event Modeling | Railroad and swimlanes |
 
-See the [complete example catalogue](examples/README.md) and the
-[compatibility matrix](examples/COMPATIBILITY.md) for exact keywords, stability,
+See the [complete example catalogue](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/README.md) and the
+[compatibility matrix](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/COMPATIBILITY.md) for exact keywords, stability,
 and current limitations.
 
-![A Mermaid entity-relationship diagram rendered locally in VS Code](media/screenshots/entity-relationship.png)
+![A Mermaid entity-relationship diagram rendered locally in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/entity-relationship.png)
 
 ## Controls
 
@@ -189,7 +197,10 @@ and current limitations.
 | `mermaidPreviewOffline.export.dpi` | `144` | Set raster and PDF resolution. |
 | `mermaidPreviewOffline.export.margin` | `24` | Add space around the exported diagram. |
 | `mermaidPreviewOffline.export.background` | `transparent` | Choose a transparent or colored background. |
+| `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Set the color used when the export background is `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Build output names from export tokens. |
+| `mermaidPreviewOffline.export.optimizeSvg` | `true` | Optimize SVG before saving or rasterizing it. |
+| `mermaidPreviewOffline.export.includeMetadata` | `true` | Add source and export metadata to supported outputs. |
 
 The Mermaid file context menu exposes all four layouts. **Mermaid Preview:
 Configure Default Editor** switches `.mmd` and `.mermaid` files between the
@@ -197,6 +208,50 @@ offline preview and VS Code's text editor.
 In a Mermaid text editor, use **Mermaid: Insert Node or Link**, **Mermaid:
 Generate Missing Identifiers**, **Mermaid: Rename Identifier**, or **Mermaid:
 Format Document** from the Command Palette or editor context menu.
+
+## Built-in resource safeguards
+
+| Resource | Limit | What happens at the limit |
+|---|---:|---|
+| Mermaid source | 10 MiB of UTF-8 source | Preview rendering pauses with the measured size and limit; CLI and batch rendering reject that file. The source remains editable. |
+| Local images in one diagram | 64 unique images, 8 MiB each, 24 MiB combined | Rendering stops with a message identifying the image-count, per-image, or aggregate limit. |
+| PNG, WebP, and PDF rasterization | 32,000,000 pixels | Export stops before allocating the oversized canvas and asks you to reduce scale or DPI. SVG remains available. |
+
+These fixed limits keep memory use predictable. Optimize or split large images,
+split unusually large diagrams, or reduce export scale/DPI rather than retrying
+the same oversized operation.
+
+## Command reference
+
+| Command Palette title | Purpose |
+|---|---|
+| **Mermaid Preview: Open Offline Preview** | Open the current Mermaid file in the offline custom editor. |
+| **Mermaid Preview: Open Preview to the Side** | Keep the current editor visible and open its preview beside it. |
+| **Mermaid Preview: Choose Editor Layout** | Select Preview only, Source only, Beside, or Above. |
+| **Mermaid Preview: Preview Only** | Show only the rendered diagram. |
+| **Mermaid Preview: Source Only** | Show only VS Code's native Mermaid editor. |
+| **Mermaid Preview: Source Beside Preview** | Arrange source and preview horizontally. |
+| **Mermaid Preview: Source Above Preview** | Arrange source and preview vertically. |
+| **Mermaid Preview: Configure Default Editor** | Associate Mermaid files with the offline preview or text editor. |
+| **Mermaid: Format Document** | Format indentation and supported Mermaid block structure. |
+| **Mermaid: Insert Node or Link** | Insert a flowchart node or a link between identifiers. |
+| **Mermaid: Generate Missing Identifiers** | Add stable identifiers to anonymous flowchart nodes. |
+| **Mermaid: Rename Identifier** | Rename the identifier under the cursor throughout the file. |
+| **Mermaid Preview: Export Diagram…** | Open the export preview and settings. |
+| **Mermaid Preview: New Diagram from Template…** | Create a file from one of eight editable templates. |
+| **Mermaid Preview: Browse Example Gallery…** | Search and inspect the 43 bundled examples. |
+| **Mermaid Preview: Generate Custom Diagram…** | Open the Diagram Studio generator view. |
+| **Mermaid Preview: Generate ERD from SQL Schema…** | Generate an ER diagram from a local SQL schema. |
+| **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate a dependency graph from a local package manifest. |
+| **Mermaid Preview: Compare Git Versions Visually…** | Select two local Git revisions and compare their rendered diagrams. |
+| **Mermaid Preview: Preview Diff Visually** | Render the two sides of the active VS Code text diff. |
+| **Mermaid Preview: Preview Block Under Cursor** | Preview the current Mermaid block in Markdown, MDX, or AsciiDoc. |
+| **Mermaid Preview: Preview All Blocks in Document** | Open a live view containing every Mermaid block in the document. |
+| **Mermaid Preview: Export Document with Diagram Images…** | Copy a document and replace its Mermaid blocks with local images. |
+
+The two local generators are part of the 1.0 feature set. Their generated source
+opens as normal Mermaid content, so it can be edited, previewed, and exported
+with the same tools as a hand-written diagram.
 
 ## Diagram Studio and visual Git diffs
 
@@ -321,6 +376,15 @@ Rendering happens inside a restricted VS Code webview. The extension:
 - writes outside the current document only after an explicit save, folder export,
   task, or CLI invocation.
 
+### One-time Marketplace review prompt
+
+After five separate preview sessions have each produced a successful render, the
+extension can show one information message with **Leave a review** and **No
+thanks**. Only **Leave a review** opens the Marketplace review page; nothing is
+opened automatically. The prompt is recorded as shown regardless of the choice,
+so it does not appear after every edit, render, or later preview session. The
+counter is stored locally in VS Code and does not add telemetry.
+
 ## Install from a VSIX
 
 1. Download the latest package from
@@ -345,15 +409,19 @@ repository in VS Code and launch **Run Mermaid Preview Offline** with `F5`.
 
 ## Support
 
+Read the [complete user guide](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md) for workflows,
+configuration, compatibility, and troubleshooting. Maintainers preparing a
+release can use the [screenshot plan](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/SCREENSHOTS.md).
+
 Found a bug or have an idea? Open a
 [GitHub issue](https://github.com/Brainfkt/mermaid-preview-offline/issues).
 
 ## License and attribution
 
-This extension is released under the [MIT License](LICENSE). Mermaid and the
+This extension is released under the [MIT License](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/LICENSE). Mermaid and the
 Mermaid logo are used from the
 [mermaid-js/mermaid](https://github.com/mermaid-js/mermaid) project under its MIT
-license. See [third-party notices](THIRD_PARTY_NOTICES.md) for ZenUML and icon
+license. See [third-party notices](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/THIRD_PARTY_NOTICES.md) for ZenUML and icon
 pack attribution.
 
 This is an independent community extension and is not affiliated with or

@@ -1,4 +1,4 @@
-# Roadmap — Mermaid Preview Offline à partir de la v0.2.1
+# Roadmap — Mermaid Preview Offline 1.0
 
 ## v0.2.1 — Finition et stabilité
 
@@ -83,14 +83,15 @@
 
 ## v1.0 — Version de référence
 
-- [ ] Stabiliser toutes les commandes et tous les paramètres.
-- [ ] Garantir la restauration complète des sessions.
-- [ ] Garantir l’export identique sur macOS, Windows et Linux.
-- [ ] Couvrir chaque diagramme pris en charge par un test visuel.
-- [ ] Fournir une documentation complète et localisée.
-- [ ] Inclure une galerie de modèles professionnels.
-- [ ] Publier des engagements clairs de confidentialité et de compatibilité.
-- [ ] Atteindre une ouverture instantanée sur les diagrammes courants.
-- [ ] Garantir des exports autonomes et reproductibles.
-- [ ] Génération d’ERD depuis un schéma SQL local.
-- [ ] Génération d’un graphe de dépendances depuis `package.json`.
+- [x] Stabiliser toutes les commandes et tous les paramètres.
+- [x] Garantir la restauration complète des sessions.
+- [x] Garantir l’export identique sur macOS, Windows et Linux.
+- [x] Couvrir chaque diagramme pris en charge par un test visuel.
+- [x] Fournir une documentation complète et localisée.
+- [x] Inclure une galerie de modèles professionnels.
+- [x] Publier des engagements clairs de confidentialité et de compatibilité.
+- [x] Atteindre une ouverture instantanée sur les diagrammes courants.
+- [x] Garantir des exports autonomes et reproductibles.
+- [x] Génération d’ERD depuis un schéma SQL local.
+- [x] Génération d’un graphe de dépendances depuis `package.json`.
+- [x] Inviter dans l'app à laisser un avis sur le marketplace.
