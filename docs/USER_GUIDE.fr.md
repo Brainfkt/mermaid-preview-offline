@@ -98,6 +98,26 @@ Le pied de page indique la taille UTF-8 de la source, les dimensions naturelles
 du diagramme, l’état et la durée du rendu, ainsi que le pourcentage de zoom
 actuel.
 
+### Garde-fous sur les ressources
+
+Les limites fixes suivantes empêchent un aperçu ou un export de consommer une
+quantité de mémoire non bornée. Il s’agit de plafonds de sécurité, et non de
+réglages de qualité configurables.
+
+| Ressource | Limite | Comportement visible |
+|---|---:|---|
+| Source Mermaid | 10 Mio de source UTF-8 | L’aperçu suspend le rendu et affiche la taille mesurée ainsi que le plafond de 10 Mio. L’édition du texte reste disponible. Le CLI et le rendu de dossier/par lot rejettent ou ignorent le fichier trop volumineux avec la même limite. |
+| Images locales d’un diagramme | 64 images relatives uniques | Le rendu s’arrête en indiquant le nombre détecté et le plafond de 64 images. |
+| Une image locale | 8 Mio | Le rendu s’arrête et identifie la référence trop volumineuse. |
+| Ensemble des images locales d’un diagramme | 24 Mio cumulés | Le rendu s’arrête avec un message signalant la limite cumulée. |
+| Export matriciel | 32 000 000 pixels (32 Mpx) | L’export PNG, WebP ou PDF s’arrête avant de créer un canevas trop volumineux et demande de réduire l’échelle ou le DPI. |
+
+SVG étant un format vectoriel, il n’est pas soumis au budget matriciel de
+32 mégapixels. Optimisez ou répartissez les images d’un diagramme qui en contient
+beaucoup ; scindez une source exceptionnellement volumineuse en plusieurs petits
+diagrammes ; et réduisez le DPI ou l’échelle lorsqu’un export matriciel dépasse
+son budget.
+
 ### Zoom, déplacement, minimap et focus
 
 | Action | Commande |
@@ -257,6 +277,9 @@ SVG optimisé ou le PNG.
 
 Les caractères interdits dans les noms de fichiers sont remplacés avant
 l’enregistrement. Une extension de format manquante est ajoutée automatiquement.
+Si le PNG, WebP ou PDF demandé devait dépasser 32 000 000 pixels, la boîte de
+dialogue d’export indique les dimensions demandées et invite à réduire l’échelle
+ou le DPI au lieu d’allouer le canevas trop volumineux.
 
 ### Profils et export de dossier
 
@@ -555,6 +578,21 @@ La syntaxe des familles Mermaid expérimentales peut changer entre les versions
 de Mermaid ; utilisez la matrice de compatibilité et les exemples épinglés
 lorsqu’un résultat reproductible est important.
 
+### Invitation unique à laisser un avis sur la Marketplace
+
+Après la cinquième session d’aperçu qui termine un rendu avec succès,
+l’extension peut afficher une seule notification d’information VS Code :
+**Enjoying Mermaid Preview Offline? A Marketplace review helps the project.**
+Elle propose les choix explicites **Leave a review** et **No thanks**.
+
+Seul **Leave a review** ouvre la page d’avis de la Marketplace. L’extension ne
+l’ouvre jamais automatiquement, et les modifications de la source ou les rendus
+répétés au sein d’un aperçu déjà comptabilisé ne déclenchent aucune invitation
+supplémentaire. Une fois le message affiché, son état local dans VS Code empêche
+sa réapparition lors de sessions ultérieures, que vous laissiez un avis,
+refusiez ou fermiez le message. Ce compteur local d’éligibilité ne constitue pas
+de la télémétrie et ne transmet aucune donnée sur les diagrammes ou leur usage.
+
 ## Dépannage
 
 ### Un fichier Mermaid s’ouvre comme du texte
@@ -577,6 +615,15 @@ seuil utilisent un délai minimal de 400 ms. Le pied de page identifie les
 fichiers volumineux et affiche la progression du rendu. Réduisez les
 modifications inutiles de la source avant de diminuer le délai.
 
+### Une source ou un ensemble d’images locales dépasse sa limite
+
+Une source Mermaid de plus de 10 Mio reste modifiable, mais n’est pas rendue.
+Scindez-la en plusieurs petits diagrammes avant l’aperçu, le CLI ou l’export de
+dossier. Pour les images locales, conservez au maximum 64 références uniques,
+avec une taille maximale de 8 Mio par fichier et de 24 Mio cumulés dans un même
+diagramme. Optimisez ou répartissez les ressources nommées dans l’avertissement,
+puis actualisez l’aperçu.
+
 ### Le diagramme ne tient pas dans la vue ou la minimap est absente
 
 Appuyez sur `Ctrl/Cmd + 0` pour réactiver le mode d’ajustement. La minimap
@@ -598,6 +645,10 @@ Le thème d’export est indépendant du thème d’aperçu. Vérifiez le thème
 l’arrière-plan, l’échelle, le DPI, la marge et si **Original SVG** est
 sélectionné. Original SVG n’applique ni optimisation, ni métadonnées, ni
 arrière-plan, ni réglage de marge.
+
+Si une demande PNG, WebP ou PDF dépasse 32 000 000 pixels, réduisez l’échelle ou
+le DPI d’export jusqu’à ce que l’aperçu en direct réussisse, ou choisissez SVG
+lorsqu’une sortie vectorielle convient.
 
 ### L’export CLI ou par tâche ne trouve pas de navigateur
 

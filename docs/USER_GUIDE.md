@@ -88,6 +88,24 @@ Changing back to automatic mode renders immediately.
 The footer reports the UTF-8 source size, natural diagram dimensions, render
 status and timing, and current zoom percentage.
 
+### Resource safeguards
+
+The following fixed limits prevent one preview or export from consuming
+unbounded memory. They are safety ceilings, not configurable quality settings.
+
+| Resource | Limit | User-visible behavior |
+|---|---:|---|
+| Mermaid source | 10 MiB of UTF-8 source | The preview pauses rendering and shows the measured size and 10 MiB ceiling. Text editing remains available. CLI and folder/batch rendering reject or skip the oversized file with the same limit. |
+| Local images in one diagram | 64 unique relative images | Rendering stops with the detected count and the 64-image ceiling. |
+| One local image | 8 MiB | Rendering stops and identifies the oversized reference. |
+| All local images in one diagram | 24 MiB combined | Rendering stops with an aggregate-limit message. |
+| Rasterized export | 32,000,000 pixels | PNG, WebP, or PDF export stops before creating an oversized canvas and asks you to reduce scale or DPI. |
+
+SVG is vector output and is not subject to the 32-megapixel raster budget.
+Optimize image files or split image-heavy diagrams; split an exceptional source
+file into smaller diagrams; and lower DPI or scale when a raster export exceeds
+its budget.
+
 ### Zoom, pan, minimap, and focus
 
 | Action | Control |
@@ -235,7 +253,9 @@ dialog can separately copy original SVG, optimized SVG, or PNG.
   selected format.
 
 Unsafe file-name characters are replaced before saving. A missing format
-extension is added automatically.
+extension is added automatically. If the requested PNG, WebP, or PDF would
+exceed 32,000,000 pixels, the export dialog reports the requested dimensions and
+asks you to reduce scale or DPI instead of allocating the oversized canvas.
 
 ### Profiles and folder export
 
@@ -524,6 +544,20 @@ plug-in versions are declared in `package.json`. Experimental Mermaid families
 can change syntax between Mermaid releases; use the compatibility matrix and
 the pinned examples when reproducible output matters.
 
+### One-time Marketplace review prompt
+
+After the fifth preview session that completes a successful render, the
+extension may show one VS Code information message: **Enjoying Mermaid Preview
+Offline? A Marketplace review helps the project.** It offers the explicit
+choices **Leave a review** and **No thanks**.
+
+Only **Leave a review** opens the Marketplace review page. The extension never
+opens it automatically, and source edits or repeated renders inside an already
+counted preview do not trigger more prompts. Once the message has been shown,
+its local VS Code state prevents it from appearing in later sessions, whether
+you leave a review, decline, or dismiss the message. This local eligibility
+counter is not telemetry and does not transmit diagram or usage data.
+
 ## Troubleshooting
 
 ### A Mermaid file opens as text
@@ -544,6 +578,14 @@ Check `refreshDelay` and `largeFileThresholdKb`. Files above the threshold use
 at least a 400 ms debounce. The footer identifies a large file and shows render
 progress. Reduce unnecessary source churn before lowering the delay.
 
+### A source or local-image set exceeds its limit
+
+A Mermaid source larger than 10 MiB stays editable but is not rendered. Split it
+into smaller diagrams before preview, CLI, or folder export. For local images,
+keep at most 64 unique references, no more than 8 MiB per file, and no more than
+24 MiB combined in one diagram. Optimize or split the assets named by the
+warning, then refresh.
+
 ### The diagram does not fit or the minimap is missing
 
 Press `Ctrl/Cmd + 0` to re-enable fit mode. The minimap appears only when the
@@ -562,6 +604,10 @@ files, and paths outside the workspace are intentionally ignored.
 The export theme is independent of the preview theme. Check theme, background,
 scale, DPI, margin, and whether **Original SVG** is selected. Original SVG does
 not apply optimization, metadata, background, or margin controls.
+
+If a PNG, WebP, or PDF request exceeds 32,000,000 pixels, reduce export scale or
+DPI until the live preview succeeds, or choose SVG when vector output is
+appropriate.
 
 ### CLI or task export cannot find a browser
 
