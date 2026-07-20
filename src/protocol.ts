@@ -90,7 +90,7 @@ export type WebviewToExtensionMessage =
       line?: number;
       column?: number;
     }
-  | { type: 'clearDiagnostic'; version: number }
+  | { type: 'clearDiagnostic'; version: number; rendered: boolean }
   | { type: 'viewState'; state: PersistedPreviewState }
   | { type: 'copySvg'; svg: string }
   | { type: 'saveSvg'; svg: string }

@@ -17,6 +17,7 @@ import {
 } from './exportRenderer';
 import { describeMermaidError } from './mermaidError';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { OFFLINE_FONT_STACK } from './offlineFont';
 import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   DiagramTheme,
@@ -395,7 +396,7 @@ async function renderLatest(): Promise<void> {
     exportOpenButton.disabled = true;
     showState('empty');
     renderStatus.textContent = 'Empty file';
-    vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion });
+    vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion, rendered: false });
     activeRenderController = undefined;
     rendering = false;
     return;
@@ -441,7 +442,7 @@ async function renderLatest(): Promise<void> {
         ? ` • ${formatByteLength(latestByteLength)}`
         : '';
     renderStatus.textContent = `Rendered • ${Math.round(performance.now() - startedAt)} ms${sizeStatus}`;
-    vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion });
+    vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion, rendered: true });
   } catch (error: unknown) {
     cleanupFailedRender(renderId);
     if (error instanceof RenderCancelledError) {
@@ -1071,7 +1072,7 @@ function initializeMermaid(theme: Exclude<DiagramTheme, 'adaptive'>): void {
     startOnLoad: false,
     securityLevel: 'strict',
     theme,
-    fontFamily: getComputedStyle(document.body).fontFamily,
+    fontFamily: OFFLINE_FONT_STACK,
     flowchart: { htmlLabels: false, useMaxWidth: false },
     sequence: { useMaxWidth: false },
   });

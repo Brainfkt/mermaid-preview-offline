@@ -334,7 +334,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'clearDiagnostic':
           if (message.version === document.version) {
             this.diagnostics.clearRender(document.uri);
-            if (!reviewSessionRecorded) {
+            if (message.rendered && !reviewSessionRecorded) {
               reviewSessionRecorded = true;
               void this.recordEligibleReviewSession();
             }
@@ -823,6 +823,7 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     mode?: unknown;
     profiles?: unknown;
     relativeDirectory?: unknown;
+    rendered?: unknown;
     settings?: unknown;
     state?: unknown;
     svg?: unknown;
@@ -850,7 +851,7 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     return isDiagramTheme(candidate.theme);
   }
   if (candidate.type === 'clearDiagnostic') {
-    return typeof candidate.version === 'number';
+    return typeof candidate.version === 'number' && typeof candidate.rendered === 'boolean';
   }
   if (candidate.type === 'diagnostic') {
     return (

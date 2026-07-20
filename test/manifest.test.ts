@@ -152,7 +152,7 @@ void test('v0.7 documentation workflows support Markdown, MDX, and AsciiDoc', ()
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
   }
   for (const language of ['markdown', 'mdx', 'asciidoc']) {
-    assert.ok(manifest.activationEvents.includes(`onLanguage:${language}`));
+    assert.ok(!manifest.activationEvents.includes(`onLanguage:${language}`));
   }
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   for (const command of documentationCommands) {
