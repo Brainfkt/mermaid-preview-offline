@@ -36,6 +36,8 @@ interface RasterizedSvg {
 }
 
 const textEncoder = new TextEncoder();
+const MAX_RASTER_DIMENSION = 16_384;
+export const MAX_RASTER_PIXELS = 32_000_000;
 
 export async function renderExportArtifact(input: ExportRenderInput): Promise<ExportArtifact> {
   const settings = normalizeExportSettings(input.settings);
@@ -179,9 +181,14 @@ async function rasterizeSvg(
   const pixelScale = settings.scale * (settings.dpi / 96);
   const width = Math.max(1, Math.round(prepared.width * pixelScale));
   const height = Math.max(1, Math.round(prepared.height * pixelScale));
-  if (width > 32_767 || height > 32_767 || width * height > 268_000_000) {
+  if (
+    width > MAX_RASTER_DIMENSION ||
+    height > MAX_RASTER_DIMENSION ||
+    width * height > MAX_RASTER_PIXELS
+  ) {
     throw new Error(
-      `The requested ${width.toLocaleString()} × ${height.toLocaleString()} export exceeds browser canvas limits.`,
+      `The requested ${width.toLocaleString()} × ${height.toLocaleString()} export exceeds the ` +
+      `${MAX_RASTER_PIXELS.toLocaleString()}-pixel memory budget. Reduce scale or DPI.`,
     );
   }
 
