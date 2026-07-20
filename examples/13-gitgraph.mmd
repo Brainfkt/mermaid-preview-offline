@@ -1,17 +1,36 @@
+---
+title: Release branch history
+---
 gitGraph LR:
-  commit id: "Initialisation"
-  commit id: "Socle"
-  branch feature/paiement
-  checkout feature/paiement
-  commit id: "Formulaire"
-  commit id: "API paiement" tag: "beta"
+  commit id: "bootstrap"
+  commit id: "catalog-baseline"
+
+  branch feature/checkout
+  checkout feature/checkout
+  commit id: "checkout-ui"
+  commit id: "order-api" tag: "1.0-rc.1"
+
   checkout main
-  branch hotfix
-  commit id: "Correctif urgent" type: HIGHLIGHT
+  branch fix/inventory
+  checkout fix/inventory
+  commit id: "inventory-lock" type: HIGHLIGHT
   checkout main
-  merge hotfix
-  checkout feature/paiement
-  commit id: "Tests"
+  merge fix/inventory tag: "0.9.1"
+
+  checkout feature/checkout
+  commit id: "end-to-end-tests"
   checkout main
-  merge feature/paiement tag: "v1.0"
-  commit id: "Publication" type: REVERSE
+  merge feature/checkout tag: "1.0.0"
+
+  branch release/1.0
+  checkout release/1.0
+  commit id: "release-notes"
+
+  checkout main
+  branch docs
+  checkout docs
+  cherry-pick id: "release-notes"
+  commit id: "publish-guide"
+
+  checkout main
+  commit id: "next-cycle" type: REVERSE

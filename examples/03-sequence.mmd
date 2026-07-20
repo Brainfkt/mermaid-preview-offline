@@ -1,27 +1,48 @@
+---
+title: Idempotent order placement
+---
 sequenceDiagram
   autonumber
-  actor U as Utilisateur
-  participant W as Application web
-  participant A as API
-  participant D as Base de données
-
-  U->>W: Valider le panier
-  W->>+A: POST /commandes
-  A->>D: Démarrer une transaction
-
-  alt Stock disponible
-    A->>D: Créer la commande
-    D-->>A: Commande créée
-    par Actions parallèles
-      A-)W: Confirmer la commande
-    and
-      A-)D: Planifier l'expédition
-    end
-    W-->>U: Afficher la confirmation
-  else Stock insuffisant
-    A-->>W: Erreur 409
-    W-->>U: Proposer une alternative
+  actor C as Customer
+  box rgb(235, 245, 255) Storefront
+    participant W as Web app
+    participant O as Order API
+  end
+  box rgb(240, 253, 244) Core services
+    participant I as Inventory
+    participant P as Payments
+    participant E as Event stream
   end
 
-  A->>-D: Terminer la transaction
-  Note over U,D: Les messages asynchrones utilisent une flèche ouverte
+  C->>W: Confirm checkout
+  W->>+O: POST /orders with idempotency key
+  O->>+I: Reserve cart items
+  I-->>-O: Reservation and expiry time
+
+  alt Inventory is available
+    critical Authorize the payment
+      O->>+P: Authorize total amount
+      P-->>-O: Authorization approved
+    option Provider is temporarily unavailable
+      O->>O: Mark order as payment pending
+    end
+
+    par Complete the customer order
+      O->>O: Persist order and reservation
+    and Start downstream fulfillment
+      O-)E: Publish OrderConfirmed
+      E--)O: Event accepted
+    end
+
+    opt Customer requested a receipt
+      O-)E: Publish ReceiptRequested
+    end
+    O-->>W: 201 Created with order status
+    W-->>C: Show confirmation and tracking
+  else One or more items are unavailable
+    O-->>W: 409 Conflict with alternatives
+    W-->>C: Restore cart and suggest substitutes
+  end
+
+  deactivate O
+  Note over C,E: Every retry reuses the same idempotency key to prevent duplicate orders.

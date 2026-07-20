@@ -1,38 +1,72 @@
+---
+title: Commerce transactional data model
+---
 erDiagram
-  CLIENT ||--o{ COMMANDE : passe
-  COMMANDE ||--|{ LIGNE_COMMANDE : contient
-  PRODUIT ||--o{ LIGNE_COMMANDE : apparaît_dans
-  COMMANDE ||--o| PAIEMENT : est_réglée_par
+  CUSTOMER ||--o{ ADDRESS : saves
+  CUSTOMER ||--o{ ORDER : places
+  ORDER ||--|{ ORDER_LINE : contains
+  PRODUCT ||--o{ ORDER_LINE : appears_in
+  PRODUCT ||--o{ INVENTORY_ITEM : stocked_as
+  ORDER ||--o{ PAYMENT : paid_with
+  ORDER ||--o| SHIPMENT : fulfilled_by
+  ADDRESS ||--o{ ORDER : selected_for
 
-  CLIENT {
+  CUSTOMER {
     uuid id PK
     string email UK
-    string nom
-    datetime cree_le
+    string display_name
+    datetime created_at
   }
 
-  COMMANDE {
+  ADDRESS {
     uuid id PK
-    uuid client_id FK
-    string statut
-    decimal total
+    uuid customer_id FK
+    string country_code
+    string postal_code
   }
 
-  LIGNE_COMMANDE {
-    uuid commande_id PK, FK
-    uuid produit_id PK, FK
-    int quantite
-    decimal prix_unitaire
+  ORDER {
+    uuid id PK
+    uuid customer_id FK
+    uuid shipping_address_id FK
+    string status
+    decimal total_amount
+    datetime placed_at
   }
 
-  PRODUIT {
+  ORDER_LINE {
+    uuid order_id PK, FK
+    uuid product_id PK, FK
+    int quantity
+    decimal unit_price
+  }
+
+  PRODUCT {
     uuid id PK
     string sku UK
-    string libelle
+    string name
+    decimal list_price
   }
 
-  PAIEMENT {
+  INVENTORY_ITEM {
+    uuid product_id PK, FK
+    string warehouse_code PK
+    int available_quantity
+    int reserved_quantity
+  }
+
+  PAYMENT {
     uuid id PK
-    uuid commande_id FK
-    string fournisseur
+    uuid order_id FK
+    string provider_reference UK
+    string status
+    decimal amount
+  }
+
+  SHIPMENT {
+    uuid id PK
+    uuid order_id FK, UK
+    string carrier
+    string tracking_number UK
+    datetime shipped_at
   }

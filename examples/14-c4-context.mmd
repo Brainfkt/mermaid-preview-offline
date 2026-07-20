@@ -1,11 +1,18 @@
 C4Context
-  title Contexte du système de commande
+  title Northstar Commerce — System Context
 
-  Person(customer, "Client", "Achète et suit ses commandes")
-  System(shop, "Plateforme e-commerce", "Gère le catalogue et les commandes")
-  System_Ext(payment, "Prestataire de paiement", "Autorise les paiements")
-  System_Ext(carrier, "Transporteur", "Livre les colis")
+  Person(customer, "Customer", "Discovers products, places orders, and tracks deliveries")
+  Person(support, "Support Specialist", "Resolves order, payment, and delivery issues")
 
-  Rel(customer, shop, "Utilise", "HTTPS")
-  Rel(shop, payment, "Demande une autorisation", "HTTPS/JSON")
-  Rel(shop, carrier, "Crée une expédition", "HTTPS/JSON")
+  System(northstar, "Northstar Commerce", "Provides a global storefront and coordinates the order lifecycle")
+  System_Ext(identity, "Identity Provider", "Authenticates customers and employees")
+  System_Ext(payment, "Payment Service", "Authorizes, captures, and refunds payments")
+  System_Ext(carrier, "Carrier Network", "Creates shipments and reports delivery status")
+  System_Ext(analytics, "Analytics Platform", "Measures customer journeys and business outcomes")
+
+  Rel(customer, northstar, "Browses, buys, and tracks orders", "HTTPS")
+  Rel(support, northstar, "Investigates and resolves cases", "HTTPS")
+  Rel(northstar, identity, "Authenticates users", "OIDC")
+  Rel(northstar, payment, "Authorizes and settles payments", "HTTPS/JSON")
+  Rel(northstar, carrier, "Books and tracks shipments", "HTTPS/JSON")
+  Rel(northstar, analytics, "Exports business events", "Encrypted event stream")

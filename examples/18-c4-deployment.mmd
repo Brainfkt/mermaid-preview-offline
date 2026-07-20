@@ -1,18 +1,40 @@
 C4Deployment
-  title Déploiement de la plateforme e-commerce
+  title Northstar Commerce — Production Deployment
 
-  Deployment_Node(device, "Appareil du client", "Navigateur") {
-    Container(spa, "Application web", "TypeScript", "Interface utilisateur")
+  Deployment_Node(customer_device, "Customer Device", "Modern browser") {
+    Container(storefront, "Web Storefront", "TypeScript", "Runs the shopping experience")
   }
 
-  Deployment_Node(cloud, "Cloud", "Production") {
-    Deployment_Node(app_cluster, "Cluster applicatif", "Kubernetes") {
-      Container(api, "API", "Node.js", "Logique métier")
+  Deployment_Node(cloud, "Primary Cloud Region", "Production") {
+    Deployment_Node(edge, "Edge Network", "Managed CDN and web application firewall") {
+      Container(cdn, "Static Delivery", "CDN", "Serves versioned storefront assets")
     }
-    Deployment_Node(data_cluster, "Cluster de données", "Service managé") {
-      ContainerDb(db, "Base de données", "PostgreSQL", "Commandes")
+
+    Deployment_Node(app_cluster, "Application Cluster", "Kubernetes") {
+      Container(api, "Commerce API", "Node.js — three replicas", "Handles synchronous commerce traffic")
+      Container(worker, "Fulfillment Worker", "Node.js — two replicas", "Processes asynchronous workflows")
+    }
+
+    Deployment_Node(data_services, "Managed Data Services", "Private network") {
+      ContainerDb(database, "Commerce Database", "PostgreSQL — multi-zone", "Stores commerce records")
+      ContainerDb(search, "Product Search Index", "OpenSearch — multi-zone", "Serves product searches")
+      ContainerDb(cache, "Session Cache", "Redis — replicated", "Stores sessions, carts, and reservations")
+      ContainerQueue(events, "Event Stream", "AMQP — replicated", "Distributes durable commerce events")
     }
   }
 
-  Rel(spa, api, "Appelle", "HTTPS/JSON")
-  Rel(api, db, "Lit et écrit", "TLS/SQL")
+  System_Ext(identity, "Identity Provider", "Authenticates customers and employees")
+  System_Ext(payment, "Payment Service", "Authorizes and settles payments")
+  System_Ext(carrier, "Carrier Network", "Creates and tracks shipments")
+
+  Rel(storefront, cdn, "Downloads application assets", "HTTPS")
+  Rel(storefront, api, "Calls", "HTTPS/JSON")
+  Rel(api, identity, "Validates identities", "OIDC")
+  Rel(api, database, "Reads and writes", "TLS/SQL")
+  Rel(api, search, "Queries products", "HTTPS/JSON")
+  Rel(api, cache, "Reads and updates", "TLS/RESP")
+  Rel(api, payment, "Authorizes and settles", "HTTPS/JSON")
+  Rel(api, events, "Publishes order events", "AMQP")
+  Rel(events, worker, "Delivers order events", "AMQP")
+  Rel(worker, database, "Updates fulfillment state", "TLS/SQL")
+  Rel(worker, carrier, "Books and tracks shipments", "HTTPS/JSON")

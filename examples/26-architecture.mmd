@@ -1,14 +1,43 @@
+---
+title: Event-driven commerce architecture
+---
 architecture-beta
-  group edge(cloud)[Edge]
-  group platform(cloud)[Platform]
+  group edge(cloud)[Edge Network]
+  group platform(cloud)[Commerce Platform]
+  group data(cloud)[Managed Data Services]
+  group partners(cloud)[Partner Systems]
 
-  service client(internet)[Client] in edge
-  service gateway(server)[Passerelle API] in edge
-  service api(server)[Business service] in platform
-  service database(database)[Database] in platform
-  service storage(disk)[Stockage objet] in platform
+  service customers(internet)[Customer devices] in edge
+  service cdn(cloud)[CDN] in edge
+  service gateway(server)[API gateway] in edge
 
-  client:R --> L:gateway
-  gateway:R --> L:api
-  api:B --> T:database
-  api:R --> L:storage
+  service catalog(server)[Catalog service] in platform
+  service orders(server)[Order service] in platform
+  service fulfillment(server)[Fulfillment worker] in platform
+  junction event_router in platform
+  junction partner_router in platform
+
+  service cache(disk)[Catalog cache] in data
+  service search(disk)[Search index] in data
+  service database(database)[Commerce database] in data
+  service stream(disk)[Event stream] in data
+
+  service identity(server)[Identity provider] in partners
+  service payment(server)[Payment service] in partners
+  service carrier(server)[Carrier network] in partners
+
+  customers:R --> L:cdn
+  cdn:R --> L:gateway
+  gateway:R --> L:catalog
+  gateway:R --> L:orders
+  gateway:B --> T:identity
+  catalog:B --> T:cache
+  catalog:B --> T:search
+  orders:B --> T:database
+  orders:R --> L:event_router
+  event_router:B --> T:stream
+  stream:T --> B:fulfillment
+  orders:R --> L:partner_router
+  fulfillment:R --> L:partner_router
+  partner_router:R --> L:payment
+  partner_router:R --> L:carrier

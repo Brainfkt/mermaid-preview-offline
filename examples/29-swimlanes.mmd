@@ -1,27 +1,50 @@
+---
+title: Cross-team production incident response
+---
 swimlane-beta LR
-  accTitle: Traitement d'une demande de support
-  accDescr: Le client ouvre une demande, le support la qualifie et l'ingénierie peut la résoudre.
+  accTitle: Production incident response across four teams
+  accDescr: A customer report moves through support, platform operations, and engineering until service health is verified and the incident is closed.
 
-  subgraph customer [Client]
-    open[Ouvrir une demande]
-    receive([Recevoir la réponse])
+  subgraph customer [Customer]
+    report(["Report checkout failure"])
+    confirm(["Confirm recovery"])
   end
 
-  subgraph support [Support]
-    triage[Qualifier]
-    known{Incident connu ?}
-    answer[Répondre]
+  subgraph support [Customer Support]
+    capture["Capture impact and evidence"]
+    notice["Publish incident notice"]
+    recovery["Publish recovery update"]
+    close(["Close the incident"])
   end
 
-  subgraph engineering [Ingénierie]
-    investigate[Analyser]
-    fix[Préparer un correctif]
+  subgraph platform [Platform Operations]
+    correlate["Correlate alerts and traces"]
+    severity{"Major incident?"}
+    mitigate["Apply safe mitigation"]
+    observe["Watch service-level indicators"]
   end
 
-  open -->|Demande reçue| triage --> known
-  known -->|Oui| answer
-  known -->|Non| investigate --> fix --> answer
-  answer --> receive
+  subgraph engineering [Engineering]
+    reproduce["Reproduce the failure"]
+    cause["Identify root cause"]
+    fix["Implement and review fix"]
+    deploy["Deploy progressively"]
+  end
 
-  classDef decision fill:#fef3c7,stroke:#d97706,color:#78350f;
-  class known decision;
+  report -->|"Ticket and diagnostics"| capture
+  capture --> correlate --> severity
+  severity -->|"Yes"| notice
+  severity -->|"No"| reproduce
+  notice --> mitigate
+  mitigate --> reproduce --> cause --> fix --> deploy
+  deploy --> observe
+  observe -->|"Healthy"| recovery
+  observe -->|"Regression"| mitigate
+  recovery --> confirm --> close
+
+  classDef terminal fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:2px;
+  classDef decision fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:2px;
+  classDef action fill:#eff6ff,stroke:#2563eb,color:#1e3a8a;
+  class report,confirm,close terminal;
+  class severity decision;
+  class capture,notice,recovery,correlate,mitigate,observe,reproduce,cause,fix,deploy action;

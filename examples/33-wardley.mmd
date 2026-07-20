@@ -1,21 +1,35 @@
 wardley-beta
-  title Stratégie d'une plateforme logicielle
-  size [1100, 700]
+  title Strategy for a global commerce platform
+  size [1200, 760]
 
-  evolution Genesis@0.25 -> Sur mesure@0.50 -> Produit@0.75 -> Commodite@1.0
+  evolution Genesis@0.20 -> Custom@0.45 -> Product@0.70 -> Commodity@1.0
 
-  anchor Client [0.95, 0.90]
-  component "Application web" [0.82, 0.74] (build)
-  component "API métier" [0.68, 0.58] (build)
-  component "Moteur de recommandation" [0.55, 0.28] (build) (inertia)
-  component "Base de données" [0.45, 0.80] (buy)
-  component "Cloud" [0.22, 0.96] (market)
+  anchor Customer [0.98, 0.90]
+  anchor Operator [0.88, 0.88]
+  component "Mobile storefront" [0.88, 0.72] (build)
+  component "Order API" [0.78, 0.60] (build)
+  component "Personalization model" [0.66, 0.27] (build) (inertia)
+  component "Fulfillment optimizer" [0.60, 0.38] (build)
+  component "Identity service" [0.70, 0.76] (buy)
+  component "Payment gateway" [0.73, 0.88] (buy)
+  component "Event stream" [0.52, 0.70] (buy)
+  component "Object storage" [0.41, 0.91] (market)
+  component "Compute platform" [0.31, 0.95] (market)
 
-  Client -> "Application web"
-  "Application web" -> "API métier"
-  "API métier" -> "Moteur de recommandation"
-  "API métier" -> "Base de données"
-  "Base de données" -> "Cloud"
+  Customer -> "Mobile storefront"
+  Operator -> "Fulfillment optimizer"
+  "Mobile storefront" -> "Order API"
+  "Mobile storefront" -> "Identity service"
+  "Order API" -> "Payment gateway"
+  "Order API" -> "Personalization model"
+  "Order API" -> "Fulfillment optimizer"
+  "Order API" -> "Event stream"
+  "Personalization model" -> "Object storage"
+  "Fulfillment optimizer" -> "Event stream"
+  "Event stream" -> "Object storage"
+  "Object storage" -> "Compute platform"
 
-  evolve "Moteur de recommandation" 0.55
-  note "Industrialiser la recommandation" [0.58, 0.42]
+  evolve "Personalization model" 0.52
+  evolve "Fulfillment optimizer" 0.58
+  note "Differentiate through decisions, not infrastructure" [0.57, 0.46]
+  note "Replace custom plumbing with managed capabilities" [0.38, 0.79]

@@ -1,28 +1,60 @@
+---
+title: Version 1.0 requirements traceability
+---
 requirementDiagram
-  requirement disponibilite {
+  functionalRequirement checkout {
     id: REQ001
-    text: Le service doit rester disponible 99.9 pour cent du temps
+    text: A customer can place an order from a valid cart
     risk: high
     verifymethod: test
   }
 
-  functionalRequirement export_pdf {
+  interfaceRequirement checkout_api {
     id: REQ002
-    text: L'utilisateur doit pouvoir exporter un rapport en PDF
+    text: The order API returns a stable order identifier and status
+    risk: medium
+    verifymethod: inspection
+  }
+
+  performanceRequirement order_latency {
+    id: REQ003
+    text: Ninety five percent of order requests complete within two seconds
+    risk: high
+    verifymethod: analysis
+  }
+
+  designConstraint accessible_checkout {
+    id: REQ004
+    text: The checkout flow meets WCAG AA interaction requirements
     risk: medium
     verifymethod: demonstration
   }
 
-  element api_redondante {
+  element order_service {
     type: service
-    docRef: ADR004
+    docRef: ADR012
   }
 
-  element tests_charge {
+  element api_contract {
+    type: contract
+    docRef: OPENAPI01
+  }
+
+  element acceptance_suite {
     type: test_suite
     docRef: TESTPLAN01
   }
 
-  api_redondante - satisfies -> disponibilite
-  tests_charge - verifies -> disponibilite
-  tests_charge - verifies -> export_pdf
+  element load_suite {
+    type: test_suite
+    docRef: PERFPLAN01
+  }
+
+  checkout - contains -> checkout_api
+  accessible_checkout - refines -> checkout
+  order_service - satisfies -> checkout
+  api_contract - satisfies -> checkout_api
+  acceptance_suite - verifies -> checkout
+  acceptance_suite - verifies -> accessible_checkout
+  load_suite - verifies -> order_latency
+  order_latency - traces -> checkout

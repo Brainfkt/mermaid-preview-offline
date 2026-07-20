@@ -1,16 +1,40 @@
 zenuml
-  title Création d'une commande
-  @Actor Client
-  @Boundary Web
-  @Database Database
+  title Resilient checkout orchestration
+  @Actor Shopper
+  @Boundary Storefront
+  @Control Checkout
+  @Control Payment
+  @Entity Inventory
+  @Database OrderStore
+  @Queue EventBus
 
-  Client->Web: Valider le panier
-  Web.createOrder() {
-    Database.save()
-    if(stockAvailable) {
-      return confirmation
+  Shopper->Storefront: Confirm checkout
+  Storefront.submitOrder(cartId) {
+    try {
+      order = Checkout.createOrder(cartId) {
+        par {
+          stock = Inventory.reserve(cartId)
+          authorization = Payment.authorize(cartId)
+        }
+        if(stock && authorization) {
+          order = new Order(cartId)
+          OrderStore.save(order)
+          Checkout->EventBus: OrderConfirmed
+          return order
+        } else {
+          Checkout->EventBus: OrderRejected
+          return rejection
+        }
+      }
+    } catch (CheckoutFailure) {
+      Checkout.releaseReservation(cartId)
+      Storefront->Shopper: Show recovery options
+    } finally {
+      Checkout.recordAttempt(cartId)
+    }
+    if(order) {
+      Storefront->Shopper: Display confirmation
     } else {
-      return outOfStock
+      Storefront->Shopper: Keep cart ready for retry
     }
   }
-  Web->Client: Afficher le résultat

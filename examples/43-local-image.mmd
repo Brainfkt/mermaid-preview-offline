@@ -1,6 +1,39 @@
+---
+title: Workspace-local image rendering
+---
 flowchart LR
-  source["Fichier Mermaid"]
-  preview@{ img: "assets/offline-preview.svg", label: "Image locale incorporée", pos: "b", h: 112, constraint: "on" }
-  export["SVG autonome"]
+  accTitle: Workspace-local image rendering and export
+  accDescr: A Mermaid document and a workspace-relative SVG asset are validated, embedded without network access, sanitized, and exported to several formats.
 
-  source --> preview --> export
+  subgraph workspace [Workspace inputs]
+    source["diagram.mmd"]
+    asset["assets/offline-preview.svg"]
+  end
+
+  subgraph renderer [Offline renderer]
+    allowed{"Workspace path allowed?"}
+    preview@{ img: "assets/offline-preview.svg", label: "Embedded local preview", pos: "b", h: 128, constraint: "on" }
+    sanitize["Sanitize generated SVG"]
+    blocked["Show actionable path error"]
+  end
+
+  subgraph outputs [Export outputs]
+    svg[["Standalone SVG"]]
+    png["High-resolution PNG"]
+    pdf[("Print-ready PDF")]
+  end
+
+  source --> allowed
+  asset -. "Workspace-relative asset" .-> allowed
+  allowed -->|"Yes"| preview --> sanitize
+  allowed -->|"No"| blocked
+  sanitize --> svg
+  sanitize --> png
+  sanitize --> pdf
+
+  classDef input fill:#eff6ff,stroke:#2563eb,color:#1e3a8a;
+  classDef output fill:#ecfdf5,stroke:#059669,color:#064e3b;
+  classDef error fill:#fff1f2,stroke:#e11d48,color:#881337;
+  class source,asset input;
+  class svg,png,pdf output;
+  class blocked error;

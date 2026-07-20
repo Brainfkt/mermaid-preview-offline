@@ -1,7 +1,17 @@
 railroad-peg-beta
-  title Grammaire PEG d'une expression
-  expression <- term (("+" / "-") term)*;
-  term <- factor (("*" / "/") factor)*;
-  factor <- number / "(" expression ")";
-  number <- digit+;
+  title Authorization policy grammar in PEG
+  accTitle: PEG grammar for a compact authorization policy language
+  accDescr: Policies contain allow rules with actions, resources, optional conditions, quoted values, and strict end-of-input handling.
+  policy <- spacing rule+ end;
+  rule <- "allow" spacing action "on" spacing resource condition? ";" spacing;
+  action <- ("read" / "write" / "delete") spacing;
+  resource <- ("orders" / "inventory" / "payments") spacing;
+  condition <- "when" spacing subject comparator literal spacing;
+  subject <- ("role" / "region" / "risk") spacing;
+  comparator <- ("equals" / "contains" / "below") spacing;
+  literal <- quoted / integer;
+  quoted <- "'" (!"'" .)* "'" spacing;
+  integer <- digit+ spacing;
   digit <- "0" / "1" / "2" / "3" / "4" / "5" / "6" / "7" / "8" / "9";
+  spacing <- (" " / "\t" / "\r" / "\n")*;
+  end <- !.;

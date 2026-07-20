@@ -1,21 +1,32 @@
+---
+title: Root causes of unreliable production releases
+---
 ishikawa-beta
-  Retard de livraison
-    Processus
-      Validation manuelle
-      Priorités changeantes
-      Absence de critères de sortie
-    Équipe
-      Capacité insuffisante
-      Connaissance concentrée
-    Technologie
-      Tests instables
-      Déploiement lent
-      Dette technique
-        Dépendances obsolètes
-        Couplage fort
-    Environnement
-      Fournisseur indisponible
-      Incidents de production
-    Mesure
-      Estimations imprécises
-      Alertes tardives
+  Unreliable production releases
+    People
+      Ownership changes during incidents
+      Critical knowledge held by one engineer
+      Review load exceeds team capacity
+    Process
+      Acceptance criteria are ambiguous
+      Risky changes bypass staging
+      Rollback steps are not rehearsed
+      Release windows keep moving
+    Platform
+      Test environments drift from production
+      Deployments are slow
+        Images are rebuilt repeatedly
+        Database migrations block startup
+      Feature flags lack lifecycle controls
+    Product
+      Scope changes after implementation starts
+      Dependencies cross several teams
+      Edge cases are discovered by customers
+    Partners
+      Vendor sandboxes behave differently
+      Rate limits are undocumented
+      Status notifications arrive late
+    Measurement
+      Flaky tests hide real regressions
+      Service-level indicators are incomplete
+      Release health has no shared scorecard

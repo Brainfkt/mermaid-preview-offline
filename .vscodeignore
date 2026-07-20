@@ -11,6 +11,7 @@ node_modules/**
 scripts/**
 src/**
 test/**
+media/screenshots/**
 eslint.config.mjs
 esbuild.mjs
 tsconfig*.json

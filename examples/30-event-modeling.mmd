@@ -1,14 +1,28 @@
+---
+title: Commerce order event model
+---
 eventmodeling
-  tf 01 ui Cart.CartUI
+  tf 01 ui Checkout.Storefront
   tf 02 cmd Cart.AddItem [[AddItem]]
   tf 03 evt Cart.ItemAdded [[ItemAdded]]
-  tf 04 rmo Cart.CartItems
-  tf 05 ui Cart.CartUI
+  tf 04 rmo Cart.CartSummary
+  tf 05 ui Checkout.Storefront
 
-  rf 06 evt Payment.PaymentAuthorized
-  tf 07 pcr Shipping.ShippingProcessor
-  tf 08 cmd Shipping.PrepareShipment
-  tf 09 evt Shipping.ShipmentPrepared
+  tf 06 cmd Checkout.PlaceOrder [[PlaceOrder]]
+  tf 07 evt Checkout.OrderPlaced [[OrderPlaced]]
+  rf 08 evt Payment.PaymentDeclined [[PaymentDeclined]]
+  rf 09 evt Payment.PaymentAuthorized [[PaymentAuthorized]]
+
+  tf 10 pcr Inventory.ReservationPolicy
+  tf 11 cmd Inventory.ReserveStock [[ReserveStock]]
+  rf 12 evt Inventory.StockRejected
+  tf 13 evt Inventory.StockReserved [[StockReserved]]
+
+  tf 14 pcr Fulfillment.FulfillmentPolicy
+  tf 15 cmd Fulfillment.PrepareShipment
+  tf 16 evt Fulfillment.ShipmentPrepared [[ShipmentPrepared]]
+  tf 17 rmo Checkout.OrderStatus
+  tf 18 ui Checkout.OrderTracking
 
 data AddItem {
   productId: string
@@ -19,4 +33,44 @@ data ItemAdded {
   productId: string
   quantity: number
   unitPrice: number
+}
+
+data PlaceOrder {
+  cartId: string
+  customerId: string
+  deliveryCountry: string
+}
+
+data OrderPlaced {
+  orderId: string
+  totalAmount: number
+  currency: string
+}
+
+data PaymentAuthorized {
+  orderId: string
+  authorizationId: string
+  authorizedAmount: number
+}
+
+data PaymentDeclined {
+  orderId: string
+  reasonCode: string
+  retryable: boolean
+}
+
+data ReserveStock {
+  orderId: string
+  warehouseId: string
+}
+
+data StockReserved {
+  orderId: string
+  reservationId: string
+}
+
+data ShipmentPrepared {
+  orderId: string
+  trackingNumber: string
+  carrier: string
 }

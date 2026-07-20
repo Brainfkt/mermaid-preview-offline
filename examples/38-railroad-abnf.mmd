@@ -1,6 +1,28 @@
 railroad-abnf-beta
-  title Grammaire ABNF d'une requête
-  request = method SP path;
-  method = "GET" / "POST" / "PUT";
-  path = "/" 1*( ALPHA / DIGIT / "-" );
+  title HTTP API request grammar in ABNF
+  accTitle: ABNF grammar for an HTTP API request
+  accDescr: The grammar covers a request line, path and query parameters, headers, and an optional body.
+  request = request-line 1*( header CRLF ) CRLF [ body ];
+  request-line = method SP target SP version CRLF;
+  method = "GET" / "POST" / "PUT" / "PATCH" / "DELETE";
+  target = "/" segment *( "/" segment ) [ "?" query ];
+  segment = 1*( ALPHA / DIGIT / "-" / "_" );
+  query = pair *( "&" pair );
+  pair = key "=" value;
+  key = 1*( ALPHA / DIGIT / "-" / "_" );
+  value = *( ALPHA / DIGIT / pct-encoded / "-" / "_" / "." );
+  pct-encoded = "%" HEXDIG HEXDIG;
+  version = "HTTP/1.1" / "HTTP/2";
+  header = field-name ":" OWS field-value;
+  field-name = 1*( ALPHA / DIGIT / "-" );
+  field-value = *( VCHAR / SP / HTAB );
+  OWS = *( SP / HTAB );
+  body = *OCTET;
+  ALPHA = %x41-5A / %x61-7A;
+  DIGIT = %x30-39;
+  HEXDIG = DIGIT / "A" / "B" / "C" / "D" / "E" / "F";
   SP = %x20;
+  HTAB = %x09;
+  CRLF = %x0D %x0A;
+  VCHAR = %x21-7E;
+  OCTET = %x00-FF;

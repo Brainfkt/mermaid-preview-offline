@@ -1,18 +1,38 @@
 C4Component
-  title Composants du conteneur API
+  title Northstar Commerce — Commerce API Components
 
-  Container_Boundary(api, "API") {
-    Component(controller, "Contrôleur commandes", "HTTP", "Valide les requêtes")
-    Component(service, "Service commandes", "Application", "Orchestre le métier")
-    Component(repository, "Dépôt commandes", "Persistence", "Persiste les agrégats")
-    Component(eventbus, "Bus d'événements", "Messaging", "Publie les événements")
+  Container(storefront, "Web Storefront", "TypeScript", "Customer-facing shopping experience")
+  Container(console, "Operations Console", "TypeScript", "Support and operations workspace")
+
+  Container_Boundary(api, "Commerce API") {
+    Component(controller, "Commerce Controller", "HTTP adapter", "Authenticates requests and maps API contracts")
+    Component(cart, "Cart Service", "Application service", "Maintains carts, prices, and promotions")
+    Component(checkout, "Checkout Orchestrator", "Application service", "Coordinates inventory, payment, and order creation")
+    Component(orders, "Order Service", "Domain service", "Owns order state transitions and refund rules")
+    Component(inventory, "Inventory Gateway", "Integration adapter", "Reserves and releases sellable stock")
+    Component(payments, "Payment Gateway", "Integration adapter", "Protects the domain from provider-specific contracts")
+    Component(repository, "Commerce Repository", "Persistence adapter", "Loads and stores carts, orders, and payment records")
+    Component(publisher, "Event Publisher", "Messaging adapter", "Publishes durable domain events")
   }
 
-  ContainerDb_Ext(db, "Base de données", "PostgreSQL", "Stocke les commandes")
-  ContainerQueue_Ext(queue, "File de messages", "AMQP", "Distribue les événements")
+  Container_Ext(inventory_service, "Inventory Service", "Warehouse platform", "Owns available-to-promise stock")
+  System_Ext(payment_service, "Payment Service", "Authorizes, captures, and refunds payments")
+  ContainerDb_Ext(database, "Commerce Database", "PostgreSQL", "Stores commerce aggregates")
+  ContainerQueue_Ext(events, "Event Stream", "AMQP", "Distributes commerce events")
 
-  Rel(controller, service, "Appelle")
-  Rel(service, repository, "Utilise")
-  Rel(repository, db, "Lit et écrit", "SQL")
-  Rel(service, eventbus, "Publie")
-  Rel(eventbus, queue, "Envoie", "AMQP")
+  Rel(storefront, controller, "Uses for shopping and checkout", "HTTPS/JSON")
+  Rel(console, controller, "Uses for support operations", "HTTPS/JSON")
+  Rel(controller, cart, "Routes cart commands")
+  Rel(controller, checkout, "Routes checkout commands")
+  Rel(controller, orders, "Routes order queries and commands")
+  Rel(checkout, cart, "Prices the final cart")
+  Rel(checkout, inventory, "Reserves stock")
+  Rel(inventory, inventory_service, "Calls", "HTTPS/JSON")
+  Rel(checkout, payments, "Authorizes payment")
+  Rel(payments, payment_service, "Calls", "HTTPS/JSON")
+  Rel(checkout, orders, "Creates the confirmed order")
+  Rel(cart, repository, "Persists cart state")
+  Rel(orders, repository, "Persists order state")
+  Rel(repository, database, "Reads and writes", "TLS/SQL")
+  Rel(orders, publisher, "Emits domain events")
+  Rel(publisher, events, "Publishes", "AMQP")

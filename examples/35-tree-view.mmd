@@ -1,18 +1,35 @@
 ---
+title: Production TypeScript service repository
 config:
   treeView:
     showIcons: false
+    filenameIcons:
+      package.json: nodejs
+      Dockerfile: docker
+    extensionIcons:
+      .ts: typescript
+      .md: markdown
+      .json: json
 ---
 treeView-beta
-  mermaid-preview-offline/
-    src/
-      extension.ts ## point d'entrée
-      webview.ts :::highlight ## moteur de prévisualisation
-      protocol.ts
-    media/
-      preview.css
-      icon.png
-    examples/
-      README.md
-    package.json ## manifeste de l'extension
-    README.md
+  atlas-commerce/ ## Production-ready TypeScript service
+    src/ icon(material-icon-theme:folder-src) ## Application source
+      api/
+        checkout.ts :::highlight ## Checkout orchestration entry point
+        health.ts ## Readiness and liveness probes
+      domain/
+        order.ts ## Order aggregate and invariants
+        pricing.ts ## Promotion and tax rules
+      infrastructure/
+        database.ts ## Transactional persistence adapter
+        events.ts ## Durable event publisher
+      main.ts ## Process bootstrap
+    test/
+      checkout.test.ts ## Critical purchase-path coverage
+      pricing.test.ts ## Pricing boundary cases
+    docs/
+      architecture.md ## System context and decisions
+      operations.md ## Runbooks and recovery steps
+    Dockerfile ## Reproducible runtime image
+    package.json ## Scripts and dependency manifest
+    README.md :::highlight ## Setup, examples, and support policy

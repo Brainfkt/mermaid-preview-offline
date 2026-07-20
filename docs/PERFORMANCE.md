@@ -10,7 +10,7 @@ de la version 1.0.
 | Indicateur | v0.7 | v1.0 | Évolution |
 |---|---:|---:|---:|
 | JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,37 Mio | −76 % |
-| VSIX final | 20 913 638 octets | 6 931 821 octets | −67 % |
+| VSIX final | 20 913 638 octets | 5 040 746 octets | −76 % |
 | Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
 | Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
 | Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
@@ -37,6 +37,9 @@ la préparation de la version 1.0.
 - Les graisses normales Latin et Latin Extended de Noto Sans et Inter totalisent
   127 424 octets WOFF2 avant leur intégration au bundle. Elles sont partagées
   par les moteurs web et ne provoquent aucun chargement réseau au rendu.
+- Les captures destinées au README et aux guides restent dans le dépôt public,
+  mais sont exclues du VSIX par `.vscodeignore`. Le README Marketplace les
+  charge depuis GitHub tandis que l’icône de l’extension reste embarquée.
 - Le build échoue si le JavaScript navigateur dépasse 20 Mio.
 
 ### Rendu interactif
@@ -114,9 +117,12 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 109/109 réussis.
+- Tests unitaires et d’intégration : 111/112 réussis dans l’arbre courant. Le
+  seul garde-fou restant exige que les nouvelles captures soient suivies par
+  Git avant publication afin d’empêcher des images en erreur 404.
 - Build de production : réussi, 14,37 Mio sur le budget de 20 Mio.
-- Package VSIX : réussi, 189 fichiers, 6,61 Mio compressés.
+- Package VSIX : réussi, 184 fichiers, 4,81 Mio compressés
+  (5 040 746 octets). Les captures du dépôt en sont bien exclues.
 - Cohérence du lockfile en mode npm hors ligne : réussie.
 
 Les tests nécessitant l’ouverture locale de Chromium n’ont pas été lancés dans

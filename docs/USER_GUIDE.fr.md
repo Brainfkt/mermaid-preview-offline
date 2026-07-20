@@ -27,6 +27,8 @@ Pour ouvrir temporairement un fichier Mermaid en texte brut, exécutez
 **Reopen Editor With…** → **Text Editor**. Pour modifier l’association au niveau
 de l’espace de travail, exécutez **Mermaid Preview: Configure Default Editor**.
 
+![Un processus complet de commande et de livraison rendu hors ligne dans VS Code](../media/screenshots/flowchart.png)
+
 ## Ouvrir et organiser les diagrammes
 
 ### Fichiers pris en charge et association de l’éditeur
@@ -53,6 +55,8 @@ ouvre l’aperçu dans un autre groupe.
 | **Source only** | L’éditeur texte Mermaid natif de VS Code occupe tout le groupe d’éditeurs. |
 | **Beside** | Le code source est à gauche et l’aperçu à droite. |
 | **Above** | Le code source est au-dessus de l’aperçu. |
+
+![Le sélecteur de disposition proposant Preview only, Source only, Beside et Above](../media/screenshots/editor-layout.png)
 
 Beside et Above utilisent un véritable éditeur texte VS Code : la coloration
 syntaxique, l’autocomplétion, l’aide au survol, le formatage, les diagnostics,
@@ -133,6 +137,8 @@ uniquement lorsqu’elle est activée et que le diagramme dépasse la zone visib
 Son rectangle représente la zone affichée ; cliquez ou faites-le glisser pour
 déplacer cette zone dans un grand diagramme.
 
+![Une mindmap Mermaid agrandie avec sa minimap déplaçable](../media/screenshots/minimap.png)
+
 ### Thèmes de diagramme et thèmes de couleurs VS Code
 
 Le sélecteur de thème de l’aperçu propose **Adaptive**, **Default**, **Dark**,
@@ -144,6 +150,11 @@ sombre, clair à contraste élevé et sombre à contraste élevé.
 Le thème de l’aperçu et celui de l’export sont indépendants. Vous pouvez ainsi
 travailler dans un espace sombre tout en exportant, par exemple, un diagramme
 neutre sur fond blanc.
+
+<p align="center">
+  <img src="../media/screenshots/theme-forest.png" alt="Une mindmap Mermaid avec le thème Forest sélectionné" width="49%">
+  <img src="../media/screenshots/theme-neutral.png" alt="La même mindmap Mermaid avec le thème Neutral sélectionné" width="49%">
+</p>
 
 ### Typographie des diagrammes
 
@@ -211,6 +222,11 @@ ou traits d’union. Avant d’appliquer une modification sémantique à l’ens
 d’un projet, examinez la source modifiée, car les identifiants Mermaid peuvent
 être réutilisés dans des libellés et des syntaxes propres à chaque diagramme.
 
+<p align="center">
+  <img src="../media/screenshots/code-completion.png" alt="Complétion des déclarations Mermaid avec documentation contextuelle" width="66%">
+  <img src="../media/screenshots/commands-2.png" alt="Commandes Mermaid d’insertion, de génération d’identifiants et de renommage" width="30%">
+</p>
+
 ## Compatibilité des diagrammes et des ressources
 
 Mermaid `11.16.0` est intégré et épinglé. Le catalogue validé couvre les
@@ -224,6 +240,11 @@ Mermaid `11.16.0` est intégré et épinglé. Le catalogue validé couvre les
 | Données et graphiques | Sankey, XY chart, radar, treemap et block diagram |
 | Grammaires et diagnostics | Native railroad, EBNF railroad, ABNF railroad, PEG railroad et informations du moteur Mermaid |
 | Ressources intégrées | Packs d’icônes Iconify et images locales relatives |
+
+<p align="center">
+  <img src="../media/screenshots/entity-relationship.png" alt="Un modèle entité-association commercial complet rendu hors ligne" width="49%">
+  <img src="../media/screenshots/gantt.png" alt="Un plan de livraison complet de la version 1.0 rendu en diagramme de Gantt Mermaid" width="49%">
+</p>
 
 Les alias historiques tels que `graph`, `flowchart-v2`, `classDiagram-v2` et
 `stateDiagram` utilisent les mêmes familles de diagrammes intégrées. Les
@@ -245,12 +266,16 @@ localement. Utilisez la syntaxe d’icône Mermaid habituelle, par exemple
 `icon: "logos:react"`. Les autres packs Iconify ne sont pas inclus et ne sont
 pas téléchargés automatiquement. Consultez `examples/42-icon-packs.mmd`.
 
+![Un pipeline de livraison hors ligne rendu avec les packs Iconify intégrés](../media/screenshots/icon-packs-2.png)
+
 ### Images locales
 
 Les références d’images relatives dans les attributs Mermaid `img:` sont
 résolues depuis le répertoire du diagramme et intégrées sous forme d’URI `data:`
 avant le rendu. Les extensions prises en charge sont SVG, PNG, JPEG, GIF, WebP,
 AVIF, BMP et ICO. Le SVG enregistré reste ainsi portable.
+
+![Un flowchart Mermaid intégrant une image relative de l’espace de travail pour un export hors ligne portable](../media/screenshots/local-image.png)
 
 Utilisez un chemin situé dans l’espace de travail actuel, par exemple :
 
@@ -270,6 +295,8 @@ Ouvrez la boîte de dialogue d’export depuis la barre d’outils de l’aperç
 palette de commandes, le titre de l’éditeur ou le menu contextuel de
 l’Explorateur. Elle génère un aperçu en direct et affiche les dimensions finales
 en pixels ou de la page avant l’enregistrement.
+
+![La boîte de dialogue d’export professionnel avec aperçu, format, thème, DPI, marge, arrière-plan et profils](../media/screenshots/export-window.png)
 
 ### Formats
 
@@ -429,6 +456,8 @@ Les huit modèles intégrés sont :
 7. Idea map
 8. System landscape
 
+![Diagram Studio avec huit modèles Mermaid personnalisables et l’aperçu en direct d’un modèle entité-association](../media/screenshots/gallery-templates.png)
+
 Exécutez **Mermaid Preview: Browse Example Gallery…** pour effectuer une
 recherche dans les 43 exemples intégrés, filtrer par catégorie, examiner leur
 rendu et créer une copie modifiable dans l’espace de travail.
@@ -476,6 +505,8 @@ ordinaire peut tout de même être prévisualisé sans sélectionner de révisio
 L’extension détecte les blocs Mermaid dans Markdown (`.md`, `.markdown`), MDX
 (`.mdx`) et AsciiDoc (`.adoc`, `.asciidoc`, `.asc`).
 
+![Les commandes de documentation pour prévisualiser un bloc, tous les blocs ou exporter les images](../media/screenshots/commands.png)
+
 ### Formes de blocs prises en charge
 
 Markdown et MDX acceptent les fences à accents graves ou tildes, y compris la
@@ -518,6 +549,8 @@ direct du document. Elle se met à jour après les modifications de la source.
 Sélectionnez **Go to source**, ou double-cliquez sur le canevas d’un diagramme,
 pour afficher et sélectionner le bloc source correspondant.
 
+![La source Markdown à côté de l’aperçu en direct de plusieurs diagrammes Mermaid intégrés](../media/screenshots/preview-markdown.png)
+
 ### Exporter une copie de la documentation
 
 Exécutez **Export Document with Diagram Images…**, puis choisissez SVG optimisé
@@ -528,6 +561,8 @@ utilise le thème, le DPI, l’échelle, la marge et l’arrière-plan d’expor
 configurés. Le document source n’est pas écrasé.
 
 ## Référence des commandes
+
+![Toutes les commandes Mermaid Preview Offline dans la palette de commandes VS Code](../media/screenshots/commands-3.png)
 
 | Intitulé dans la palette de commandes | Disponibilité et résultat |
 |---|---|

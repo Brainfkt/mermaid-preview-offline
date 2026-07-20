@@ -25,6 +25,8 @@ To temporarily open a Mermaid file as plain text, run **Reopen Editor With…** 
 **Text Editor**. To change the workspace association, run **Mermaid Preview:
 Configure Default Editor**.
 
+![A complete checkout and fulfillment flowchart rendered offline in VS Code](../media/screenshots/flowchart.png)
+
 ## Open and arrange diagrams
 
 ### Supported files and editor association
@@ -49,6 +51,8 @@ editor visible and opens the preview in another group.
 | **Source only** | VS Code's native Mermaid text editor fills the editor group. |
 | **Beside** | Source is on the left and the preview is on the right. |
 | **Above** | Source is above the preview. |
+
+![The editor-layout picker offering Preview only, Source only, Beside, and Above](../media/screenshots/editor-layout.png)
 
 Beside and Above use a real VS Code text editor, so syntax coloring, completion,
 hover help, formatting, diagnostics, snippets, quick fixes, and rename continue
@@ -120,6 +124,8 @@ Zoom is constrained to a practical 15–400% range. The minimap appears only whe
 it is enabled and the diagram exceeds the viewport. Its rectangle represents
 the visible area; click or drag to move that area across a large diagram.
 
+![A zoomed Mermaid mindmap with its draggable minimap visible](../media/screenshots/minimap.png)
+
 ### Diagram themes and VS Code color themes
 
 The preview theme selector offers **Adaptive**, **Default**, **Dark**,
@@ -130,6 +136,11 @@ dark themes.
 
 The preview theme and export theme are independent. This lets you edit in a dark
 workspace while exporting, for example, a neutral diagram on white.
+
+<p align="center">
+  <img src="../media/screenshots/theme-forest.png" alt="A Mermaid mindmap with the Forest theme selected" width="49%">
+  <img src="../media/screenshots/theme-neutral.png" alt="The same Mermaid mindmap with the Neutral theme selected" width="49%">
+</p>
 
 ### Diagram typography
 
@@ -190,6 +201,11 @@ letters, digits, underscores, or hyphens. Before applying a project-wide semanti
 change, review the edited source because Mermaid identifiers can be reused in
 labels and diagram-specific syntax.
 
+<p align="center">
+  <img src="../media/screenshots/code-completion.png" alt="Mermaid declaration completion with contextual documentation" width="66%">
+  <img src="../media/screenshots/commands-2.png" alt="Mermaid node insertion, missing identifier, and rename commands" width="30%">
+</p>
+
 ## Diagram and asset compatibility
 
 Mermaid `11.16.0` is bundled and pinned. The validated catalogue includes these
@@ -203,6 +219,11 @@ Mermaid `11.16.0` is bundled and pinned. The validated catalogue includes these
 | Data and charts | Sankey, XY chart, radar, treemap, and block diagram |
 | Grammars and diagnostics | Native railroad, EBNF railroad, ABNF railroad, PEG railroad, and Mermaid engine info |
 | Bundled assets | Iconify icon packs and relative local images |
+
+<p align="center">
+  <img src="../media/screenshots/entity-relationship.png" alt="A complete commerce entity-relationship model rendered offline" width="49%">
+  <img src="../media/screenshots/gantt.png" alt="A complete version 1.0 release plan rendered as a Mermaid Gantt chart" width="49%">
+</p>
 
 Historical aliases such as `graph`, `flowchart-v2`, `classDiagram-v2`, and
 `stateDiagram` use the same bundled diagram families. Syntaxes whose Mermaid
@@ -223,12 +244,16 @@ locally. Use normal Mermaid icon syntax such as `icon: "logos:react"`. Other
 Iconify packs are not included and are not downloaded automatically. See
 `examples/42-icon-packs.mmd`.
 
+![An offline delivery pipeline rendered with the bundled Iconify packs](../media/screenshots/icon-packs-2.png)
+
 ### Local images
 
 Relative image references in Mermaid `img:` attributes are resolved from the
 diagram's directory and embedded as `data:` URIs before rendering. Supported
 extensions are SVG, PNG, JPEG, GIF, WebP, AVIF, BMP, and ICO. This keeps saved
 SVG output portable.
+
+![A Mermaid flowchart embedding a workspace-relative image for portable offline export](../media/screenshots/local-image.png)
 
 Use a path inside the current workspace, for example:
 
@@ -246,6 +271,8 @@ used. Remote workspaces use the active VS Code file-system provider.
 Open the export dialog from the preview toolbar, Command Palette, editor title,
 or Explorer context menu. The dialog renders a live preview and displays final
 pixel/page dimensions before you save.
+
+![The professional export dialog with live preview, format, theme, DPI, margin, background, and profile controls](../media/screenshots/export-window.png)
 
 ### Formats
 
@@ -400,6 +427,8 @@ The eight bundled templates are:
 7. Idea map
 8. System landscape
 
+![Diagram Studio with eight customizable templates and a live entity-relationship preview](../media/screenshots/gallery-templates.png)
+
 Run **Mermaid Preview: Browse Example Gallery…** to search the 43 bundled
 examples, filter by category, inspect their rendered result, and create an
 editable workspace copy.
@@ -445,6 +474,8 @@ without selecting revisions.
 The extension detects Mermaid blocks in Markdown (`.md`, `.markdown`), MDX
 (`.mdx`), and AsciiDoc (`.adoc`, `.asciidoc`, `.asc`).
 
+![The documentation commands for previewing one block, every block, or exporting diagram images](../media/screenshots/commands.png)
+
 ### Supported block forms
 
 Markdown and MDX can use backtick or tilde fences, including attribute syntax:
@@ -485,6 +516,8 @@ that block. Run **Preview All Blocks in Document** to open a live document view.
 It updates after source edits. Select **Go to source**, or double-click a diagram
 canvas, to reveal and select the matching source block.
 
+![Markdown source beside a live document preview containing multiple Mermaid diagrams](../media/screenshots/preview-markdown.png)
+
 ### Export a documentation copy
 
 Run **Export Document with Diagram Images…**, then choose optimized SVG or PNG.
@@ -495,6 +528,8 @@ theme, DPI, scale, margin, and background. The source document is not
 overwritten.
 
 ## Command reference
+
+![The complete Mermaid Preview Offline command set in the VS Code Command Palette](../media/screenshots/commands-3.png)
 
 | Command Palette title | Availability and result |
 |---|---|

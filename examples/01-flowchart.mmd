@@ -1,19 +1,33 @@
+---
+title: Resilient checkout and fulfillment
+---
 flowchart LR
-  start([Nouvelle commande]) --> validate{Paiement valide ?}
-  validate -->|Non| reject[Refuser la commande]
-  validate -->|Oui| reserve[Réserver le stock]
+  customer([Customer checks out]) --> validate{Cart valid?}
+  validate -->|No| review[/Review unavailable items/]
+  review --> customer
+  validate -->|Yes| authorize[[Authorize payment]]
 
-  subgraph fulfillment [Traitement logistique]
-    reserve --> pick[Préparer les articles]
-    pick --> pack[/Emballer le colis/]
-    pack --> ship[[Expédier]]
+  subgraph commerce [Commerce platform]
+    direction TB
+    authorize --> paid{Payment approved?}
+    paid -->|No| decline[Explain decline and keep cart]
+    paid -->|Yes| reserve[(Reserve inventory)]
+    reserve --> create[Create confirmed order]
   end
 
-  ship ==> notify[Notifier le client]
-  reject -.-> notify
-  notify --> finish((Fin))
+  create ==> event{{Order confirmed event}}
+  event --> fulfillment[Pick, pack, and ship]
+  event -.-> analytics[(Update sales analytics)]
+  event -.-> notify[Send email and push receipt]
+  fulfillment --> tracking[/Publish tracking link/]
+  tracking --> delivered((Order delivered))
+  decline --> retry{Try another method?}
+  retry -->|Yes| authorize
+  retry -->|No| abandoned((Checkout abandoned))
 
+  classDef action fill:#dbeafe,stroke:#2563eb,color:#172554;
   classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d;
-  classDef danger fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
-  class ship,finish success;
-  class reject danger;
+  classDef warning fill:#fef3c7,stroke:#d97706,color:#78350f;
+  class create,event,delivered success;
+  class decline,retry warning;
+  class authorize,reserve,fulfillment,notify,analytics action;

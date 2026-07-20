@@ -1,20 +1,34 @@
 C4Container
-  title Conteneurs de la plateforme e-commerce
+  title Northstar Commerce — Container View
 
-  Person(customer, "Client", "Passe une commande")
-  System_Ext(payment, "Prestataire de paiement", "Autorise les paiements")
+  Person(customer, "Customer", "Shops and tracks orders")
+  Person(support, "Support Specialist", "Resolves customer cases")
+  System_Ext(identity, "Identity Provider", "Authenticates customers and employees")
+  System_Ext(payment, "Payment Service", "Authorizes and settles payments")
+  System_Ext(carrier, "Carrier Network", "Creates and tracks shipments")
 
-  System_Boundary(shop, "Plateforme e-commerce") {
-    Container(web, "Application web", "TypeScript", "Interface utilisateur")
-    Container(api, "API", "Node.js", "Expose les fonctions métier")
-    Container(worker, "Worker", "Node.js", "Traite les tâches asynchrones")
-    ContainerDb(db, "Base de données", "PostgreSQL", "Stocke les commandes")
-    ContainerQueue(queue, "File de messages", "AMQP", "Distribue les événements")
+  System_Boundary(northstar, "Northstar Commerce") {
+    Container(storefront, "Web Storefront", "TypeScript single-page application", "Delivers product discovery, checkout, and order tracking")
+    Container(console, "Operations Console", "TypeScript single-page application", "Supports orders, refunds, and delivery exceptions")
+    Container(api, "Commerce API", "Node.js", "Enforces business rules and exposes commerce capabilities")
+    Container(worker, "Fulfillment Worker", "Node.js", "Processes asynchronous order and shipment workflows")
+    ContainerDb(database, "Commerce Database", "PostgreSQL", "Stores customers, carts, orders, and payments")
+    ContainerDb(search, "Product Search Index", "OpenSearch", "Serves faceted product searches")
+    ContainerDb(cache, "Session Cache", "Redis", "Stores sessions, carts, and short-lived reservations")
+    ContainerQueue(events, "Event Stream", "AMQP", "Distributes durable commerce events")
   }
 
-  Rel(customer, web, "Utilise", "HTTPS")
-  Rel(web, api, "Appelle", "HTTPS/JSON")
-  Rel(api, db, "Lit et écrit", "SQL")
-  Rel(api, payment, "Autorise le paiement", "HTTPS")
-  Rel(api, queue, "Publie", "AMQP")
-  Rel(queue, worker, "Distribue", "AMQP")
+  Rel(customer, storefront, "Uses", "HTTPS")
+  Rel(support, console, "Uses", "HTTPS")
+  Rel(storefront, identity, "Signs in through", "OIDC")
+  Rel(console, identity, "Signs in through", "OIDC")
+  Rel(storefront, api, "Calls", "HTTPS/JSON")
+  Rel(console, api, "Calls", "HTTPS/JSON")
+  Rel(api, database, "Reads and writes", "TLS/SQL")
+  Rel(api, search, "Searches products", "HTTPS/JSON")
+  Rel(api, cache, "Reads and updates", "TLS/RESP")
+  Rel(api, payment, "Authorizes, captures, and refunds", "HTTPS/JSON")
+  Rel(api, events, "Publishes order events", "AMQP")
+  Rel(events, worker, "Delivers order events", "AMQP")
+  Rel(worker, database, "Updates fulfillment state", "TLS/SQL")
+  Rel(worker, carrier, "Books shipments and polls status", "HTTPS/JSON")

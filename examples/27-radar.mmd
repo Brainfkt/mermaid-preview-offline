@@ -1,11 +1,12 @@
 ---
-title: Comparaison des profils
+title: Architecture strategy comparison
 ---
 radar-beta
-  axis ux["UX"], perf["Performance"], sec["Sécurité"]
-  axis maint["Maintenabilité"], cost["Coût"], eco["Écosystème"]
-  curve a["Solution A"]{85, 70, 90, 75, 55, 80}
-  curve b["Solution B"]{70, 92, 72, 88, 78, 65}
+  axis delivery["Delivery speed"], scale["Independent scaling"], resilience["Resilience"]
+  axis simplicity["Operational simplicity"], efficiency["Cost efficiency"], ownership["Team ownership"]
+  curve monolith["Modular monolith"]{88, 58, 70, 90, 86, 72}
+  curve services["Microservices"]{68, 96, 90, 48, 55, 94}
+  curve serverless["Serverless"]{82, 88, 84, 66, 74, 76}
   showLegend true
   max 100
   min 0

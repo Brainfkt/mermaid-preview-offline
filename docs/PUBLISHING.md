@@ -32,6 +32,26 @@ L’identifiant Marketplace est définitif après création. Le choisir avec soi
 Cette première publication manuelle évite de stocker un jeton avant que
 l’identité et la fiche Marketplace soient validées.
 
+## Captures et README Marketplace
+
+Le README Marketplace utilise des URL HTTPS absolues vers
+`raw.githubusercontent.com`. Avant de créer le tag de publication :
+
+1. Ajouter à Git le README, les guides et toutes les captures référencées.
+2. Pousser ces fichiers sur la branche `main` du dépôt public.
+3. Ouvrir chaque URL d’image Raw dans une session non authentifiée et vérifier
+   qu’elle répond correctement, avec la casse exacte du chemin.
+4. Exécuter `npm test` : le test de publication refuse les liens README relatifs,
+   les fichiers absents et les captures qui ne figurent pas dans `git ls-files`.
+5. Construire ensuite le VSIX et contrôler son README avant publication.
+
+Les captures sous `media/screenshots/` sont exclues du VSIX pour ne pas alourdir
+l’installation ; elles restent disponibles depuis le dépôt pour le README. La
+Marketplace conserve le README contenu dans la version publiée. Une relance de
+la même version avec `--skip-duplicate` ne met donc pas la fiche à jour : après
+une publication existante, il faut incrémenter la version pour diffuser un
+nouveau README.
+
 ## Publication automatisée avec GitHub Actions
 
 1. Dans GitHub, créer l’environnement `marketplace` et activer une approbation

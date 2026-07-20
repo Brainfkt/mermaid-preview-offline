@@ -1,15 +1,22 @@
 venn-beta
-  title "Compétences d'une équipe produit"
-  set Produit["Produit"]:20
-    text P1["Recherche"]
-  set Design["Design"]:18
-    text D1["Prototypage"]
-  set Tech["Technologie"]:22
-    text T1["Architecture"]
-  union Produit,Design["Expérience utilisateur"]:8
-  union Produit,Tech["Faisabilité"]:7
-  union Design,Tech["Design system"]:6
-  union Produit,Design,Tech["Innovation"]:3
-  style Produit fill:#60a5fa,fill-opacity:0.35
-  style Design fill:#f472b6,fill-opacity:0.35
-  style Tech fill:#34d399,fill-opacity:0.35
+  title "What makes an AI product ready to scale"
+  set Value["Customer value"]:30
+    text V1["Pain worth solving"]
+    text V2["Measurable outcome"]
+  set Trust["Operational trust"]:28
+    text T1["Safe defaults"]
+    text T2["Observable behavior"]
+  set Learning["Learning velocity"]:26
+    text L1["Fast feedback"]
+    text L2["Reproducible evaluation"]
+  union Value,Trust["Adoption"]:13
+    text VT1["Transparent decisions"]
+  union Value,Learning["Product-market learning"]:12
+    text VL1["Evidence-led roadmap"]
+  union Trust,Learning["Reliable iteration"]:11
+    text TL1["Guardrailed experiments"]
+  union Value,Trust,Learning["Sustainable advantage"]:6
+    text VTL1["Responsible scale"]
+  style Value fill:#60a5fa,fill-opacity:0.32
+  style Trust fill:#34d399,fill-opacity:0.32
+  style Learning fill:#f59e0b,fill-opacity:0.32

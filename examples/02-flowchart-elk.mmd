@@ -1,23 +1,58 @@
+---
+title: Global commerce service landscape
+---
 flowchart-elk TB
-  client[Application cliente]
+  shopper[Web and mobile clients]
 
-  subgraph edge [Couche périphérique]
-    gateway[Passerelle API]
-    auth[Authentification]
+  subgraph edge [Global edge]
+    direction LR
+    cdn[Content delivery network]
+    gateway[API gateway]
+    identity[Identity provider]
+    cdn --> gateway
+    gateway --> identity
   end
 
-  subgraph services [Microservices]
-    catalog[Catalogue]
-    orders[Commandes]
-    billing[Facturation]
-    notifications[Notifications]
+  subgraph platform [Commerce platform]
+    direction LR
+    subgraph experience [Experience services]
+      catalog[Catalog]
+      search[Search]
+      cart[Cart]
+    end
+    subgraph transaction [Transaction services]
+      orders[Order orchestration]
+      inventory[Inventory]
+      payments[Payments]
+    end
+    catalog --> search
+    catalog --> cart
+    cart ==> orders
+    orders --> inventory
+    orders --> payments
   end
 
-  client --> gateway
-  gateway --> auth
+  subgraph data [Data and integrations]
+    direction LR
+    primary[(Operational database)]
+    events{{Event stream}}
+    warehouse[(Analytics warehouse)]
+    carriers[Carrier network]
+  end
+
+  shopper --> cdn
   gateway --> catalog
+  gateway --> search
+  gateway --> cart
   gateway --> orders
-  orders --> billing
-  orders --> notifications
-  catalog --> orders
-  billing --> notifications
+  orders --> primary
+  orders ==> events
+  events --> warehouse
+  events -.-> carriers
+
+  classDef entry fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e;
+  classDef service fill:#ede9fe,stroke:#7c3aed,color:#2e1065;
+  classDef store fill:#dcfce7,stroke:#16a34a,color:#14532d;
+  class shopper,cdn,gateway entry;
+  class catalog,search,cart,orders,inventory,payments service;
+  class primary,events,warehouse store;

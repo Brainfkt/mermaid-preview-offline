@@ -1,31 +1,44 @@
+---
+title: Order lifecycle and fulfillment
+---
 stateDiagram-v2
-  [*] --> Brouillon
-  Brouillon --> EnValidation : soumettre
+  [*] --> Draft
+  Draft --> Validating : submit order
+  Draft --> Cancelled : abandon checkout
 
-  state EnValidation {
-    [*] --> ControleStock
-    ControleStock --> ControlePaiement
-    ControlePaiement --> [*]
+  state Validating {
+    [*] --> CheckInventory
+    CheckInventory --> CheckPayment : items reserved
+    CheckPayment --> [*] : authorization recorded
   }
 
-  state choix <<choice>>
-  EnValidation --> choix
-  choix --> Confirmee : contrôles réussis
-  choix --> Refusee : contrôle échoué
+  state validationResult <<choice>>
+  Validating --> validationResult
+  validationResult --> Confirmed : all checks pass
+  validationResult --> Rejected : a check fails
 
-  state Confirmee {
-    [*] --> Preparation
-    state fork_state <<fork>>
-    Preparation --> fork_state
-    fork_state --> Emballage
-    fork_state --> Facturation
-    state join_state <<join>>
-    Emballage --> join_state
-    Facturation --> join_state
-    join_state --> Expediee
+  state Confirmed {
+    [*] --> Ready
+    state workFork <<fork>>
+    Ready --> workFork
+    workFork --> PickAndPack
+    workFork --> CapturePayment
+
+    state workJoin <<join>>
+    PickAndPack --> workJoin : parcel sealed
+    CapturePayment --> workJoin : funds captured
+    workJoin --> Shipped : hand off to carrier
+    Shipped --> [*]
   }
 
-  Confirmee --> Livree : réception
-  Refusee --> [*]
-  Livree --> [*]
-  note right of Confirmee : Le traitement interne est parallèle
+  Confirmed --> Delivered : delivery confirmed
+  Confirmed --> ReturnRequested : return opened
+  ReturnRequested --> Refunded : parcel received
+  Rejected --> Draft : revise order
+  Rejected --> Cancelled : stop checkout
+  Delivered --> [*]
+  Refunded --> [*]
+  Cancelled --> [*]
+
+  note right of Validating : Inventory and payment checks are coordinated before confirmation.
+  note right of Confirmed : Fulfillment and payment capture run in parallel.

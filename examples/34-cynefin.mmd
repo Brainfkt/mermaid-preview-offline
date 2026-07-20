@@ -1,25 +1,33 @@
 cynefin-beta
-  title Décisions de livraison logicielle
+  title Software delivery decisions under uncertainty
 
   complex
-    "Découvrir un nouveau marché"
-    "Tester une expérience produit"
+    "Discover a new customer workflow"
+    "Shape an AI-assisted experience"
+    "Test a new marketplace model"
 
   complicated
-    "Optimiser la base de données"
-    "Concevoir l'architecture"
+    "Tune a high-volume database"
+    "Design a regional data architecture"
+    "Choose a migration strategy"
 
   clear
-    "Déployer un correctif standard"
-    "Créer un compte utilisateur"
+    "Rotate a documented certificate"
+    "Deploy a proven patch"
+    "Provision a standard environment"
 
   chaotic
-    "Répondre à une panne majeure"
+    "Contain an active data-loss incident"
+    "Restore a failed checkout path"
 
   confusion
-    "Incident sans diagnostic"
+    "Triage a novel cross-system failure"
+    "Assess conflicting incident signals"
 
-  complex --> complicated : "Un motif émerge"
-  complicated --> clear : "La pratique est codifiée"
-  clear --> chaotic : "Excès de confiance"
-  chaotic --> complex : "La situation est stabilisée"
+  confusion --> chaotic : "Immediate harm is confirmed"
+  confusion --> complicated : "Experts can bound the problem"
+  complex --> complicated : "A repeatable pattern emerges"
+  complicated --> clear : "Practice becomes standardized"
+  complicated --> complex : "Constraints keep changing"
+  clear --> chaotic : "Controls fail suddenly"
+  chaotic --> complex : "The crisis is contained"

@@ -1,6 +1,11 @@
 railroad-beta
-  title Grammaire d'une commande
-  command = sequence(terminal("create"), nonterminal("identifier"), optional(terminal("--force")));
-  identifier = sequence(nonterminal("letter"), zeroOrMore(choice(nonterminal("letter"), nonterminal("digit"), terminal("-"))));
-  letter = choice(terminal("a"), terminal("b"), terminal("c"));
-  digit = choice(terminal("0"), terminal("1"), terminal("2"));
+  title Deployment command grammar
+  accTitle: Grammar for the Atlas deployment command
+  accDescr: The command selects an environment, one or more services, an optional rollout strategy, and zero or more operational flags.
+  command = sequence(terminal("atlas"), terminal("deploy"), nonterminal("environment"), oneOrMore(nonterminal("service")), optional(nonterminal("strategy")), zeroOrMore(nonterminal("flag")));
+  environment = choice(terminal("staging"), terminal("production"));
+  service = sequence(terminal("--service"), nonterminal("service-name"));
+  strategy = sequence(terminal("--strategy"), choice(terminal("rolling"), terminal("canary"), terminal("blue-green")));
+  flag = choice(terminal("--dry-run"), terminal("--wait"), sequence(terminal("--timeout"), nonterminal("seconds")));
+  service-name = special("lowercase service identifier");
+  seconds = special("positive integer");

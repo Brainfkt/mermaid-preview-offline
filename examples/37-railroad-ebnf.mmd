@@ -1,6 +1,19 @@
 railroad-ebnf-beta
-  title Grammaire EBNF d'une liste
-  list = item, { ",", item };
-  item = identifier, [ ":", value ];
-  identifier = letter, { letter | digit | "_" };
-  value = number | string;
+  title Commerce search query grammar in EBNF
+  accTitle: EBNF grammar for a structured commerce search query
+  accDescr: A query selects a resource and can include filters, sorting, and a result limit.
+  query ::= "find", resource, [ where-clause ], { sort-clause }, [ limit-clause ];
+  resource = "orders" | "products" | "shipments";
+  where-clause = "where", expression;
+  expression = predicate, { boolean-op, predicate };
+  predicate = identifier, comparator, value;
+  boolean-op = "and" | "or";
+  comparator = "=" | "!=" | ">" | ">=" | "<" | "<=" | "contains";
+  sort-clause = "sort", identifier, [ "asc" | "desc" ];
+  limit-clause = "limit", integer;
+  value = string | integer | boolean;
+  boolean = "true" | "false";
+  identifier = ? Unicode letter ?, { ? Unicode letter or digit ? | "_" | "-" };
+  string = "'", { ? any character except apostrophe ? }, "'";
+  integer = [ "-" ], digit, { digit };
+  digit = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9";

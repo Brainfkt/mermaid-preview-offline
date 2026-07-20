@@ -1,22 +1,53 @@
+---
+title: Layered commerce platform
+---
 block-beta
-  columns 3
-  client["Client"] space gateway["Passerelle API"]
+  columns 4
 
-  block:services:3
-    catalog["Catalogue"]
-    orders["Commandes"]
-    billing["Facturation"]
+  block:channels:4
+    mobile["Mobile app"]
+    storefront["Web storefront"]
+    partner["Partner API"]
+    console["Operations console"]
   end
 
-  cache[("Cache")] database[("Base de données")] queue[["File de messages"]]
+  block:edge:4
+    cdn["CDN"]
+    gateway["API gateway"]
+    identity["Identity policy"]
+    limiter["Rate limiter"]
+  end
 
-  client --> gateway
+  block:domain:4
+    catalog["Catalog"]
+    checkout["Checkout"]
+    orders["Orders"]
+    fulfillment["Fulfillment"]
+  end
+
+  cache[("Cache")]
+  search[("Search index")]
+  database[("Commerce database")]
+  events[["Event stream"]]
+
+  mobile --> gateway
+  storefront --> cdn
+  cdn --> gateway
+  partner --> gateway
+  console --> gateway
+  gateway --> identity
+  gateway --> limiter
   gateway --> catalog
+  gateway --> checkout
   gateway --> orders
-  orders --> billing
   catalog --> cache
+  catalog --> search
+  checkout --> database
+  checkout --> events
   orders --> database
-  billing --> queue
+  events --> fulfillment
 
-  style gateway fill:#dbeafe,stroke:#2563eb
-  style database fill:#dcfce7,stroke:#16a34a
+  style gateway fill:#dbeafe,stroke:#2563eb,stroke-width:2px
+  style checkout fill:#fef3c7,stroke:#d97706,stroke-width:2px
+  style database fill:#dcfce7,stroke:#16a34a,stroke-width:2px
+  style events fill:#f3e8ff,stroke:#9333ea,stroke-width:2px

@@ -1,6 +1,32 @@
+---
+title: Offline preview delivery pipeline
+---
 flowchart LR
-  react@{ icon: "logos:react", form: "square", label: "React", pos: "b", h: 96 }
-  node@{ icon: "logos:nodejs-icon", form: "square", label: "Node.js", pos: "b", h: 96 }
-  database@{ icon: "material-icon-theme:database", form: "square", label: "Base de données", pos: "b", h: 96 }
+  accTitle: Offline preview delivery pipeline using bundled icon packs
+  accDescr: Mermaid source moves from VS Code through a TypeScript and Node.js runtime, automated tests, continuous integration, and local packaging.
 
-  react --> node --> database
+  subgraph authoring [Authoring]
+    vscode@{ icon: "logos:visual-studio-code", form: "square", label: "VS Code", pos: "b", h: 88 }
+    source@{ icon: "material-icon-theme:markdown", form: "rounded", label: "Mermaid source", pos: "b", h: 88 }
+  end
+
+  subgraph runtime [Offline runtime]
+    typescript@{ icon: "logos:typescript-icon", form: "square", label: "TypeScript", pos: "b", h: 88 }
+    node@{ icon: "logos:nodejs-icon", form: "circle", label: "Node.js", pos: "b", h: 88 }
+    renderer@{ icon: "logos:react", form: "rounded", label: "Interactive preview", pos: "b", h: 88 }
+  end
+
+  subgraph quality [Quality gates]
+    tests@{ icon: "material-icon-theme:test-ts", form: "square", label: "Renderer tests", pos: "b", h: 88 }
+    ci@{ icon: "logos:github-actions", form: "square", label: "CI validation", pos: "b", h: 88 }
+  end
+
+  subgraph delivery [Local delivery]
+    manifest@{ icon: "material-icon-theme:json", form: "square", label: "Extension manifest", pos: "b", h: 88 }
+    package@{ icon: "material-icon-theme:nodejs", form: "rounded", label: "VSIX package", pos: "b", h: 88 }
+  end
+
+  vscode -->|"Edit"| source --> typescript --> node --> renderer
+  typescript --> tests --> ci
+  renderer --> tests
+  ci --> manifest --> package

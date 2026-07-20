@@ -1,18 +1,27 @@
 gantt
-  title Livraison de la version 1.0
+  title Commerce platform 1.0 release plan
   dateFormat YYYY-MM-DD
-  axisFormat %d/%m
+  axisFormat %b %d
   excludes weekends
+  todayMarker off
 
-  section Cadrage
-  Spécifications              :done, spec, 2026-07-01, 5d
-  Validation                  :milestone, validation, after spec, 0d
+  section Discovery
+  Customer interviews          :done, interviews, 2026-07-01, 4d
+  Architecture decision        :done, architecture, after interviews, 3d
+  Release scope approved       :milestone, scope, after architecture, 0d
 
-  section Développement
-  API                         :active, api, after validation, 8d
-  Interface                   :ui, after validation, 6d
-  Intégration                 :crit, integration, after api, 4d
+  section Build
+  Checkout experience          :done, checkout, after scope, 7d
+  Order API                    :active, order_api, after scope, 9d
+  Fulfillment integration      :active, fulfillment, after architecture, 8d
+  Observability dashboards     :observability, after order_api, 3d
 
-  section Livraison
-  Tests de recette            :crit, tests, after integration, 3d
-  Mise en production          :milestone, prod, after tests, 0d
+  section Validate
+  End-to-end test campaign     :crit, e2e, after checkout order_api fulfillment, 4d
+  Performance acceptance       :crit, performance, after e2e, 3d
+  Release candidate            :milestone, rc, after performance, 0d
+
+  section Launch
+  Operations readiness review  :crit, readiness, after rc observability, 2d
+  Production rollout           :crit, rollout, after readiness, 2d
+  Version 1.0 available        :milestone, release, after rollout, 0d

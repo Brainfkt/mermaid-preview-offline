@@ -28,9 +28,9 @@
   <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/roadmap.md">Roadmap</a>
 </p>
 
-![A Mermaid pie chart preview and its source open side by side in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/pie-with-source.png)
+![A complete checkout and fulfillment flowchart rendered offline in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/flowchart.png)
 
-<p align="center"><em>Edit the source and see the locally rendered preview update beside it.</em></p>
+<p align="center"><em>Render complete Mermaid diagrams locally with native VS Code controls, themes, and export tools.</em></p>
 
 Open any `.mmd` or `.mermaid` file and the diagram appears immediately in a
 native VS Code editor. Use the layout control to switch between preview-only,
@@ -66,14 +66,20 @@ per file. Selecting another Mermaid source tab immediately replaces the
 companion preview, while the extension keeps a single source/preview pair for
 the active document.
 
-![Sankey and block diagrams open in two VS Code editor groups](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/split-view.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/editor-layout.png" alt="VS Code quick pick offering Preview only, Source only, Beside, and Above Mermaid editor layouts" width="720">
+</p>
+
+<p align="center"><em>Switch between the four native editor layouts without leaving the preview.</em></p>
+
+![A complete Mermaid Gantt release plan rendered in the VS Code preview](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/gantt.png)
 
 Large diagrams remain easy to inspect with fit-to-window, incremental zoom,
 drag-to-pan navigation, and a draggable minimap that appears only when the
 diagram exceeds the viewport. The active editor group can be maximized without
 losing the selected layout.
 
-![A zoomed Mermaid mindmap beside its source in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/mindmap-zoomed.png)
+![A zoomed Mermaid mindmap with the draggable minimap visible in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/minimap.png)
 
 ## Bundled assets work offline too
 
@@ -82,7 +88,23 @@ The official ZenUML plug-in and the Iconify `logos` and
 diagram uses them. Relative images inside the workspace are converted to `data:`
 URIs, so exported SVGs stay portable and do not depend on local file paths.
 
-![Bundled Iconify icons and a workspace image rendered locally in two VS Code previews](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icons-image-local.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icon-packs-2.png" alt="Bundled Iconify packs used in a complete offline Mermaid delivery pipeline" width="49%">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/local-image.png" alt="A workspace-relative image embedded in an offline Mermaid diagram" width="49%">
+</p>
+
+<p align="center"><em>Bundled Iconify packs and workspace-relative images render without a network request.</em></p>
+
+## Six selectable diagram themes
+
+Choose **Adaptive**, **Default**, **Dark**, **Forest**, **Neutral**, or **Base**
+directly from the preview. Adaptive follows VS Code's active color scheme;
+explicit themes remain stable when you need a deliberate presentation style.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/theme-forest.png" alt="A complete Mermaid mindmap rendered with the Forest theme selected" width="49%">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/theme-neutral.png" alt="The same Mermaid mindmap rendered with the Neutral theme selected" width="49%">
+</p>
 
 ## Diagram typography
 
@@ -111,6 +133,15 @@ unchanged output and does not receive export-time font embedding.
 
 No configuration is required. To temporarily open a Mermaid file as plain text,
 use **Reopen Editor With...** → **Text Editor**.
+
+## Professional export
+
+Inspect the exact output before saving it, then configure format, export theme,
+scale, DPI, margin, background, metadata, optimization, and file-name tokens.
+Reusable profiles keep documentation and release exports consistent across
+workspaces.
+
+![The professional Mermaid export dialog with a live Gantt preview and output settings](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/export-window.png)
 
 ## Features
 
@@ -159,6 +190,16 @@ use **Reopen Editor With...** → **Text Editor**.
   preview sessions—never after every edit or render.
 - Adaptive handling for large files and cancellation of obsolete renders.
 - Workspace-aware local assets in multi-root and remote workspaces.
+
+## Mermaid-aware editing
+
+The native text editor provides declaration completion, contextual help,
+snippets, diagnostics, quick fixes, formatting, node insertion, missing-ID
+generation, and safe identifier rename without replacing VS Code's editor.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/code-completion.png" alt="Mermaid declaration completion and contextual documentation in VS Code" width="900">
+</p>
 
 ## Diagram coverage
 
@@ -241,6 +282,8 @@ the same oversized operation.
 
 ## Command reference
 
+![The Mermaid Preview Offline commands available from the VS Code Command Palette](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/commands-3.png)
+
 | Command Palette title | Purpose |
 |---|---|
 | **Mermaid Preview: Open Offline Preview** | Open the current Mermaid file in the offline custom editor. |
@@ -279,6 +322,8 @@ result, optionally edit the generated Mermaid source, and create the file in the
 workspace. **Mermaid Preview: Browse Example Gallery…** switches directly to a
 searchable visual catalog of all 43 examples shipped with the extension.
 
+![Diagram Studio showing its eight customizable Mermaid templates and a live entity-relationship preview](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/gallery-templates.png)
+
 For an existing `.mmd` or `.mermaid` file, run **Mermaid Preview: Compare Git
 Versions Visually…** from the Command Palette or Explorer context menu. Select
 the before and after revisions, including the current working tree, then compare
@@ -298,6 +343,8 @@ Preview: Preview All Blocks in Document**. Both commands are available from the
 editor title and context menus. The document view updates after source edits;
 select **Go to source** on any diagram (or double-click its canvas) to reveal and
 select the corresponding block in a native text editor.
+
+![A Markdown source document beside the live preview of all embedded Mermaid blocks](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/preview-markdown.png)
 
 Markdown and MDX support backtick or tilde fences, including attribute-style
 MDX fences:

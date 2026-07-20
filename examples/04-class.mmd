@@ -1,42 +1,72 @@
+---
+title: Order domain model
+---
 classDiagram
   direction LR
 
-  class Commande {
-    +String numero
-    +Statut statut
-    +ajouterArticle(article, quantite)
-    +total() Decimal
+  class Order {
+    <<aggregate>>
+    +UUID id
+    +OrderStatus status
+    +Money total
+    +addItem(product, quantity)
+    +confirm(payment) OrderConfirmed
+    +cancel(reason)
   }
 
-  class LigneCommande {
-    +int quantite
-    +prix() Decimal
+  class OrderLine {
+    +int quantity
+    +Money unitPrice
+    +subtotal() Money
   }
 
-  class Produit {
+  class Product {
     <<entity>>
-    +String sku
-    +String nom
-    +Decimal prix
+    +SKU sku
+    +String name
+    +Money price
+    +bool active
   }
 
-  class Paiement {
+  class Customer {
+    <<entity>>
+    +UUID id
+    +Email email
+    +placeOrder(cart) Order
+  }
+
+  class PaymentMethod {
     <<interface>>
-    +autoriser(montant) bool
-    +rembourser(montant)
+    +authorize(amount) Authorization
+    +capture(authorization) Receipt
+    +refund(receipt, amount)
   }
 
-  class PaiementCarte
-  class Statut {
+  class CardPayment {
+    -String token
+    +authorize(amount) Authorization
+    +capture(authorization) Receipt
+  }
+
+  class OrderRepository {
+    <<interface>>
+    +findById(id) Order
+    +save(order)
+  }
+
+  class OrderStatus {
     <<enumeration>>
-    BROUILLON
-    PAYEE
-    EXPEDIEE
+    DRAFT
+    CONFIRMED
+    FULFILLED
+    CANCELLED
   }
 
-  Commande "1" *-- "1..*" LigneCommande : contient
-  LigneCommande "*" --> "1" Produit : référence
-  Commande --> Statut
-  Commande ..> Paiement : utilise
-  Paiement <|.. PaiementCarte : implémente
-  note for Commande "Racine de l'agrégat métier"
+  Customer "1" --> "0..*" Order : places
+  Order "1" *-- "1..*" OrderLine : owns
+  OrderLine "*" --> "1" Product : references
+  Order --> OrderStatus : has
+  Order ..> PaymentMethod : authorizes through
+  PaymentMethod <|.. CardPayment : implements
+  OrderRepository ..> Order : persists
+  note for Order "Enforces pricing, payment, and lifecycle invariants"

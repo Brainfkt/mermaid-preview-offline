@@ -1,8 +1,11 @@
 packet-beta
-  title En-tête d'un paquet applicatif de 64 bits
-  0-3: "Version"
-  4-7: "Type"
-  8-15: "Drapeaux"
-  16-31: "Longueur"
-  32-47: "Identifiant"
-  48-63: "Somme de contrôle"
+  title Northstar event envelope — 128-bit header
+  0-3: "Protocol version"
+  4-7: "Header words"
+  8-15: "Delivery flags"
+  16-31: "Event type"
+  32-47: "Schema version"
+  48-63: "Tenant shard"
+  64-95: "Stream offset"
+  96-111: "Payload bytes"
+  112-127: "CRC-16"

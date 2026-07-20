@@ -1,13 +1,22 @@
 C4Dynamic
-  title Création dynamique d'une commande
+  title Northstar Commerce — Place an Order
 
-  Container(web, "Application web", "TypeScript", "Interface utilisateur")
-  Container(api, "API", "Node.js", "Logique métier")
-  ContainerDb(db, "Base de données", "PostgreSQL", "Commandes")
-  System_Ext(payment, "Prestataire de paiement", "Paiements")
+  Container(storefront, "Web Storefront", "TypeScript", "Customer-facing shopping experience")
+  Container(api, "Commerce API", "Node.js", "Coordinates checkout and order rules")
+  Container(worker, "Fulfillment Worker", "Node.js", "Starts asynchronous fulfillment")
+  ContainerDb(database, "Commerce Database", "PostgreSQL", "Stores orders and payment records")
+  ContainerQueue(events, "Event Stream", "AMQP", "Distributes durable commerce events")
+  Container_Ext(inventory, "Inventory Service", "Warehouse platform", "Owns available-to-promise stock")
+  System_Ext(payment, "Payment Service", "Authorizes and settles payments")
+  System_Ext(carrier, "Carrier Network", "Creates and tracks shipments")
 
-  RelIndex(1, web, api, "Crée une commande", "HTTPS/JSON")
-  RelIndex(2, api, payment, "Autorise le paiement", "HTTPS/JSON")
-  RelIndex(3, payment, api, "Confirme l'autorisation", "HTTPS/JSON")
-  RelIndex(4, api, db, "Enregistre la commande", "SQL")
-  RelIndex(5, api, web, "Retourne la confirmation", "JSON")
+  RelIndex(1, storefront, api, "Submits checkout", "HTTPS/JSON")
+  RelIndex(2, api, inventory, "Reserves requested items", "HTTPS/JSON")
+  RelIndex(3, inventory, api, "Confirms the reservation", "JSON")
+  RelIndex(4, api, payment, "Authorizes the order total", "HTTPS/JSON")
+  RelIndex(5, payment, api, "Returns the authorization", "JSON")
+  RelIndex(6, api, database, "Commits the confirmed order", "TLS/SQL")
+  RelIndex(7, api, events, "Publishes OrderConfirmed", "AMQP")
+  RelIndex(8, api, storefront, "Returns order confirmation", "HTTPS/JSON")
+  RelIndex(9, events, worker, "Delivers OrderConfirmed", "AMQP")
+  RelIndex(10, worker, carrier, "Creates the shipment", "HTTPS/JSON")
