@@ -13,6 +13,13 @@
   ZenUML, Mermaid diagram implementations, and the two offline icon packs;
 - removed duplicate parse/render passes and duplicate visual-diff renders, and
   paused hidden file and documentation previews until they become visible;
+- preserved Mermaid CSS selectors when cloning visual Git overlays, and kept
+  cursor-block previews attached to the same block after surrounding edits;
+- made documentation extraction ignore literal nested examples, encoded image
+  paths safely, and prevented case-only export targets from replacing sources;
+- made quoted SQL table and column names generate strict Mermaid identifiers;
+- moved task and CLI browser control to Chromium's native debugging pipe,
+  compatible with the Node.js 20 runtime embedded by supported VS Code builds;
 - bounded large-source rendering, local image work, documentation exports,
   raster canvas memory, and worst-case visual/source diff algorithms;
 - embedded a deterministic local font in optimized SVG, PNG, WebP, and PDF

@@ -9,12 +9,15 @@
     "sourceMap": false
   },
   "include": [
+    "src/cdpClient.ts",
+    "src/cdpPipe.ts",
     "src/localImages.ts",
     "src/exportSettings.ts",
     "src/diagramTemplates.ts",
     "src/packageDependencyGenerator.ts",
     "src/sqlErdGenerator.ts",
     "src/documentationBlocks.ts",
+    "src/documentationTracking.ts",
     "src/documentationWebviewHtml.ts",
     "src/mermaidError.ts",
     "src/mermaidLanguage.ts",

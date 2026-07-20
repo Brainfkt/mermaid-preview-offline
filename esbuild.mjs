@@ -65,7 +65,7 @@ await Promise.all([
     outfile: 'dist/cli.js',
     platform: 'node',
     sourcemap: production ? false : 'linked',
-    target: 'node22',
+    target: 'node20',
   }),
 ]);
 
