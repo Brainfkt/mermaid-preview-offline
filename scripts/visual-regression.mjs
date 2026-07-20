@@ -55,10 +55,15 @@ let html = createWebviewHtml({
 const stub = `<script nonce="${nonce}">
   let persistedState;
   const postedMessages = [];
+  let resolveWebviewReady;
+  const webviewReady = new Promise((resolve) => { resolveWebviewReady = resolve; });
   globalThis.acquireVsCodeApi = () => ({
     getState: () => persistedState,
     setState: (state) => { persistedState = state; },
-    postMessage: (message) => { postedMessages.push(message); },
+    postMessage: (message) => {
+      postedMessages.push(message);
+      if (message.type === 'ready') resolveWebviewReady();
+    },
   });
 </script>`;
 const runner = `<script nonce="${nonce}">
@@ -115,6 +120,7 @@ const runner = `<script nonce="${nonce}">
   };
 
   (async () => {
+    await webviewReady;
     const entries = [];
     const interfaceThemes = [];
     let version = 0;

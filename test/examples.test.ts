@@ -97,3 +97,11 @@ void test('the English gallery covers every supported Mermaid example', () => {
     );
   }
 });
+
+void test('the visual harness waits for the webview readiness handshake', () => {
+  const harness = readFileSync(resolve(root, 'scripts', 'visual-regression.mjs'), 'utf8');
+
+  assert.match(harness, /const webviewReady = new Promise/u);
+  assert.match(harness, /message\.type === 'ready'.*resolveWebviewReady\(\)/u);
+  assert.match(harness, /\(async \(\) => \{\s+await webviewReady;/u);
+});

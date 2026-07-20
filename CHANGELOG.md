@@ -8,7 +8,8 @@
 - regenerated the visual regression baseline after the complete English rewrite
   of all 43 bundled examples, covering light, dark, and high-contrast themes;
 - restored the shared visual gate used by CI, GitHub Release, and VS Code
-  Marketplace publication.
+  Marketplace publication, and made its browser harness wait for the explicit
+  webview readiness handshake instead of relying on a timing delay;
 - upgraded checkout and Node setup workflows to their Node 24-based v6 actions,
   removing GitHub's deprecated action-runtime warning.
 
