@@ -11,7 +11,8 @@
   Marketplace publication, and made its browser harness wait for the explicit
   webview readiness handshake and real-time Chromium completion instead of
   relying on timing delays or an accelerated virtual clock, with bundled Noto
-  Sans metrics for stable visual signatures across runner operating systems;
+  Sans metrics and a bounded mindmap aspect-ratio tolerance for stable visual
+  signatures across runner operating systems;
 - upgraded checkout and Node setup workflows to their Node 24-based v6 actions,
   removing GitHub's deprecated action-runtime warning.
 

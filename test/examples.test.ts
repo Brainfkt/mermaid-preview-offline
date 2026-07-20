@@ -106,7 +106,7 @@ void test('the visual harness waits for the webview readiness handshake', () => 
   assert.match(harness, /\(async \(\) => \{\s+await webviewReady;/u);
 });
 
-void test('visual harnesses wait in real time through the Chromium debugging pipe', () => {
+void test('visual harnesses use real time and deterministic bundled font metrics', () => {
   const browserHarness = readFileSync(
     resolve(root, 'scripts', 'browser-harness.mjs'),
     'utf8',
@@ -123,6 +123,7 @@ void test('visual harnesses wait in real time through the Chromium debugging pip
   assert.match(browserHarness, /--remote-debugging-pipe/u);
   assert.match(browserHarness, /readHarnessResult/u);
   assert.match(previewHarness, /diagramFontFamily: 'noto-sans'/u);
+  assert.match(previewHarness, /\['19-mindmap\.mmd', 0\.25\]/u);
   assert.doesNotMatch(previewHarness, /--virtual-time-budget|--dump-dom/u);
   assert.doesNotMatch(projectHarness, /--virtual-time-budget|--dump-dom/u);
 });

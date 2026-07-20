@@ -200,6 +200,12 @@ const runner = `<script nonce="${nonce}">
         }
         const svg = document.querySelector('#diagram svg');
         if (!svg) throw new Error('Missing SVG for ' + example.fileName);
+        const diagramText = svg.querySelector('text, foreignObject *');
+        if (diagramText &&
+            !getComputedStyle(diagramText).fontFamily.includes('Mermaid Offline Noto Sans')) {
+          throw new Error('The deterministic visual regression font is not applied to ' +
+            example.fileName);
+        }
         entries.push({ fileName: example.fileName, scheme: scheme.name, ...signature(svg) });
       }
     }
@@ -576,6 +582,9 @@ if (updateBaseline) {
 
 function compareResults(expected, actual) {
   const unstableAttributeExamples = new Set(['08-gantt.mmd', '13-gitgraph.mmd']);
+  const ratioToleranceByExample = new Map([
+    ['19-mindmap.mmd', 0.25],
+  ]);
   const expectedByKey = new Map(
     expected.entries.map((entry) => [`${entry.scheme}/${entry.fileName}`, entry]),
   );
@@ -596,7 +605,8 @@ function compareResults(expected, actual) {
       }
     }
     const ratioDelta = Math.abs(entry.ratio - baseline.ratio) / Math.max(baseline.ratio, 0.001);
-    if (ratioDelta > 0.18) {
+    const ratioTolerance = ratioToleranceByExample.get(entry.fileName) ?? 0.18;
+    if (ratioDelta > ratioTolerance) {
       failures.push(
         `${key}: aspect ratio changed by ${Math.round(ratioDelta * 100)}% ` +
         `(${baseline.ratio} → ${entry.ratio})`,
