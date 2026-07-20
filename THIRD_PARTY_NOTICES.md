@@ -48,3 +48,10 @@ source and license information are available from the
 The `@iconify-json/material-icon-theme` collection is bundled under the MIT
 License. Its source and license information are available from the
 [Material Icon Theme repository](https://github.com/material-extensions/vscode-material-icon-theme).
+
+## KaTeX
+
+The KaTeX Sans Serif font is embedded in optimized exports so diagram text uses
+the same local font metrics on macOS, Windows, and Linux. KaTeX is distributed
+under the MIT License; its source and license are available from the
+[KaTeX repository](https://github.com/KaTeX/KaTeX).
