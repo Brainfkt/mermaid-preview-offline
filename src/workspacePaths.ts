@@ -21,3 +21,17 @@ export function isUriWithin(
   const candidatePath = normalize(candidate.path);
   return candidatePath === rootPath || candidatePath.startsWith(`${rootPath}/`);
 }
+
+export function isFilePathWithin(
+  root: string,
+  candidate: string,
+  caseSensitive = true,
+): boolean {
+  const normalize = (value: string): string => {
+    const resolved = resolve(value);
+    return caseSensitive ? resolved : resolved.toLowerCase();
+  };
+  const relativePath = relative(normalize(root), normalize(candidate));
+  return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
+}
+import { isAbsolute, relative, resolve } from 'node:path';
