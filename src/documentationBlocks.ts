@@ -69,12 +69,51 @@ export function replaceMermaidBlocks(
   blocks: readonly MermaidDocumentationBlock[],
   replacementFor: (block: MermaidDocumentationBlock) => string,
 ): string {
-  let result = text;
   const ordered = [...blocks].sort((left, right) => right.startOffset - left.startOffset);
+
+  // Extracted blocks are ordered, non-overlapping ranges into the original
+  // document. Build their replacement from right to left so callbacks retain
+  // their historical order, then join once instead of copying the increasingly
+  // large document for every block.
+  if (canReplaceInOnePass(text, ordered)) {
+    const chunks: string[] = [];
+    let cursor = text.length;
+    for (const block of ordered) {
+      chunks.push(text.slice(block.endOffset, cursor), replacementFor(block));
+      cursor = block.startOffset;
+    }
+    chunks.push(text.slice(0, cursor));
+    chunks.reverse();
+    return chunks.join('');
+  }
+
+  // Keep the exact legacy behavior for callers that manually provide invalid
+  // or overlapping ranges. extractMermaidBlocks never produces such ranges.
+  let result = text;
   for (const block of ordered) {
     result = `${result.slice(0, block.startOffset)}${replacementFor(block)}${result.slice(block.endOffset)}`;
   }
   return result;
+}
+
+function canReplaceInOnePass(
+  text: string,
+  ordered: readonly MermaidDocumentationBlock[],
+): boolean {
+  let nextStart = text.length;
+  for (const block of ordered) {
+    if (
+      !Number.isInteger(block.startOffset) ||
+      !Number.isInteger(block.endOffset) ||
+      block.startOffset < 0 ||
+      block.endOffset < block.startOffset ||
+      block.endOffset > nextStart
+    ) {
+      return false;
+    }
+    nextStart = block.startOffset;
+  }
+  return true;
 }
 
 export function documentationImageReference(

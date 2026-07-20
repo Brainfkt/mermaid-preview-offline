@@ -38,6 +38,7 @@ interface PendingDocumentationExport {
 }
 
 type DocumentationExportFormat = Extract<ExportFormat, 'png' | 'svg'>;
+const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 
 export class MermaidDocumentationFeatures implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
@@ -49,6 +50,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
   private previewBlocks: MermaidDocumentationBlock[] = [];
   private refreshGeneration = 0;
   private refreshTimer: NodeJS.Timeout | undefined;
+  private dirtyWhileHidden = false;
 
   public constructor(private readonly extensionContext: vscode.ExtensionContext) {
     this.disposables.push(
@@ -209,9 +211,17 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const messageSubscription = panel.webview.onDidReceiveMessage(
       async (message: unknown) => this.handleWebviewMessage(message),
     );
+    const viewStateSubscription = panel.onDidChangeViewState((event) => {
+      if (event.webviewPanel.visible && this.dirtyWhileHidden) {
+        this.dirtyWhileHidden = false;
+        this.schedulePreviewRefresh(0);
+      }
+    });
     panel.onDidDispose(() => {
       messageSubscription.dispose();
+      viewStateSubscription.dispose();
       if (this.panel === panel) this.panel = undefined;
+      this.dirtyWhileHidden = false;
       this.resolvePanelReady?.();
       this.resolvePanelReady = undefined;
       this.panelReady = Promise.resolve();
@@ -262,6 +272,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
   private schedulePreviewRefresh(delay = 120): void {
     this.refreshGeneration += 1;
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
+    if (this.panel && !this.panel.visible) {
+      this.refreshTimer = undefined;
+      this.dirtyWhileHidden = true;
+      return;
+    }
     const generation = this.refreshGeneration;
     this.refreshTimer = setTimeout(() => {
       this.refreshTimer = undefined;
@@ -290,7 +305,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const visibleBlocks = context.mode === 'cursor'
       ? blocks.filter((block) => block.index === context.selectedBlockIndex)
       : blocks;
-    const preparedBlocks = await Promise.all(visibleBlocks.map(async (block) => ({
+    const preparedBlocks = await mapWithConcurrency(visibleBlocks, 4, async (block) => ({
       endLine: block.endLine,
       id: block.id,
       index: block.index,
@@ -298,8 +313,9 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
         loadWorkspaceImage(document.uri, reference),
       ),
       startLine: block.startLine,
-    })));
+    }));
     if (generation !== this.refreshGeneration || this.panel !== panel) return;
+    this.dirtyWhileHidden = false;
     await panel.webview.postMessage({
       blocks: preparedBlocks,
       fileName: fileNameOf(document.uri),
@@ -331,13 +347,13 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       format,
       svgVariant: 'optimized' as const,
     };
-    const renderBlocks = await Promise.all(blocks.map(async (block) => ({
+    const renderBlocks = await mapWithConcurrency(blocks, 4, async (block) => ({
       fileName: `${sourceStem}-diagram-${block.index + 1}.mmd`,
       id: block.id,
       source: await inlineLocalImages(block.source, (reference) =>
         loadWorkspaceImage(document.uri, reference),
       ),
-    })));
+    }));
     const requestId = `documentation-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const result = new Promise<Array<{ artifact: SerializedExportArtifact; blockId: string }>>(
       (resolve, reject) => {
@@ -498,6 +514,26 @@ function errorMessageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+async function mapWithConcurrency<Value, Result>(
+  values: readonly Value[],
+  maximumConcurrency: number,
+  mapper: (value: Value, index: number) => Promise<Result>,
+): Promise<Result[]> {
+  const results = new Array<Result>(values.length);
+  let nextIndex = 0;
+  const worker = async (): Promise<void> => {
+    while (nextIndex < values.length) {
+      const index = nextIndex;
+      nextIndex += 1;
+      results[index] = await mapper(values[index] as Value, index);
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(maximumConcurrency, values.length) }, worker),
+  );
+  return results;
+}
+
 function isDocumentationWebviewMessage(
   value: unknown,
 ): value is DocumentationWebviewToExtensionMessage {
@@ -521,10 +557,15 @@ function isDocumentationWebviewMessage(
   ) {
     return false;
   }
+  let totalBase64Bytes = 0;
   return candidate.artifacts.every((entry: unknown) => {
     if (!entry || typeof entry !== 'object') return false;
     const artifactEntry = entry as { artifact?: unknown; blockId?: unknown };
-    return typeof artifactEntry.blockId === 'string' && isSerializedArtifact(artifactEntry.artifact);
+    if (typeof artifactEntry.blockId !== 'string' || !isSerializedArtifact(artifactEntry.artifact)) {
+      return false;
+    }
+    totalBase64Bytes += artifactEntry.artifact.dataBase64.length;
+    return totalBase64Bytes <= MAX_DOCUMENTATION_EXPORT_BASE64_BYTES;
   });
 }
 
@@ -533,7 +574,7 @@ function isSerializedArtifact(value: unknown): value is SerializedExportArtifact
   const artifact = value as Partial<Record<keyof SerializedExportArtifact, unknown>>;
   return (
     typeof artifact.dataBase64 === 'string' &&
-    artifact.dataBase64.length <= 800_000_000 &&
+    artifact.dataBase64.length <= MAX_DOCUMENTATION_EXPORT_BASE64_BYTES &&
     typeof artifact.fileName === 'string' &&
     (artifact.format === 'svg' || artifact.format === 'png') &&
     typeof artifact.height === 'number' &&
