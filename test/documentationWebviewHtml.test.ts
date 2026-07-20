@@ -20,7 +20,11 @@ void test('documentation preview exposes its block list, empty state, and offlin
     'id="documentation-empty"',
   ]) assert.match(html, new RegExp(marker, 'u'));
   assert.match(html, /Guide &lt;unsafe&gt;/u);
-  assert.match(html, /script-src 'nonce-documentation-nonce'/u);
+  assert.match(
+    html,
+    /script-src vscode-webview:\/\/documentation-test 'nonce-documentation-nonce'/u,
+  );
+  assert.match(html, /<script type="module" nonce="documentation-nonce"/u);
   assert.match(html, /connect-src 'none'/u);
   assert.doesNotMatch(html, /https?:\/\//u);
 });

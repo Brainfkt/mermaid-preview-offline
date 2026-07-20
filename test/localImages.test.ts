@@ -92,7 +92,7 @@ void test('la concurrence des images locales reste bornée', async () => {
 void test('les budgets par image, agrégé et en nombre échouent avant l’encodage base64', async () => {
   const twoImages = 'flowchart LR\n  a@{ img: "a.png" }\n  b@{ img: "b.png" }';
   await assert.rejects(
-    inlineLocalImages(twoImages, async () => ({
+    inlineLocalImages(twoImages, () => Promise.resolve({
       bytes: new Uint8Array(6),
       mimeType: 'image/png',
     }), {
@@ -104,7 +104,7 @@ void test('les budgets par image, agrégé et en nombre échouent avant l’enco
     /per-image limit/u,
   );
   await assert.rejects(
-    inlineLocalImages(twoImages, async () => ({
+    inlineLocalImages(twoImages, () => Promise.resolve({
       bytes: new Uint8Array(6),
       mimeType: 'image/png',
     }), {
@@ -116,7 +116,7 @@ void test('les budgets par image, agrégé et en nombre échouent avant l’enco
     /aggregate preview limit/u,
   );
   await assert.rejects(
-    inlineLocalImages(twoImages, async () => undefined, {
+    inlineLocalImages(twoImages, () => Promise.resolve(undefined), {
       maxConcurrency: 1,
       maxImageBytes: 6,
       maxImages: 1,

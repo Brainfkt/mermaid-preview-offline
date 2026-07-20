@@ -16,7 +16,8 @@ void test('la webview interdit les connexions et les contenus exécutables dista
   assert.match(html, /connect-src 'none'/u);
   assert.match(html, /object-src 'none'/u);
   assert.match(html, /frame-src 'none'/u);
-  assert.match(html, /script-src 'nonce-fixed-nonce'/u);
+  assert.match(html, /script-src vscode-webview:\/\/test-source 'nonce-fixed-nonce'/u);
+  assert.match(html, /<script type="module" nonce="fixed-nonce"/u);
   assert.match(html, /img-src vscode-webview:\/\/test-source data: blob:/u);
   assert.doesNotMatch(html, /https?:\/\//u);
 });

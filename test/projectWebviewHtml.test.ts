@@ -47,5 +47,6 @@ void test('visual diff exposes side-by-side and overlay before/after previews', 
     'id="diff-changed"',
     'id="diff-removed"',
   ]) assert.match(html, new RegExp(marker, 'u'));
-  assert.match(html, /script-src 'nonce-project-nonce'/u);
+  assert.match(html, /script-src vscode-webview:\/\/project-test 'nonce-project-nonce'/u);
+  assert.match(html, /<script type="module" nonce="project-nonce"/u);
 });

@@ -11,13 +11,13 @@ void test('SQL CREATE TABLE columns and inline keys generate an ER diagram', () 
   const sql = [
     '-- A fake CREATE TABLE ignored(value text);',
     'CREATE TABLE IF NOT EXISTS "app"."User Account" (',
-    '  "user id" BIGINT PRIMARY KEY,',
+    '  "user.id" BIGINT PRIMARY KEY,',
     '  email VARCHAR(255) NOT NULL',
     ');',
     '/* Orders belong to users. */',
     'CREATE TABLE orders (',
     '  id INTEGER,',
-    '  user_id BIGINT NOT NULL REFERENCES "app"."User Account" ("user id"),',
+    '  user_id BIGINT NOT NULL REFERENCES "app"."User Account" ("user.id"),',
     '  CONSTRAINT orders_pk PRIMARY KEY (id)',
     ');',
   ].join('\n');
@@ -27,14 +27,14 @@ void test('SQL CREATE TABLE columns and inline keys generate an ER diagram', () 
   assert.deepEqual(
     schema.tables[0]?.columns.map((column) => [column.name, column.type, column.primaryKey]),
     [
-      ['user id', 'BIGINT', true],
+      ['user.id', 'BIGINT', true],
       ['email', 'VARCHAR(255)', false],
     ],
   );
   assert.deepEqual(schema.tables[1]?.foreignKeys, [
     {
       columns: ['user_id'],
-      referencedColumns: ['user id'],
+      referencedColumns: ['user.id'],
       referencedTable: 'app.User Account',
     },
   ]);
@@ -43,8 +43,9 @@ void test('SQL CREATE TABLE columns and inline keys generate an ER diagram', () 
   assert.match(mermaid, /^erDiagram\n/u);
   assert.match(mermaid, /app_User_Account\["app\.User Account"\] \{/u);
   assert.match(mermaid, /BIGINT user_id FK/u);
+  assert.match(mermaid, /BIGINT user_id PK "user\.id"/u);
   assert.match(mermaid, /INTEGER id PK/u);
-  assert.match(mermaid, /app_User_Account \|\|--o\{ orders : "user_id to user id"/u);
+  assert.match(mermaid, /app_User_Account \|\|--o\{ orders : "user_id to user\.id"/u);
 });
 
 void test('table-level composite primary and foreign keys support quoted identifiers', () => {
