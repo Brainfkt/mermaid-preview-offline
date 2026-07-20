@@ -131,6 +131,21 @@ const diffStub = stubFor(diffData, `
   await waitFor(() => document.querySelector('#after-diagram svg'), 'after preview');
   await waitFor(() => document.querySelector('#overlay-before svg'), 'before overlay layer');
   await waitFor(() => document.querySelector('#overlay-after svg'), 'after overlay layer');
+  for (const [sourceSelector, overlaySelector, suffix] of [
+    ['#before-diagram svg', '#overlay-before svg', 'before-1'],
+    ['#after-diagram svg', '#overlay-after svg', 'after-1'],
+  ]) {
+    const sourceSvg = document.querySelector(sourceSelector);
+    const overlaySvg = document.querySelector(overlaySelector);
+    const sourceStyle = [...sourceSvg.querySelectorAll('style')].map((node) => node.textContent).join('\\n');
+    const overlayStyle = [...overlaySvg.querySelectorAll('style')].map((node) => node.textContent).join('\\n');
+    if (!sourceSvg.id || !sourceStyle.includes('#' + sourceSvg.id)) {
+      throw new Error('The rendered diff fixture does not exercise an SVG ID selector.');
+    }
+    if (!overlayStyle.includes('#' + sourceSvg.id + '-' + suffix)) {
+      throw new Error('The cloned overlay did not rewrite its SVG ID selector.');
+    }
+  }
   document.querySelector('#overlay-mode').click();
   await waitFor(() => !document.querySelector('#overlay-view').hidden, 'overlay mode');
   const opacity = document.querySelector('#overlay-opacity');
