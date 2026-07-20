@@ -126,6 +126,20 @@ void test('v0.6 project workflows expose Diagram Studio and visual Git diff comm
   assert.match(visualDiff?.when ?? '', /textCompareEditorVisible/u);
 });
 
+void test('v1.0 local source generators are explicit commands with activation events', () => {
+  const commands = manifest.contributes.commands.map((entry) => entry.command);
+  for (const command of [
+    'mermaidPreviewOffline.generateErdFromSql',
+    'mermaidPreviewOffline.generateDependencyGraphFromPackageJson',
+  ]) {
+    assert.ok(commands.includes(command));
+    assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
+  }
+  const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
+  assert.match(extension, /generateErdFromSql/u);
+  assert.match(extension, /generateDependencyGraphFromPackageJson/u);
+});
+
 void test('v0.7 documentation workflows support Markdown, MDX, and AsciiDoc', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
   const documentationCommands = [

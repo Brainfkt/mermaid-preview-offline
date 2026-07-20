@@ -97,6 +97,42 @@ void test('replaces complete source blocks with format-specific local image refe
   );
 });
 
+void test('replaces 2,000 blocks in a multi-megabyte document byte-for-byte', { timeout: 15_000 }, () => {
+  const sourceChunks: string[] = [];
+  const expectedChunks: string[] = [];
+  const filler = `Background ${'x'.repeat(2_048)}\n`;
+  const blockCount = 2_000;
+  for (let index = 0; index < blockCount; index += 1) {
+    const prose = `## Section ${index}\n${filler}`;
+    const diagram = `\`\`\`mermaid\nflowchart LR\n  A${index} --> B${index}\n\`\`\`\n`;
+    const replacement = `[rendered diagram ${index}]\n`;
+    sourceChunks.push(prose, diagram);
+    expectedChunks.push(prose, replacement);
+  }
+
+  const source = sourceChunks.join('');
+  const expected = expectedChunks.join('');
+  assert.ok(source.length > 4_000_000);
+  const blocks = extractMermaidBlocks(source, 'markdown');
+  assert.equal(blocks.length, blockCount);
+
+  const callbackOrder: number[] = [];
+  const startedAt = Date.now();
+  const replaced = replaceMermaidBlocks(source, blocks, (block) => {
+    callbackOrder.push(block.index);
+    return `[rendered diagram ${block.index}]`;
+  });
+  const elapsedMilliseconds = Date.now() - startedAt;
+
+  assert.equal(Buffer.compare(Buffer.from(replaced), Buffer.from(expected)), 0);
+  assert.equal(callbackOrder[0], blockCount - 1);
+  assert.equal(callbackOrder.at(-1), 0);
+  assert.ok(
+    elapsedMilliseconds < 10_000,
+    `large document replacement took ${elapsedMilliseconds} ms`,
+  );
+});
+
 void test('recognizes documentation languages by language id and extension', () => {
   assert.equal(documentationKind('markdown'), 'markdown');
   assert.equal(documentationKind('mdx'), 'mdx');

@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { imageMimeType, inlineLocalImages, isRelativeLocalImage } from '../src/localImages';
+import {
+  assertOfflineImageReferences,
+  imageMimeType,
+  inlineLocalImages,
+  isRelativeLocalImage,
+} from '../src/localImages';
 
 void test('les images locales Mermaid sont intégrées sous forme de data URI', async () => {
   const source = 'flowchart LR\n  logo@{ img: "assets/logo.png", label: "Logo" }';
@@ -40,7 +45,7 @@ void test('les formats locaux courants sont reconnus', () => {
   assert.equal(isRelativeLocalImage('vscode-webview://source/logo.png'), false);
 });
 
-void test('les images locales uniques sont chargées en parallèle une seule fois', async () => {
+void test('les images locales uniques sont dédupliquées et chargées avec une concurrence bornée', async () => {
   const requested: string[] = [];
   let activeLoads = 0;
   let maximumActiveLoads = 0;
@@ -63,4 +68,78 @@ void test('les images locales uniques sont chargées en parallèle une seule foi
   assert.deepEqual(requested.sort(), ['assets/a.png', 'assets/b.png']);
   assert.equal(maximumActiveLoads, 2);
   assert.equal(result.match(/data:image\/png;base64,AQ==/gu)?.length, 3);
+});
+
+void test('la concurrence des images locales reste bornée', async () => {
+  let activeLoads = 0;
+  let maximumActiveLoads = 0;
+  const source = [
+    'flowchart LR',
+    ...Array.from({ length: 12 }, (_, index) => `  n${index}@{ img: "assets/${index}.png" }`),
+  ].join('\n');
+
+  await inlineLocalImages(source, async () => {
+    activeLoads += 1;
+    maximumActiveLoads = Math.max(maximumActiveLoads, activeLoads);
+    await new Promise((resolve) => setTimeout(resolve, 2));
+    activeLoads -= 1;
+    return { bytes: new Uint8Array([1]), mimeType: 'image/png' };
+  });
+
+  assert.equal(maximumActiveLoads, 4);
+});
+
+void test('les budgets par image, agrégé et en nombre échouent avant l’encodage base64', async () => {
+  const twoImages = 'flowchart LR\n  a@{ img: "a.png" }\n  b@{ img: "b.png" }';
+  await assert.rejects(
+    inlineLocalImages(twoImages, async () => ({
+      bytes: new Uint8Array(6),
+      mimeType: 'image/png',
+    }), {
+      maxConcurrency: 1,
+      maxImageBytes: 5,
+      maxImages: 2,
+      maxTotalBytes: 10,
+    }),
+    /per-image limit/u,
+  );
+  await assert.rejects(
+    inlineLocalImages(twoImages, async () => ({
+      bytes: new Uint8Array(6),
+      mimeType: 'image/png',
+    }), {
+      maxConcurrency: 1,
+      maxImageBytes: 6,
+      maxImages: 2,
+      maxTotalBytes: 10,
+    }),
+    /aggregate preview limit/u,
+  );
+  await assert.rejects(
+    inlineLocalImages(twoImages, async () => undefined, {
+      maxConcurrency: 1,
+      maxImageBytes: 6,
+      maxImages: 1,
+      maxTotalBytes: 10,
+    }),
+    /offline preview limit/u,
+  );
+});
+
+void test('la politique CLI rejette les images distantes et les images locales non intégrées', () => {
+  assert.doesNotThrow(() => assertOfflineImageReferences(
+    'flowchart LR\n  a@{ img: "data:image/png;base64,AQID" }',
+  ));
+  assert.doesNotThrow(() => assertOfflineImageReferences(
+    'flowchart LR\n  a@{ img: "assets/a.png" }',
+    { allowRelative: true },
+  ));
+  assert.throws(
+    () => assertOfflineImageReferences('flowchart LR\n  a@{ img: "https://example.com/a.png" }'),
+    /External image references are disabled/u,
+  );
+  assert.throws(
+    () => assertOfflineImageReferences('flowchart LR\n  a@{ img: "assets/a.png" }'),
+    /could not be embedded/u,
+  );
 });

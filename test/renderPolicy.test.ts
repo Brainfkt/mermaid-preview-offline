@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { PreviewConfiguration } from '../src/protocol';
-import { effectiveRefreshDelay, formatByteLength } from '../src/renderPolicy';
+import {
+  effectiveRefreshDelay,
+  formatByteLength,
+  MAX_RENDER_SOURCE_BYTES,
+  renderBlockReason,
+} from '../src/renderPolicy';
 
 const configuration: PreviewConfiguration = {
       diagramTheme: 'adaptive',
@@ -22,4 +27,9 @@ void test('document sizes have readable labels', () => {
   assert.equal(formatByteLength(12), '12 B');
   assert.equal(formatByteLength(2048), '2 KB');
   assert.equal(formatByteLength(1_572_864), '1.5 MB');
+});
+
+void test('an absolute source budget prevents unbounded renderer work', () => {
+  assert.equal(renderBlockReason(MAX_RENDER_SOURCE_BYTES), undefined);
+  assert.match(renderBlockReason(MAX_RENDER_SOURCE_BYTES + 1) ?? '', /rendering is paused/u);
 });

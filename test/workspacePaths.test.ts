@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { isUriWithin } from '../src/workspacePaths';
+import { isFilePathWithin, isUriWithin } from '../src/workspacePaths';
 
 void test('local assets stay inside the workspace folder containing the document', () => {
   const root = { authority: 'remote', path: '/workspaces/docs', scheme: 'vscode-remote' };
@@ -33,4 +33,10 @@ void test('URI containment supports Windows casing and rejects another authority
     isUriWithin(root, { authority: 'server', path: '/C:/Workspace/Docs/image.png', scheme: 'file' }, false),
     false,
   );
+});
+
+void test('canonical file paths reject siblings and support case-insensitive platforms', () => {
+  assert.equal(isFilePathWithin('/workspaces/docs', '/workspaces/docs/assets/logo.svg'), true);
+  assert.equal(isFilePathWithin('/workspaces/docs', '/workspaces/other/logo.svg'), false);
+  assert.equal(isFilePathWithin('/Workspaces/Docs', '/workspaces/docs/logo.svg', false), true);
 });
