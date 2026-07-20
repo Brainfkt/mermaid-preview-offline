@@ -137,6 +137,7 @@ const runner = `<script nonce="${nonce}">
       window.postMessage({
         type: 'configuration',
         configuration: {
+          diagramFontFamily: 'vscode',
           diagramTheme: 'adaptive',
           largeFileThresholdBytes: 524288,
           minimapEnabled: true,
@@ -251,6 +252,56 @@ const runner = `<script nonce="${nonce}">
       () => document.querySelector('#diagram svg') !== svgBeforeTheme,
       'theme rerender',
     );
+
+    const accentedSource =
+      'flowchart LR\\n  A["Échéance · coût · façade · cœur"] --> B["naïve · déjà · Ç"]';
+    version += 1;
+    window.postMessage({
+      type: 'document',
+      source: accentedSource,
+      fileName: 'accented-labels.mmd',
+      sourceUri: 'file:///examples/accented-labels.mmd',
+      version,
+      byteLength: accentedSource.length,
+      isLargeFile: false,
+    }, '*');
+    await waitFor(
+      () => document.querySelector('#diagram')?.dataset.version === String(version),
+      'accented labels',
+    );
+    if (!document.querySelector('#diagram svg')?.textContent.includes('Échéance · coût · façade · cœur')) {
+      throw new Error('The renderer did not preserve the accented diagram labels.');
+    }
+    for (const [fontFamily, cssFamily] of [
+      ['noto-sans', 'Mermaid Offline Noto Sans'],
+      ['inter', 'Mermaid Offline Inter'],
+      ['vscode', '-apple-system'],
+    ]) {
+      const previousSvg = document.querySelector('#diagram svg');
+      window.postMessage({
+        type: 'configuration',
+        configuration: {
+          diagramFontFamily: fontFamily,
+          diagramTheme: 'forest',
+          largeFileThresholdBytes: 524288,
+          minimapEnabled: true,
+          refreshDelay: 0,
+          refreshMode: 'automatic',
+        },
+      }, '*');
+      await waitFor(
+        () => document.querySelector('#diagram svg') !== previousSvg,
+        fontFamily + ' font rerender',
+      );
+      const text = document.querySelector('#diagram svg text, #diagram svg foreignObject *');
+      if (!text || !getComputedStyle(text).fontFamily.includes(cssFamily)) {
+        throw new Error(fontFamily + ': selected font is not applied to diagram text.');
+      }
+      if (fontFamily !== 'vscode' &&
+          !document.fonts.check('400 16px "' + cssFamily + '"', 'Échéance · cœur · Łódź')) {
+        throw new Error(fontFamily + ': bundled Latin fonts are not ready.');
+      }
+    }
 
     const svgBeforeRefresh = document.querySelector('#diagram svg');
     document.querySelector('#refresh').click();

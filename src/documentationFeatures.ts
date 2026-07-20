@@ -11,6 +11,10 @@ import {
   type DocumentationKind,
   type MermaidDocumentationBlock,
 } from './documentationBlocks';
+import {
+  normalizeDiagramFontFamily,
+  type DiagramFontFamily,
+} from './diagramFont';
 import type {
   DocumentationPreviewMode,
   DocumentationWebviewToExtensionMessage,
@@ -74,7 +78,10 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
         }
       }),
       vscode.workspace.onDidChangeConfiguration((event) => {
-        if (event.affectsConfiguration('mermaidPreviewOffline.diagramTheme')) {
+        if (
+          event.affectsConfiguration('mermaidPreviewOffline.diagramTheme') ||
+          event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily')
+        ) {
           this.schedulePreviewRefresh(0);
         }
       }),
@@ -342,6 +349,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     await panel.webview.postMessage({
       blocks: preparedBlocks,
       fileName: fileNameOf(document.uri),
+      fontFamily: configuredDiagramFontFamily(document.uri),
       kind: context.kind,
       mode: context.mode,
       theme: configuredDiagramTheme(),
@@ -389,6 +397,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     );
     const delivered = await panel.webview.postMessage({
       blocks: renderBlocks,
+      fontFamily: configuredDiagramFontFamily(document.uri),
       requestId,
       settings,
       sourceUri: document.uri.toString(),
@@ -485,6 +494,13 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     }
     this.pendingExports.clear();
   }
+}
+
+function configuredDiagramFontFamily(resource?: vscode.Uri): DiagramFontFamily {
+  const fontFamily = vscode.workspace
+    .getConfiguration('mermaidPreviewOffline', resource)
+    .get<unknown>('diagramFontFamily', 'vscode');
+  return normalizeDiagramFontFamily(fontFamily);
 }
 
 function configuredDiagramTheme(): DiagramTheme {

@@ -84,6 +84,21 @@ URIs, so exported SVGs stay portable and do not depend on local file paths.
 
 ![Bundled Iconify icons and a workspace image rendered locally in two VS Code previews](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icons-image-local.png)
 
+## Diagram typography
+
+Diagram text follows VS Code's interface font by default, using
+`--vscode-font-family` in previews and a matching system UI fallback where that
+variable is unavailable. Set `mermaidPreviewOffline.diagramFontFamily` to
+`noto-sans` or `inter` when you want identical Latin and Latin Extended glyphs
+and metrics across platforms. Both optional fonts are bundled locally; no font
+is fetched at runtime.
+
+The VS Code choice keeps diagrams visually consistent with the current editor,
+but its exact typeface can vary between machines. Noto Sans and Inter are the
+portable choices for optimized SVG, PNG, WebP, and PDF exports because their
+font data ships with the output rendering path. Original SVG remains Mermaid's
+unchanged output and does not receive export-time font embedding.
+
 ## Get started
 
 1. Install **Mermaid Preview — 100% Offline** from the
@@ -115,6 +130,8 @@ use **Reopen Editor With...** → **Text Editor**.
 - Editor-group full screen for focused reading.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
 - Six workspace-wide diagram themes selectable directly from the preview.
+- VS Code-native diagram typography by default, with offline Noto Sans and
+  Inter presets for portable exports and complete Latin accents.
 - A modern glass interface that remains native to VS Code themes.
 - Live export preview with reusable profiles.
 - PNG, WebP, PDF, optimized SVG, and original SVG export.
@@ -191,6 +208,7 @@ and current limitations.
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Show the minimap when the diagram exceeds the viewport. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose a theme shared by every preview in the workspace. |
+| `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Follow VS Code's font, or use bundled Noto Sans/Inter for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Choose the default professional export format. |
 | `mermaidPreviewOffline.export.theme` | `default` | Render exports with a theme independent from the preview. |
 | `mermaidPreviewOffline.export.scale` | `1` | Set the default export scale factor. |
@@ -331,16 +349,19 @@ npm run build
 npm link
 
 mpo examples/01-flowchart.mmd \
-  --format png --dpi 300 --scale 2 --background transparent
+  --format png --dpi 300 --scale 2 --font noto-sans \
+  --background transparent
 
 mpo examples \
   --output exported --format pdf --theme neutral
 ```
 
 `npm link` exposes the local executable as the short `mpo` command. Use
-`--profile profile.json` to load saved settings, `--name-template` to control
-output names, `--browser` when the browser is in a non-standard location, and
-`--json` for machine-readable output. `--help` lists every option.
+`--profile profile.json` loads saved settings, `--font` selects `vscode`,
+`noto-sans`, or `inter`, `--name-template` controls output names, `--browser`
+handles a non-standard browser location, and `--json` emits machine-readable
+output. `--help` lists every option. In CLI mode, `vscode` resolves to the
+system UI font stack because VS Code's CSS variable is unavailable.
 
 The extension also contributes a `mermaid-export` task type:
 
@@ -355,6 +376,7 @@ The extension also contributes a `mermaid-export` task type:
       "output": "${workspaceFolder}/build/diagrams",
       "format": "png",
       "theme": "neutral",
+      "font": "noto-sans",
       "dpi": 300,
       "scale": 2,
       "background": "#ffffff"
@@ -362,6 +384,9 @@ The extension also contributes a `mermaid-export` task type:
   ]
 }
 ```
+
+The task's `font` property accepts the same three values. Omit it to inherit
+`mermaidPreviewOffline.diagramFontFamily` from the active workspace.
 
 ## Privacy and security
 

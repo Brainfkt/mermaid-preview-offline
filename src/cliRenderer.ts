@@ -1,13 +1,15 @@
 import mermaid from 'mermaid';
 
+import { normalizeDiagramFontFamily, type DiagramFontFamily } from './diagramFont';
+import { resolvedDiagramFontStack } from './diagramFontAssets';
 import { normalizeExportSettings, type ExportSettings } from './exportSettings';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
-import { OFFLINE_FONT_STACK } from './offlineFont';
 import type { SerializedExportArtifact } from './protocol';
 
 export interface CliRenderRequest {
   fileName: string;
+  fontFamily: DiagramFontFamily;
   settings: ExportSettings;
   source: string;
   sourceUri: string;
@@ -26,22 +28,24 @@ registerOfflineIconPacks();
 window.mermaidOfflineCli = {
   async render(request: CliRenderRequest): Promise<SerializedExportArtifact> {
     const settings = normalizeExportSettings(request.settings);
+    const fontFamily = normalizeDiagramFontFamily(request.fontFamily);
     const renderId = `mermaid-cli-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     try {
-      await prepareMermaidExtensions(request.source);
+      await prepareMermaidExtensions(request.source, fontFamily);
       mermaid.initialize({
         deterministicIds: true,
         deterministicIDSeed: 'mermaid-preview-offline-cli',
         startOnLoad: false,
         securityLevel: 'strict',
         theme: settings.theme === 'adaptive' ? 'default' : settings.theme,
-        fontFamily: OFFLINE_FONT_STACK,
+        fontFamily: resolvedDiagramFontStack(fontFamily),
         flowchart: { htmlLabels: false, useMaxWidth: false },
         sequence: { useMaxWidth: false },
       });
       const { svg } = await mermaid.render(renderId, request.source);
       const artifact = await renderExportArtifact({
         fileName: request.fileName,
+        fontFamily,
         metadata: {
           exportedAt: new Date().toISOString(),
           fileName: request.fileName,

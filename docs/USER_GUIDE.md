@@ -64,8 +64,8 @@ previous companion instead of creating duplicate panels.
 The selected layout is stored for the workspace. For each Mermaid file, the
 extension also stores zoom, fit mode, scroll position, and the native split
 ratio. VS Code restores open editor tabs; when a preview is reconstructed, the
-extension reapplies its stored view state. The selected diagram theme is shared
-by previews in the current workspace.
+extension reapplies its stored view state. The selected diagram theme and
+diagram font are shared by previews in the current VS Code window.
 
 If the restored split no longer matches the expected layout, select the desired
 layout again. If a stale preview survives an interrupted remote session, close
@@ -130,6 +130,30 @@ dark themes.
 
 The preview theme and export theme are independent. This lets you edit in a dark
 workspace while exporting, for example, a neutral diagram on white.
+
+### Diagram typography
+
+`mermaidPreviewOffline.diagramFontFamily` controls diagram text in file
+previews, documentation previews, Diagram Studio, visual comparisons, and
+prepared exports. It has three window-scoped values:
+
+| Value | Behavior |
+|---|---|
+| `vscode` (default) | Uses VS Code's resolved `--vscode-font-family`. Renderers without that CSS variable, including the standalone CLI, use a system UI font stack. |
+| `noto-sans` | Uses the bundled Noto Sans regular face for Latin and Latin Extended text. |
+| `inter` | Uses the bundled Inter regular face for Latin and Latin Extended text. |
+
+Choose `vscode` when you want the diagram to feel native to the current editor.
+The exact installed typeface and its metrics can differ between operating
+systems or VS Code profiles. Choose Noto Sans or Inter when consistent accented
+glyphs, layout metrics, and cross-platform output matter: both fonts are
+embedded in the extension and require no runtime download.
+
+Optimized SVG, PNG, WebP, and PDF rendering can carry the selected bundled font,
+so Noto Sans and Inter are the portable and reproducible choices for shared
+exports. **Original SVG** intentionally preserves Mermaid's unmodified output;
+it does not receive export-time font embedding and can therefore use a fallback
+when opened on a machine without the named font.
 
 ## Errors and editing assistance
 
@@ -283,7 +307,7 @@ npm ci
 npm run build
 npm link
 
-mpo examples/01-flowchart.mmd --format png --dpi 300 --scale 2
+mpo examples/01-flowchart.mmd --format png --dpi 300 --scale 2 --font noto-sans
 mpo examples --output exported --format pdf --theme neutral --json
 ```
 
@@ -296,6 +320,7 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--margin <pixels>` | Space around the diagram. |
 | `--background <value>` | `transparent` or `#rrggbb`. |
 | `--theme <theme>` | `adaptive`, `default`, `dark`, `forest`, `neutral`, or `base`. |
+| `--font <font>` | `vscode`, `noto-sans`, or `inter`; `vscode` uses the system UI stack outside VS Code. |
 | `--name-template <template>` | Output naming tokens used by the export dialog. |
 | `--profile <json>` | Load export settings from a JSON profile. |
 | `--original-svg` | Keep SVG output unchanged. |
@@ -328,6 +353,7 @@ that provide a compatible browser.
       "output": "${workspaceFolder}/build/diagrams",
       "format": "png",
       "theme": "neutral",
+      "font": "noto-sans",
       "scale": 2,
       "dpi": 300,
       "margin": 24,
@@ -347,6 +373,7 @@ that provide a compatible browser.
 | `output` | Source-dependent | Output file or folder; supports the same variables. |
 | `format` | `png` | `svg`, `png`, `webp`, or `pdf`. |
 | `theme` | `default` | Any supported Mermaid theme. |
+| `font` | Workspace setting | `vscode`, `noto-sans`, or `inter`. If omitted, the task uses `mermaidPreviewOffline.diagramFontFamily`. |
 | `scale` | `1` | Scale from 0.25 to 8. |
 | `dpi` | `144` | Resolution from 72 to 600. |
 | `margin` | `24` | Margin from 0 to 512. |
@@ -507,6 +534,7 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Resource-level threshold, 64–10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Resource-level minimap availability. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Workspace/window preview theme. |
+| `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Window-level diagram typography: `vscode`, `noto-sans`, or `inter`. Noto Sans and Inter are bundled for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Resource-level default: SVG, PNG, WebP, or PDF. |
 | `mermaidPreviewOffline.export.theme` | `default` | Resource-level export theme independent of the preview. |
 | `mermaidPreviewOffline.export.scale` | `1` | Resource-level scale, 0.25–8. |
@@ -525,6 +553,7 @@ Example workspace settings:
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
   "mermaidPreviewOffline.diagramTheme": "adaptive",
+  "mermaidPreviewOffline.diagramFontFamily": "noto-sans",
   "mermaidPreviewOffline.export.format": "svg",
   "mermaidPreviewOffline.export.theme": "neutral",
   "mermaidPreviewOffline.export.fileNameTemplate": "{name}-{date}.{format}"

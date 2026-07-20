@@ -10,9 +10,10 @@ import {
 } from '../src/renderPolicy';
 
 const configuration: PreviewConfiguration = {
-      diagramTheme: 'adaptive',
-      largeFileThresholdBytes: 512 * 1024,
-      minimapEnabled: true,
+  diagramFontFamily: 'vscode',
+  diagramTheme: 'adaptive',
+  largeFileThresholdBytes: 512 * 1024,
+  minimapEnabled: true,
   refreshDelay: 140,
   refreshMode: 'automatic',
 };

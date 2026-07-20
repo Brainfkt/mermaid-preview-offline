@@ -56,6 +56,7 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies['@mermaid-js/mermaid-zenuml'], '0.2.3');
   assert.match(manifest.dependencies['@iconify-json/logos'] ?? '', /^1\./u);
   assert.match(manifest.dependencies['@iconify-json/material-icon-theme'] ?? '', /^1\./u);
+  assert.equal(manifest.dependencies.katex, undefined);
 });
 
 void test('preview commands expose all four native editor layouts', () => {
@@ -173,6 +174,7 @@ void test('professional export is exposed to the UI, tasks, and offline CLI', ()
     'output',
     'format',
     'theme',
+    'font',
     'scale',
     'dpi',
     'margin',
@@ -181,6 +183,11 @@ void test('professional export is exposed to the UI, tasks, and offline CLI', ()
   ]) {
     assert.ok(property in (task?.properties ?? {}));
   }
+  const fontProperty = task?.properties.font as
+    | { default?: unknown; enum?: unknown[] }
+    | undefined;
+  assert.deepEqual(fontProperty?.enum, ['vscode', 'noto-sans', 'inter']);
+  assert.equal(fontProperty?.default, undefined);
   const metadataProperty = task?.properties.includeMetadata as
     | { default?: unknown }
     | undefined;
@@ -203,7 +210,7 @@ void test('Mermaid contributes language snippets for advanced editing', () => {
   assert.match(grammar, /\|info\|/u);
 });
 
-void test('refresh, large-file, and diagram-theme settings are configurable', () => {
+void test('refresh, large-file, diagram-theme, and diagram-font settings are configurable', () => {
   const properties = manifest.contributes.configuration.properties;
   assert.deepEqual(properties['mermaidPreviewOffline.refreshMode']?.enum, [
     'automatic',
@@ -223,6 +230,13 @@ void test('refresh, large-file, and diagram-theme settings are configurable', ()
     'base',
   ]);
   assert.equal(properties['mermaidPreviewOffline.diagramTheme']?.scope, 'window');
+  assert.deepEqual(properties['mermaidPreviewOffline.diagramFontFamily']?.enum, [
+    'vscode',
+    'noto-sans',
+    'inter',
+  ]);
+  assert.equal(properties['mermaidPreviewOffline.diagramFontFamily']?.default, 'vscode');
+  assert.equal(properties['mermaidPreviewOffline.diagramFontFamily']?.scope, 'window');
   assert.deepEqual(properties['mermaidPreviewOffline.export.format']?.enum, [
     'svg',
     'png',

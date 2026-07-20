@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 
 import { isEditorMode } from './editorLayoutController';
 import type { MermaidEditorLayoutController } from './editorLayoutController';
+import { normalizeDiagramFontFamily } from './diagramFont';
 import {
   DEFAULT_EXPORT_SETTINGS,
   normalizeExportProfiles,
@@ -711,15 +712,16 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
 function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline', resource);
-  const configuredTheme = vscode.workspace
-    .getConfiguration('mermaidPreviewOffline')
-    .get<unknown>('diagramTheme', 'adaptive');
+  const windowConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline');
+  const configuredFontFamily = windowConfiguration.get<unknown>('diagramFontFamily', 'vscode');
+  const configuredTheme = windowConfiguration.get<unknown>('diagramTheme', 'adaptive');
   const refreshMode = configuration.get<unknown>('refreshMode', 'automatic');
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
   const minimapEnabled = configuration.get<boolean>('minimap.enabled', true);
 
   return {
+    diagramFontFamily: normalizeDiagramFontFamily(configuredFontFamily),
     diagramTheme: isDiagramTheme(configuredTheme) ? configuredTheme : 'adaptive',
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
     minimapEnabled,

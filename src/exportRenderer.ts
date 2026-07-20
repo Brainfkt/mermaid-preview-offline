@@ -6,7 +6,8 @@ import {
   type ExportSettings,
   type ExportSourceMetadata,
 } from './exportSettings';
-import { offlineFontFaceCss, OFFLINE_FONT_STACK } from './offlineFont';
+import { normalizeDiagramFontFamily, type DiagramFontFamily } from './diagramFont';
+import { diagramFontFaceCss, resolvedDiagramFontStack } from './diagramFontAssets';
 import {
   replaceSvgAttributeIdReferences,
   replaceSvgStyleIdReferences,
@@ -23,6 +24,7 @@ export interface ExportArtifact {
 
 export interface ExportRenderInput {
   fileName: string;
+  fontFamily?: DiagramFontFamily;
   metadata: ExportSourceMetadata;
   settings: ExportSettings;
   svg: string;
@@ -48,7 +50,7 @@ export async function renderExportArtifact(input: ExportRenderInput): Promise<Ex
   const settings = normalizeExportSettings(input.settings);
   const fileName = createExportFileName({ fileName: input.fileName, settings });
   if (settings.format === 'svg') {
-    const prepared = prepareSvg(input.svg, settings, input.metadata);
+    const prepared = prepareSvg(input.svg, settings, input.metadata, input.fontFamily);
     return {
       bytes: textEncoder.encode(prepared.source),
       fileName,
@@ -59,7 +61,7 @@ export async function renderExportArtifact(input: ExportRenderInput): Promise<Ex
     };
   }
 
-  const prepared = prepareSvg(input.svg, settings, input.metadata);
+  const prepared = prepareSvg(input.svg, settings, input.metadata, input.fontFamily);
   const raster = await rasterizeSvg(prepared, settings);
   if (settings.format === 'pdf') {
     const bytes = await canvasToPdf(
@@ -105,7 +107,7 @@ export async function renderExportPreview(
     dpi: 96,
     scale: Math.min(input.settings.scale, 2),
   });
-  const prepared = prepareSvg(input.svg, settings, input.metadata);
+  const prepared = prepareSvg(input.svg, settings, input.metadata, input.fontFamily);
   const previewScale = Math.min(1, maximumDimension / Math.max(prepared.width, prepared.height));
   const raster = await rasterizeSvg(prepared, { ...settings, scale: previewScale });
   const outputScale = input.settings.scale * (input.settings.dpi / 96);
@@ -120,6 +122,7 @@ export function prepareSvg(
   originalSvg: string,
   rawSettings: ExportSettings,
   metadata: ExportSourceMetadata,
+  fontFamily?: DiagramFontFamily,
 ): PreparedSvg {
   const settings = normalizeExportSettings(rawSettings);
   if (settings.format === 'svg' && settings.svgVariant === 'original') {
@@ -143,8 +146,10 @@ export function prepareSvg(
 
   const fontStyle = documentNode.createElementNS('http://www.w3.org/2000/svg', 'style');
   fontStyle.setAttribute('data-mermaid-offline-font', 'true');
-  fontStyle.textContent = `${offlineFontFaceCss()}` +
-    `text,tspan,foreignObject,foreignObject *{font-family:${OFFLINE_FONT_STACK}!important;}`;
+  const normalizedFontFamily = normalizeDiagramFontFamily(fontFamily);
+  fontStyle.textContent = `${diagramFontFaceCss(normalizedFontFamily)}` +
+    'text,tspan,foreignObject,foreignObject *{' +
+    `font-family:${resolvedDiagramFontStack(normalizedFontFamily)}!important;}`;
   root.insertBefore(fontStyle, root.firstChild);
 
   if (settings.background === 'color') {

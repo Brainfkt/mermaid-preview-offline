@@ -1,5 +1,7 @@
 import mermaid from 'mermaid';
 
+import type { DiagramFontFamily } from './diagramFont';
+import { resolvedDiagramFontStack } from './diagramFontAssets';
 import {
   defaultTemplateValues,
   renderDiagramTemplate,
@@ -8,7 +10,6 @@ import {
   type DiagramTemplateField,
 } from './diagramTemplates';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
-import { OFFLINE_FONT_STACK } from './offlineFont';
 import {
   replaceSvgAttributeIdReferences,
   replaceSvgStyleIdReferences,
@@ -23,6 +24,7 @@ interface VsCodeApi {
 
 interface GalleryDataMessage {
   examples: DiagramExample[];
+  fontFamily: DiagramFontFamily;
   initialTab: GalleryTab;
   templates: DiagramTemplate[];
   type: 'galleryData';
@@ -31,6 +33,7 @@ interface GalleryDataMessage {
 interface VisualDiffDataMessage {
   after: { label: string; source: string };
   before: { label: string; source: string };
+  fontFamily: DiagramFontFamily;
   summary: LineDiffSummary;
   title: string;
   type: 'visualDiffData';
@@ -51,8 +54,9 @@ registerOfflineIconPacks();
 const vscode = acquireVsCodeApi();
 let renderSequence = 0;
 let renderQueue = Promise.resolve();
+let activeFontFamily: DiagramFontFamily = 'vscode';
 
-initializeMermaid();
+initializeMermaid(activeFontFamily);
 
 if (document.querySelector('#project-gallery')) {
   initializeGallery();
@@ -93,6 +97,8 @@ function initializeGallery(): void {
 
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
     if (event.data.type !== 'galleryData') return;
+    activeFontFamily = event.data.fontFamily;
+    initializeMermaid(activeFontFamily);
     templates = event.data.templates;
     examples = event.data.examples;
     activeTab = event.data.initialTab;
@@ -312,6 +318,8 @@ function initializeVisualDiff(): void {
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
     if (event.data.type !== 'visualDiffData') return;
     const data = event.data;
+    activeFontFamily = data.fontFamily;
+    initializeMermaid(activeFontFamily);
     const generation = ++diffGeneration;
     title.textContent = data.title;
     subtitle.textContent = `${data.before.label} → ${data.after.label}`;
@@ -389,7 +397,7 @@ async function renderMermaid(
 ): Promise<void> {
   const render = async (): Promise<void> => {
     try {
-      await prepareMermaidExtensions(source);
+      await prepareMermaidExtensions(source, activeFontFamily);
       const result = await mermaid.render(`mermaid-project-${++renderSequence}`, source);
       target.innerHTML = result.svg;
       target.dataset.renderSource = source;
@@ -415,14 +423,14 @@ async function renderMermaid(
   await queued;
 }
 
-function initializeMermaid(): void {
+function initializeMermaid(fontFamily: DiagramFontFamily): void {
   const isDark = document.body.classList.contains('vscode-dark') ||
     document.body.classList.contains('vscode-high-contrast');
   mermaid.initialize({
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline-project',
     flowchart: { htmlLabels: true, useMaxWidth: false },
-    fontFamily: OFFLINE_FONT_STACK,
+    fontFamily: resolvedDiagramFontStack(fontFamily),
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
     sequence: { useMaxWidth: false },

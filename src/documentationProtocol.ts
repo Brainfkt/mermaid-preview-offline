@@ -1,5 +1,6 @@
 import type { ExportSettings } from './exportSettings';
 import type { DocumentationKind } from './documentationBlocks';
+import type { DiagramFontFamily } from './diagramFont';
 import type { DiagramTheme, SerializedExportArtifact } from './protocol';
 
 export type DocumentationPreviewMode = 'all' | 'cursor';
@@ -16,6 +17,7 @@ export type ExtensionToDocumentationWebviewMessage =
   | {
       blocks: DocumentationPreviewBlock[];
       fileName: string;
+      fontFamily: DiagramFontFamily;
       kind: DocumentationKind;
       mode: DocumentationPreviewMode;
       theme: DiagramTheme;
@@ -24,6 +26,7 @@ export type ExtensionToDocumentationWebviewMessage =
     }
   | {
       blocks: Array<{ fileName: string; id: string; source: string }>;
+      fontFamily: DiagramFontFamily;
       requestId: string;
       settings: ExportSettings;
       sourceUri: string;

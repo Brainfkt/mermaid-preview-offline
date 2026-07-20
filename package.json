@@ -408,6 +408,15 @@
             ],
             "default": "default"
           },
+          "font": {
+            "type": "string",
+            "enum": [
+              "vscode",
+              "noto-sans",
+              "inter"
+            ],
+            "description": "Diagram font. When omitted, the workspace diagramFontFamily setting is used."
+          },
           "scale": {
             "type": "number",
             "minimum": 0.25,
@@ -509,6 +518,22 @@
           "default": "adaptive",
           "scope": "window",
           "description": "Mermaid color theme shared by every preview in the current workspace."
+        },
+        "mermaidPreviewOffline.diagramFontFamily": {
+          "type": "string",
+          "enum": [
+            "vscode",
+            "noto-sans",
+            "inter"
+          ],
+          "enumDescriptions": [
+            "Follow the VS Code interface font, with the platform UI stack as fallback.",
+            "Use the bundled offline Noto Sans font.",
+            "Use the bundled offline Inter font."
+          ],
+          "default": "vscode",
+          "scope": "window",
+          "description": "Font family shared by previews and exports in the current workspace."
         },
         "mermaidPreviewOffline.export.format": {
           "type": "string",
@@ -618,7 +643,6 @@
     "@iconify-json/logos": "1.2.11",
     "@iconify-json/material-icon-theme": "1.2.69",
     "@mermaid-js/mermaid-zenuml": "0.2.3",
-    "katex": "0.16.47",
     "mermaid": "11.16.0"
   },
   "devDependencies": {

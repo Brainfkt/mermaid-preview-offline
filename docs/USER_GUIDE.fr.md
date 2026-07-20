@@ -71,8 +71,8 @@ La disposition sélectionnée est enregistrée pour l’espace de travail. Pour
 chaque fichier Mermaid, l’extension enregistre également le zoom, le mode
 d’ajustement, la position de défilement et la proportion de la vue fractionnée
 native. VS Code restaure les onglets ouverts ; lorsqu’un aperçu est reconstruit,
-l’extension réapplique son état d’affichage enregistré. Le thème de diagramme
-sélectionné est commun aux aperçus de l’espace de travail actuel.
+l’extension réapplique son état d’affichage enregistré. Le thème et la police
+des diagrammes sont communs aux aperçus de la fenêtre VS Code actuelle.
 
 Si la vue fractionnée restaurée ne correspond plus à la disposition attendue,
 sélectionnez de nouveau la disposition voulue. Si un aperçu obsolète subsiste
@@ -144,6 +144,32 @@ sombre, clair à contraste élevé et sombre à contraste élevé.
 Le thème de l’aperçu et celui de l’export sont indépendants. Vous pouvez ainsi
 travailler dans un espace sombre tout en exportant, par exemple, un diagramme
 neutre sur fond blanc.
+
+### Typographie des diagrammes
+
+`mermaidPreviewOffline.diagramFontFamily` contrôle le texte des aperçus de
+fichiers et de documentation, de Diagram Studio, des comparaisons visuelles et
+des exports préparés. Ce réglage à portée de fenêtre accepte trois valeurs :
+
+| Valeur | Comportement |
+|---|---|
+| `vscode` (par défaut) | Utilise la valeur résolue de `--vscode-font-family`. Les moteurs dépourvus de cette variable CSS, notamment le CLI autonome, utilisent une pile de polices d’interface système. |
+| `noto-sans` | Utilise la graisse normale de Noto Sans intégrée pour les textes Latin et Latin Extended. |
+| `inter` | Utilise la graisse normale d’Inter intégrée pour les textes Latin et Latin Extended. |
+
+Choisissez `vscode` pour accorder le diagramme à l’éditeur actuel. La police
+installée exacte et ses métriques peuvent varier selon le système d’exploitation
+ou le profil VS Code. Choisissez Noto Sans ou Inter lorsque la cohérence des
+caractères accentués, des métriques de mise en page et du résultat entre les
+plateformes est prioritaire : les deux polices sont intégrées à l’extension et
+ne nécessitent aucun téléchargement à l’exécution.
+
+Les rendus SVG optimisé, PNG, WebP et PDF peuvent embarquer la police intégrée
+sélectionnée ; Noto Sans et Inter sont donc les choix portables et
+reproductibles pour les exports partagés. Le **SVG original** conserve
+volontairement la sortie Mermaid sans modification : aucune police ne lui est
+ajoutée au moment de l’export et une police de remplacement peut être utilisée
+s’il est ouvert sur une machine dépourvue de la police nommée.
 
 ## Erreurs et assistance à l’édition
 
@@ -308,7 +334,7 @@ npm ci
 npm run build
 npm link
 
-mpo examples/01-flowchart.mmd --format png --dpi 300 --scale 2
+mpo examples/01-flowchart.mmd --format png --dpi 300 --scale 2 --font noto-sans
 mpo examples --output exported --format pdf --theme neutral --json
 ```
 
@@ -321,6 +347,7 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--margin <pixels>` | Espace autour du diagramme. |
 | `--background <value>` | `transparent` ou `#rrggbb`. |
 | `--theme <theme>` | `adaptive`, `default`, `dark`, `forest`, `neutral` ou `base`. |
+| `--font <font>` | `vscode`, `noto-sans` ou `inter` ; `vscode` utilise la pile d’interface système en dehors de VS Code. |
 | `--name-template <template>` | Jetons de nommage de sortie utilisés par la boîte de dialogue d’export. |
 | `--profile <json>` | Charge les réglages d’export depuis un profil JSON. |
 | `--original-svg` | Conserve la sortie SVG inchangée. |
@@ -354,6 +381,7 @@ dans les environnements CI qui disposent d’un navigateur compatible.
       "output": "${workspaceFolder}/build/diagrams",
       "format": "png",
       "theme": "neutral",
+      "font": "noto-sans",
       "scale": 2,
       "dpi": 300,
       "margin": 24,
@@ -373,6 +401,7 @@ dans les environnements CI qui disposent d’un navigateur compatible.
 | `output` | Selon la source | Fichier ou dossier de sortie ; prend en charge les mêmes variables. |
 | `format` | `png` | `svg`, `png`, `webp` ou `pdf`. |
 | `theme` | `default` | Tout thème Mermaid pris en charge. |
+| `font` | Réglage de l’espace de travail | `vscode`, `noto-sans` ou `inter`. Si elle est omise, la tâche utilise `mermaidPreviewOffline.diagramFontFamily`. |
 | `scale` | `1` | Échelle de 0.25 à 8. |
 | `dpi` | `144` | Résolution de 72 à 600. |
 | `margin` | `24` | Marge de 0 à 512. |
@@ -539,6 +568,7 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Seuil par ressource, de 64 à 10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Disponibilité de la minimap par ressource. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Thème d’aperçu de l’espace de travail ou de la fenêtre. |
+| `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Typographie des diagrammes à l’échelle de la fenêtre : `vscode`, `noto-sans` ou `inter`. Noto Sans et Inter sont intégrées pour les sorties portables. |
 | `mermaidPreviewOffline.export.format` | `png` | Valeur par défaut de la ressource : SVG, PNG, WebP ou PDF. |
 | `mermaidPreviewOffline.export.theme` | `default` | Thème d’export par ressource, indépendant de l’aperçu. |
 | `mermaidPreviewOffline.export.scale` | `1` | Échelle par ressource, de 0.25 à 8. |
@@ -557,6 +587,7 @@ Exemple de réglages d’espace de travail :
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
   "mermaidPreviewOffline.diagramTheme": "adaptive",
+  "mermaidPreviewOffline.diagramFontFamily": "noto-sans",
   "mermaidPreviewOffline.export.format": "svg",
   "mermaidPreviewOffline.export.theme": "neutral",
   "mermaidPreviewOffline.export.fileNameTemplate": "{name}-{date}.{format}"

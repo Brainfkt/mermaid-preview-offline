@@ -62,6 +62,7 @@ const options = {
 
 const galleryData = {
   examples,
+  fontFamily: 'vscode',
   initialTab: 'templates',
   templates: DIAGRAM_TEMPLATES,
   type: 'galleryData',
@@ -122,6 +123,7 @@ const afterSource = 'flowchart LR\n  A[Request] --> B[Automated review]\n  B -->
 const diffData = {
   after: { label: 'Working tree', source: afterSource },
   before: { label: 'HEAD', source: beforeSource },
+  fontFamily: 'vscode',
   summary: summarizeLineDiff(beforeSource, afterSource),
   title: 'Visual diff · approval-flow.mmd',
   type: 'visualDiffData',

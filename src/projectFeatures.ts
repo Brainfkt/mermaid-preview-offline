@@ -8,6 +8,10 @@ import {
   titleFromFileName,
   type DiagramExample,
 } from './diagramTemplates';
+import {
+  normalizeDiagramFontFamily,
+  type DiagramFontFamily,
+} from './diagramFont';
 import { imageMimeType, inlineLocalImages } from './localImages';
 import { MERMAID_PREVIEW_VIEW_TYPE } from './mermaidPreviewProvider';
 import {
@@ -64,15 +68,23 @@ type ProjectWebviewMessage =
   | { fileName: string; source: string; type: 'createDiagram' };
 
 export class MermaidProjectFeatures implements vscode.Disposable {
+  private readonly configurationSubscription: vscode.Disposable;
   private galleryPanel: vscode.WebviewPanel | undefined;
   private galleryTab: GalleryInitialTab = 'templates';
   private visualDiffPanel: vscode.WebviewPanel | undefined;
   private visualComparison: VisualComparison | undefined;
   private examplesPromise: Promise<DiagramExample[]> | undefined;
 
-  public constructor(private readonly context: vscode.ExtensionContext) {}
+  public constructor(private readonly context: vscode.ExtensionContext) {
+    this.configurationSubscription = vscode.workspace.onDidChangeConfiguration((event) => {
+      if (!event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily')) return;
+      void this.postGalleryData();
+      void this.postVisualComparison();
+    });
+  }
 
   public dispose(): void {
+    this.configurationSubscription.dispose();
     this.galleryPanel?.dispose();
     this.visualDiffPanel?.dispose();
   }
@@ -197,6 +209,7 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     if (!this.galleryPanel) return;
     await this.galleryPanel.webview.postMessage({
       examples: await this.examples(),
+      fontFamily: configuredDiagramFontFamily(),
       initialTab: this.galleryTab,
       templates: DIAGRAM_TEMPLATES,
       type: 'galleryData',
@@ -340,9 +353,17 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     if (!this.visualDiffPanel || !this.visualComparison) return;
     await this.visualDiffPanel.webview.postMessage({
       ...this.visualComparison,
+      fontFamily: configuredDiagramFontFamily(),
       type: 'visualDiffData',
     });
   }
+}
+
+function configuredDiagramFontFamily(): DiagramFontFamily {
+  const fontFamily = vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .get<unknown>('diagramFontFamily', 'vscode');
+  return normalizeDiagramFontFamily(fontFamily);
 }
 
 function revisionChoices(repository: GitRepository): RevisionChoice[] {

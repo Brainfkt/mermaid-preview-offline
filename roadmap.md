@@ -92,6 +92,8 @@
 - [x] Publier des engagements clairs de confidentialité et de compatibilité.
 - [x] Atteindre une ouverture instantanée sur les diagrammes courants.
 - [x] Garantir des exports autonomes et des SVG optimisés reproductibles.
+- [x] Suivre la police de VS Code par défaut et proposer Noto Sans et Inter
+  hors ligne pour des diagrammes accentués et des exports portables.
 - [x] Génération d’ERD depuis un schéma SQL local.
 - [x] Génération d’un graphe de dépendances depuis `package.json`.
 - [x] Inviter dans l'app à laisser un avis sur le marketplace.

@@ -1,8 +1,9 @@
 import mermaid from 'mermaid';
 
+import { resolvedDiagramFontStack } from './diagramFontAssets';
+import type { DiagramFontFamily } from './diagramFont';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
-import { OFFLINE_FONT_STACK } from './offlineFont';
 import type {
   DocumentationPreviewBlock,
   DocumentationWebviewToExtensionMessage,
@@ -27,9 +28,10 @@ let renderSequence = 0;
 let renderGeneration = 0;
 let renderQueue = Promise.resolve();
 let activeTheme: DiagramTheme = 'adaptive';
+let activeFontFamily: DiagramFontFamily = 'vscode';
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 
-initializeMermaid(activeTheme);
+initializeMermaid(activeTheme, activeFontFamily);
 
 window.addEventListener(
   'message',
@@ -49,7 +51,8 @@ async function showDocumentation(
 ): Promise<void> {
   const generation = ++renderGeneration;
   activeTheme = data.theme;
-  initializeMermaid(activeTheme);
+  activeFontFamily = data.fontFamily;
+  initializeMermaid(activeTheme, activeFontFamily);
   title.textContent = data.fileName;
   format.textContent = formatLabel(data.kind);
   summary.textContent = data.mode === 'cursor'
@@ -63,7 +66,13 @@ async function showDocumentation(
     if (generation !== renderGeneration) return;
     const card = createDiagramCard(block);
     list.append(card.article);
-    await queuedRender(card.diagram, card.error, block.source, generation);
+    await queuedRender(
+      card.diagram,
+      card.error,
+      block.source,
+      data.fontFamily,
+      generation,
+    );
     if (generation !== renderGeneration) return;
   }
 }
@@ -116,12 +125,13 @@ async function queuedRender(
   target: HTMLElement,
   errorTarget: HTMLElement,
   source: string,
+  fontFamily: DiagramFontFamily,
   generation: number,
 ): Promise<void> {
   const task = async (): Promise<void> => {
     if (generation !== renderGeneration) return;
     try {
-      await prepareMermaidExtensions(source);
+      await prepareMermaidExtensions(source, fontFamily);
       const { svg } = await mermaid.render(`mermaid-document-${++renderSequence}`, source);
       if (generation !== renderGeneration) return;
       target.innerHTML = svg;
@@ -149,7 +159,7 @@ async function renderDocumentationExport(
 ): Promise<void> {
   const execute = async (): Promise<void> => {
     try {
-      initializeMermaid(request.settings.theme);
+      initializeMermaid(request.settings.theme, request.fontFamily);
       const artifacts: Array<{
         artifact: {
           dataBase64: string;
@@ -163,7 +173,7 @@ async function renderDocumentationExport(
       }> = [];
       let totalBase64Bytes = 0;
       for (const block of request.blocks) {
-        await prepareMermaidExtensions(block.source);
+        await prepareMermaidExtensions(block.source, request.fontFamily);
         const renderId = `mermaid-document-export-${++renderSequence}`;
         const { svg } = await mermaid.render(renderId, block.source);
         const artifact = await renderExportArtifact({
@@ -175,6 +185,7 @@ async function renderDocumentationExport(
           },
           settings: request.settings,
           svg,
+          fontFamily: request.fontFamily,
         });
         const dataBase64 = artifactDataBase64(artifact);
         totalBase64Bytes += dataBase64.length;
@@ -210,7 +221,7 @@ async function renderDocumentationExport(
         type: 'documentationExportError',
       });
     } finally {
-      initializeMermaid(activeTheme);
+      initializeMermaid(activeTheme, activeFontFamily);
     }
   };
   const queued = renderQueue.then(execute, execute);
@@ -218,7 +229,7 @@ async function renderDocumentationExport(
   await queued;
 }
 
-function initializeMermaid(theme: DiagramTheme): void {
+function initializeMermaid(theme: DiagramTheme, fontFamily: DiagramFontFamily): void {
   const adaptiveTheme = document.body.classList.contains('vscode-dark') ||
     document.body.classList.contains('vscode-high-contrast')
     ? 'dark'
@@ -227,7 +238,7 @@ function initializeMermaid(theme: DiagramTheme): void {
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline-documentation',
     flowchart: { htmlLabels: false, useMaxWidth: false },
-    fontFamily: OFFLINE_FONT_STACK,
+    fontFamily: resolvedDiagramFontStack(fontFamily),
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
     sequence: { useMaxWidth: false },

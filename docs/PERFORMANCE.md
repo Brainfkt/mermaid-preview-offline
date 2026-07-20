@@ -9,8 +9,8 @@ de la version 1.0.
 
 | Indicateur | v0.7 | v1.0 | Évolution |
 |---|---:|---:|---:|
-| JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,21 Mio | −76 % |
-| VSIX final | 20 913 638 octets | 6 810 053 octets | −67 % |
+| JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,37 Mio | −76 % |
+| VSIX final | 20 913 638 octets | 6 931 757 octets | −67 % |
 | Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
 | Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
 | Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
@@ -34,6 +34,9 @@ la préparation de la version 1.0.
 - La CLI et les tâches utilisent le pipe de débogage natif de Chromium, avec
   framing borné et timeout de 15 secondes, y compris sous le Node.js 20 intégré
   aux versions de VS Code prises en charge.
+- Les graisses normales Latin et Latin Extended de Noto Sans et Inter totalisent
+  127 424 octets WOFF2 avant leur intégration au bundle. Elles sont partagées
+  par les moteurs web et ne provoquent aucun chargement réseau au rendu.
 - Le build échoue si le JavaScript navigateur dépasse 20 Mio.
 
 ### Rendu interactif
@@ -89,14 +92,21 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 - Les métadonnées de source et d’heure sont désactivées par défaut ; elles
   restent disponibles en opt-in lorsque la traçabilité prime sur la
   reproductibilité octet par octet du SVG optimisé.
-- Une police locale embarquée fixe les métriques de texte des aperçus et des
-  exports optimisés sur macOS, Windows et Linux.
-- À source et réglages identiques, le SVG optimisé sans métadonnées vise une
-  sortie octet par octet reproductible. Les exports PNG, WebP et PDF restent
-  visuellement stables, mais leurs octets peuvent varier avec la version et le
-  codec du navigateur Chromium installé localement.
-- Le rendu, les chunks, ZenUML, Iconify, les images intégrées et la police ne
-  nécessitent aucun téléchargement à l’exécution.
+- La police par défaut suit `--vscode-font-family` dans les webviews et une pile
+  d’interface système dans le CLI. Elle évite toute police distante et s’accorde
+  à l’éditeur, mais ses métriques peuvent varier selon la machine.
+- Les choix Noto Sans et Inter utilisent des faces WOFF2 intégrées pour Latin et
+  Latin Extended. Ils fixent les métriques de texte des aperçus et des exports
+  préparés sur macOS, Windows et Linux.
+- À source, réglages et police embarquée identiques, le SVG optimisé sans
+  métadonnées vise une sortie octet par octet reproductible. Le mode `vscode`
+  n’offre cette garantie que lorsque la pile de polices résolue est identique.
+  Les exports PNG, WebP et PDF restent visuellement stables, mais leurs octets
+  peuvent varier avec la version et le codec du navigateur Chromium installé
+  localement.
+- Le rendu, les chunks, ZenUML, Iconify, les images intégrées et les polices ne
+  nécessitent aucun téléchargement à l’exécution. Le SVG original reste
+  volontairement inchangé et ne reçoit pas de face embarquée à l’export.
 - Le pipeline CI exécute la vérification sur macOS, Windows et Linux, puis les
   43 exemples dans trois familles de thème.
 
@@ -104,9 +114,9 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 105/105 réussis.
-- Build de production : réussi, 14,21 Mio sur le budget de 20 Mio.
-- Package VSIX : réussi, 189 fichiers, 6,49 Mio compressés.
+- Tests unitaires et d’intégration : 109/109 réussis.
+- Build de production : réussi, 14,37 Mio sur le budget de 20 Mio.
+- Package VSIX : réussi, 189 fichiers, 6,61 Mio compressés.
 - Cohérence du lockfile en mode npm hors ligne : réussie.
 
 Les tests nécessitant l’ouverture locale de Chromium n’ont pas été lancés dans

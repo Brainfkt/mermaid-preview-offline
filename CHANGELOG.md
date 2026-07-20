@@ -22,12 +22,17 @@
   compatible with the Node.js 20 runtime embedded by supported VS Code builds;
 - bounded large-source rendering, local image work, documentation exports,
   raster canvas memory, and worst-case visual/source diff algorithms;
-- embedded a deterministic local font in optimized SVG, PNG, WebP, and PDF
-  exports for stable text metrics across macOS, Windows, and Linux;
+- made diagram text follow VS Code's interface font by default, with bundled
+  Noto Sans and Inter presets covering Latin and Latin Extended text;
+- added the `mermaidPreviewOffline.diagramFontFamily` window setting, CLI
+  `--font` option, and export-task `font` property across previews, Studio,
+  documentation views, comparisons, and prepared exports;
+- embedded the selected Noto Sans or Inter face in optimized SVG, PNG, WebP,
+  and PDF rendering for stable text metrics across macOS, Windows, and Linux;
 - normalized internal IDs and references in optimized SVG output, and made
   source and export metadata opt-in by default for reproducible optimized SVG;
 - completed and localized the user guide, documented every command and setting,
-  and added a prioritized 36-shot README and user-guide capture plan;
+  and added a prioritized 37-shot README and user-guide capture plan;
 - replaced Marketplace-relative README links with absolute GitHub and raw-file
   URLs so documentation and images resolve correctly from the extension page.
 

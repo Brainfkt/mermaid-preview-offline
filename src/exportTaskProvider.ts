@@ -3,6 +3,11 @@ import process from 'node:process';
 
 import * as vscode from 'vscode';
 
+import {
+  isDiagramFontFamily,
+  normalizeDiagramFontFamily,
+  type DiagramFontFamily,
+} from './diagramFont';
 import { isExportFormat, type ExportFormat } from './exportSettings';
 import { isDiagramTheme } from './previewState';
 import type { DiagramTheme } from './protocol';
@@ -13,6 +18,7 @@ interface MermaidExportTaskDefinition extends vscode.TaskDefinition {
   background?: string;
   browser?: string;
   dpi?: number;
+  font?: DiagramFontFamily;
   format?: ExportFormat;
   includeMetadata?: boolean;
   margin?: number;
@@ -42,6 +48,7 @@ export class MermaidExportTaskProvider implements vscode.TaskProvider {
       source: definition.source,
       ...(typeof definition.output === 'string' ? { output: definition.output } : {}),
       ...(isExportFormat(definition.format) ? { format: definition.format } : {}),
+      ...(isDiagramFontFamily(definition.font) ? { font: definition.font } : {}),
       ...(isDiagramTheme(definition.theme) ? { theme: definition.theme } : {}),
       ...(typeof definition.scale === 'number' ? { scale: definition.scale } : {}),
       ...(typeof definition.dpi === 'number' ? { dpi: definition.dpi } : {}),
@@ -91,10 +98,15 @@ class MermaidExportTaskTerminal implements vscode.Pseudoterminal {
       ? vscode.workspace.getWorkspaceFolder(activeUri)
       : vscode.workspace.workspaceFolders?.[0];
     const workspacePath = workspaceFolder?.uri.fsPath ?? process.cwd();
+    const font = this.definition.font ?? normalizeDiagramFontFamily(
+      vscode.workspace
+        .getConfiguration('mermaidPreviewOffline', activeUri ?? workspaceFolder?.uri)
+        .get<unknown>('diagramFontFamily'),
+    );
     const args = [
       vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'cli.js').fsPath,
       substituteVariables(this.definition.source, workspacePath, activeUri),
-      ...taskArguments(this.definition, workspacePath, activeUri),
+      ...taskArguments({ ...this.definition, font }, workspacePath, activeUri),
     ];
     this.writeEmitter.fire(`Mermaid export: ${args.slice(1).join(' ')}\r\n`);
     this.child = spawn(process.execPath, args, {
@@ -134,6 +146,7 @@ function taskArguments(
     : undefined);
   add('--format', definition.format);
   add('--theme', definition.theme);
+  add('--font', definition.font);
   add('--scale', definition.scale);
   add('--dpi', definition.dpi);
   add('--margin', definition.margin);

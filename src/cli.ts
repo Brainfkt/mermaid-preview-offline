@@ -19,6 +19,11 @@ import { pathToFileURL } from 'node:url';
 
 import { CdpClient, withTimeout } from './cdpClient';
 import {
+  DEFAULT_DIAGRAM_FONT_FAMILY,
+  isDiagramFontFamily,
+  type DiagramFontFamily,
+} from './diagramFont';
+import {
   DEFAULT_EXPORT_SETTINGS,
   EXPORT_FORMATS,
   normalizeExportSettings,
@@ -36,6 +41,7 @@ import { MAX_RENDER_SOURCE_BYTES } from './renderPolicy';
 
 interface CliOptions {
   browser?: string;
+  fontFamily: DiagramFontFamily;
   input: string;
   json: boolean;
   output?: string;
@@ -52,6 +58,7 @@ interface BrowserSession {
   close(): Promise<void>;
   render(request: {
     fileName: string;
+    fontFamily: DiagramFontFamily;
     settings: ExportSettings;
     source: string;
     sourceUri: string;
@@ -92,6 +99,7 @@ async function main(): Promise<void> {
       const source = await loadSourceWithImages(file.uri, inputRoot);
       const artifact = await browser.render({
         fileName: basename(file.uri),
+        fontFamily: options.fontFamily,
         settings: options.settings,
         source,
         sourceUri: pathToFileURL(file.uri).toString(),
@@ -140,6 +148,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
   let input = '';
   let output: string | undefined;
   let browser: string | undefined;
+  let fontFamily: DiagramFontFamily = DEFAULT_DIAGRAM_FONT_FAMILY;
   let json = false;
 
   for (let index = 0; index < args.length; index += 1) {
@@ -163,6 +172,14 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
       case '--dpi': settingsValue.dpi = Number(takeValue()); break;
       case '--margin': settingsValue.margin = Number(takeValue()); break;
       case '--theme': settingsValue.theme = takeValue(); break;
+      case '--font': {
+        const value = takeValue();
+        if (!isDiagramFontFamily(value)) {
+          throw new Error(`Unsupported font: ${value}`);
+        }
+        fontFamily = value;
+        break;
+      }
       case '--name-template': settingsValue.fileNameTemplate = takeValue(); break;
       case '--background': {
         const value = takeValue();
@@ -187,7 +204,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
     throw new Error(`Unsupported format: ${String(settingsValue.format)}`);
   }
   const settings = normalizeExportSettings(settingsValue);
-  return { browser, input, json, output, profile, settings };
+  return { browser, fontFamily, input, json, output, profile, settings };
 }
 
 async function startBrowser(preferredExecutable?: string): Promise<BrowserSession> {
@@ -454,6 +471,7 @@ Options:
       --margin <pixels>      Margin around the diagram
       --background <value>  transparent or a #rrggbb color
       --theme <theme>        default, dark, forest, neutral, base, adaptive
+      --font <font>          vscode, noto-sans, or inter (default: vscode)
       --name-template <tpl>  File template using {name}, {format}, {theme}, …
       --profile <json>       Read export settings from a JSON profile
       --original-svg         Keep SVG output unchanged

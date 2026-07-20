@@ -1,6 +1,7 @@
 import mermaid from 'mermaid';
 
-import { installOfflineFont } from './offlineFont';
+import type { DiagramFontFamily } from './diagramFont';
+import { installDiagramFont } from './diagramFontAssets';
 
 let iconPacksRegistered = false;
 let zenUmlRegistration: Promise<void> | undefined;
@@ -24,9 +25,12 @@ export function registerOfflineIconPacks(): void {
 }
 
 /** Load external renderers only when their syntax is actually used. */
-export async function prepareMermaidExtensions(source: string): Promise<void> {
+export async function prepareMermaidExtensions(
+  source: string,
+  fontFamily: DiagramFontFamily,
+): Promise<void> {
   registerOfflineIconPacks();
-  await installOfflineFont();
+  await installDiagramFont(fontFamily);
   if (!/^\s*zenuml\b/imu.test(source)) {
     return;
   }

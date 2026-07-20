@@ -1,4 +1,5 @@
 import type { ExportProfile, ExportSettings } from './exportSettings';
+import type { DiagramFontFamily } from './diagramFont';
 
 export const DIAGRAM_THEMES = [
   'adaptive',
@@ -14,6 +15,7 @@ export type RefreshMode = 'automatic' | 'manual';
 export type MermaidEditorMode = 'preview' | 'source' | 'beside' | 'above';
 
 export interface PreviewConfiguration {
+  diagramFontFamily: DiagramFontFamily;
   diagramTheme: DiagramTheme;
   largeFileThresholdBytes: number;
   minimapEnabled: boolean;
