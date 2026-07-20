@@ -28,7 +28,7 @@ jobs:
       PUBLISH_MODE: ${{ github.event_name == 'push' && 'PUBLISH' || inputs.confirmation }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Sign in to Microsoft Entra
         uses: azure/login@v3
@@ -63,7 +63,7 @@ jobs:
 
       - name: Setup Node.js
         if: env.PUBLISH_MODE == 'VERIFY' || env.PUBLISH_MODE == 'PUBLISH'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm

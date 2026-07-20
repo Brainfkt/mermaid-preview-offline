@@ -39,7 +39,7 @@ void test('le manifeste pointe vers le dépôt autonome', () => {
 });
 
 void test('le publisher et les commandes de publication sont configurés', () => {
-  assert.equal(manifest.version, '1.0.0');
+  assert.equal(manifest.version, '1.0.1');
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
@@ -127,6 +127,15 @@ void test('workspace-local image examples stay literal on GitHub', () => {
 void test('les workflows CI, release et Marketplace sont présents', () => {
   for (const workflow of ['ci.yml', 'release.yml', 'publish-marketplace.yml']) {
     assert.equal(existsSync(resolve(root, '.github', 'workflows', workflow)), true);
+  }
+});
+
+void test('GitHub workflows use the Node 24 generation of official setup actions', () => {
+  for (const workflow of ['ci.yml', 'release.yml', 'publish-marketplace.yml']) {
+    const contents = readFileSync(resolve(root, '.github', 'workflows', workflow), 'utf8');
+    assert.match(contents, /actions\/checkout@v6/u);
+    assert.match(contents, /actions\/setup-node@v6/u);
+    assert.doesNotMatch(contents, /actions\/(?:checkout|setup-node)@v4/u);
   }
 });
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.1
+
+- made workspace-local image syntax render as literal code in both user guides
+  instead of asking GitHub's Mermaid renderer to load a repository-relative
+  example asset;
+- regenerated the visual regression baseline after the complete English rewrite
+  of all 43 bundled examples, covering light, dark, and high-contrast themes;
+- restored the shared visual gate used by CI, GitHub Release, and VS Code
+  Marketplace publication.
+- upgraded checkout and Node setup workflows to their Node 24-based v6 actions,
+  removing GitHub's deprecated action-runtime warning.
+
 ## 1.0.0
 
 - added local SQL schema to Mermaid ERD generation, including quoted names,
