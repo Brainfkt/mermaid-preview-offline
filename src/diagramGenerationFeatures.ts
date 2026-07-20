@@ -39,6 +39,9 @@ export class MermaidDiagramGenerationFeatures {
     });
     if (!source) return;
     try {
+      if (fileNameOf(source).toLocaleLowerCase('en-US') !== 'package.json') {
+        throw new Error('select a file named package.json');
+      }
       const manifest = await readTextInput(source);
       await saveGeneratedDiagram(source, 'dependency-graph.mmd', generatePackageDependencyGraph(manifest), {
         success: 'Generated Mermaid dependency graph',
@@ -103,8 +106,11 @@ async function saveGeneratedDiagram(
 }
 
 function sanitizeFileName(value: string): string {
-  const cleaned = value
-    .replace(/[\u0000-\u001f\\/:*?"<>|]/gu, '-')
+  const printable = Array.from(value, (character) =>
+    (character.codePointAt(0) ?? 0) < 32 ? '-' : character,
+  ).join('');
+  const cleaned = printable
+    .replace(/[\\/:*?"<>|]/gu, '-')
     .replace(/^\.+/u, '')
     .replace(/\s+/gu, '-')
     .slice(0, 180);

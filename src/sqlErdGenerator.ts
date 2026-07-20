@@ -25,6 +25,7 @@ export interface SqlSchema {
 interface ParsedIdentifier {
   end: number;
   name: string;
+  parts: number;
 }
 
 interface PendingTableDefinition {
@@ -127,7 +128,8 @@ export function generateSqlErd(source: string): string {
           .join(', ');
         const type = mermaidAttributeToken(column.type, 'value');
         const columnId = columnIds.get(sqlNameKey(column.name)) ?? 'column';
-        lines.push(`    ${type} ${columnId}${keys ? ` ${keys}` : ''}`);
+        const originalName = columnId === column.name ? '' : ` "${mermaidLabel(column.name)}"`;
+        lines.push(`    ${type} ${columnId}${keys ? ` ${keys}` : ''}${originalName}`);
       }
     }
     lines.push('  }');
@@ -197,6 +199,9 @@ function parseTable(name: string, body: string): SqlTable {
     throw new SqlSchemaParseError(`Table ${name} does not contain any supported column.`);
   }
   const columnsByName = new Map(columns.map((column) => [sqlNameKey(column.name), column]));
+  if (columnsByName.size !== columns.length) {
+    throw new SqlSchemaParseError(`Table ${name} declares a column more than once.`);
+  }
   for (const primaryKey of pending.primaryKeys) {
     const column = columnsByName.get(sqlNameKey(primaryKey));
     if (!column) {
@@ -226,7 +231,7 @@ function parseColumn(
   tableName: string,
 ): { column: SqlColumn; foreignKey?: SqlForeignKey } {
   const identifier = readQualifiedIdentifier(source, 0);
-  if (!identifier || identifier.name.includes('.')) {
+  if (!identifier || identifier.parts !== 1) {
     throw new SqlSchemaParseError(`Could not read a column name in table ${tableName}.`);
   }
   const definition = source.slice(identifier.end);
@@ -305,7 +310,7 @@ function removeLeadingConstraintName(source: string): string {
   const constraint = consumeKeywordSequence(source, ['CONSTRAINT'], 0);
   if (constraint === undefined) return source;
   const identifier = readQualifiedIdentifier(source, constraint);
-  if (!identifier || identifier.name.includes('.')) {
+  if (!identifier || identifier.parts !== 1) {
     throw new SqlSchemaParseError('CONSTRAINT must be followed by a constraint name.');
   }
   return source.slice(identifier.end).trimStart();
@@ -327,7 +332,7 @@ function identifierListAt(source: string, open: number, context: string): string
   const identifiers = splitTopLevel(source.slice(open + 1, close), ',').map((part) => {
     const parsed = readQualifiedIdentifier(part, 0);
     if (!parsed) throw new SqlSchemaParseError(`${context} contains an invalid column name.`);
-    return parsed.name.split('.').at(-1) ?? parsed.name;
+    return parsed.parts === 1 ? parsed.name : (parsed.name.split('.').at(-1) ?? parsed.name);
   });
   if (identifiers.length === 0 || identifiers.some((identifier) => !identifier)) {
     throw new SqlSchemaParseError(`${context} has an empty column list.`);
@@ -471,15 +476,22 @@ function consumeKeywordSequence(source: string, words: string[], from: number): 
 function readQualifiedIdentifier(source: string, from: number): ParsedIdentifier | undefined {
   let index = skipWhitespace(source, from);
   const names: string[] = [];
+  let requiresPart = false;
   while (true) {
     const part = readIdentifierPart(source, index);
-    if (!part) return names.length > 0 ? { end: index, name: names.join('.') } : undefined;
+    if (!part) {
+      return names.length > 0 && !requiresPart
+        ? { end: index, name: names.join('.'), parts: names.length }
+        : undefined;
+    }
+    requiresPart = false;
     names.push(part.name);
     index = skipWhitespace(source, part.end);
     if (source[index] !== '.') break;
+    requiresPart = true;
     index = skipWhitespace(source, index + 1);
   }
-  return { end: index, name: names.join('.') };
+  return { end: index, name: names.join('.'), parts: names.length };
 }
 
 function readIdentifierPart(source: string, from: number): ParsedIdentifier | undefined {
@@ -492,12 +504,12 @@ function readIdentifierPart(source: string, from: number): ParsedIdentifier | un
     }
     const raw = source.slice(index + 1, end - 1);
     const name = opener === '[' ? raw.replaceAll(']]', ']') : raw.replaceAll(opener + opener, opener);
-    return { end, name };
+    return { end, name, parts: 1 };
   }
   if (!isIdentifierStart(opener)) return undefined;
   let end = index + 1;
   while (end < source.length && isIdentifierPart(source[end])) end += 1;
-  return { end, name: source.slice(index, end) };
+  return { end, name: source.slice(index, end), parts: 1 };
 }
 
 function quotedEnd(source: string, from: number): number {
