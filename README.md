@@ -411,7 +411,8 @@ repository in VS Code and launch **Run Mermaid Preview Offline** with `F5`.
 
 Read the [complete user guide](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md) for workflows,
 configuration, compatibility, and troubleshooting. Maintainers preparing a
-release can use the [screenshot plan](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/SCREENSHOTS.md).
+release can use the [screenshot plan](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/SCREENSHOTS.md) and the
+[v1.0 performance review](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/PERFORMANCE.md).
 
 Found a bug or have an idea? Open a
 [GitHub issue](https://github.com/Brainfkt/mermaid-preview-offline/issues).
