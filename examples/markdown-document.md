@@ -1,7 +1,7 @@
 # Mermaid documentation example
 
 This Markdown document contains a Mermaid diagram for testing Mermaid Preview
-Offline 0.7.0.
+Offline 1.0.0.
 
 Place the cursor anywhere between the opening and closing fences, then run
 **Mermaid Preview: Preview Block Under Cursor**. You can also run **Mermaid

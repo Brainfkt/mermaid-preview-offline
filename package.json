@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "0.7.0",
+  "version": "1.0.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -88,16 +88,15 @@
     "onCommand:mermaidPreviewOffline.newDiagram",
     "onCommand:mermaidPreviewOffline.browseExamples",
     "onCommand:mermaidPreviewOffline.generateFromTemplate",
+    "onCommand:mermaidPreviewOffline.generateErdFromSql",
+    "onCommand:mermaidPreviewOffline.generateDependencyGraphFromPackageJson",
     "onCommand:mermaidPreviewOffline.compareGitVersions",
     "onCommand:mermaidPreviewOffline.previewVisualDiff",
     "onCommand:mermaidPreviewOffline.previewDocumentationBlock",
     "onCommand:mermaidPreviewOffline.previewDocumentation",
     "onCommand:mermaidPreviewOffline.exportDocumentation",
     "onTaskType:mermaid-export",
-    "onLanguage:mermaid",
-    "onLanguage:markdown",
-    "onLanguage:mdx",
-    "onLanguage:asciidoc"
+    "onLanguage:mermaid"
   ],
   "contributes": {
     "languages": [
@@ -222,6 +221,16 @@
         "command": "mermaidPreviewOffline.generateFromTemplate",
         "title": "Mermaid Preview: Generate Custom Diagram…",
         "icon": "$(wand)"
+      },
+      {
+        "command": "mermaidPreviewOffline.generateErdFromSql",
+        "title": "Mermaid Preview: Generate ERD from SQL Schema…",
+        "icon": "$(database)"
+      },
+      {
+        "command": "mermaidPreviewOffline.generateDependencyGraphFromPackageJson",
+        "title": "Mermaid Preview: Generate Dependency Graph from package.json…",
+        "icon": "$(references)"
       },
       {
         "command": "mermaidPreviewOffline.compareGitVersions",
@@ -609,6 +618,7 @@
     "@iconify-json/logos": "1.2.11",
     "@iconify-json/material-icon-theme": "1.2.69",
     "@mermaid-js/mermaid-zenuml": "0.2.3",
+    "katex": "0.16.47",
     "mermaid": "11.16.0"
   },
   "devDependencies": {

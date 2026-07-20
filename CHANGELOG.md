@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.0.0
+
+- added local SQL schema to Mermaid ERD generation, including quoted names,
+  primary and foreign keys, composite constraints, comments, and focused input
+  errors;
+- added deterministic `package.json` dependency graph generation for runtime,
+  development, peer, and optional dependencies;
+- added a bilingual, one-time Marketplace review invitation after five
+  successful preview sessions;
+- split the four browser renderers into shared ES modules and lazy-loaded
+  ZenUML, Mermaid diagram implementations, and the two offline icon packs;
+- removed duplicate parse/render passes and duplicate visual-diff renders, and
+  paused hidden file and documentation previews until they become visible;
+- bounded large-source rendering, local image work, documentation exports,
+  raster canvas memory, and worst-case visual/source diff algorithms;
+- embedded a deterministic local font in optimized SVG, PNG, WebP, and PDF
+  exports for stable text metrics across macOS, Windows, and Linux;
+- completed and localized the user guide, documented every command and setting,
+  and added a prioritized 36-shot README and user-guide capture plan;
+- replaced Marketplace-relative README links with absolute GitHub and raw-file
+  URLs so documentation and images resolve correctly from the extension page.
+
 ## 0.7.0
 
 - added a focused preview for the Mermaid block under the cursor in Markdown,
