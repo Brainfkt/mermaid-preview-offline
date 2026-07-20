@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { readFile } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 
 const production = process.argv.includes('--production');
 const zenUmlRemoteFontFace =
@@ -17,6 +17,8 @@ const offlineZenUmlStyles = {
   },
 };
 
+await rm('dist/chunks', { force: true, recursive: true });
+
 await Promise.all([
   build({
     entryPoints: ['src/extension.ts'],
@@ -31,63 +33,26 @@ await Promise.all([
     target: 'node20',
   }),
   build({
-    entryPoints: ['src/webview.ts'],
+    entryPoints: {
+      'cli-renderer': 'src/cliRenderer.ts',
+      'documentation-webview': 'src/documentationWebview.ts',
+      'project-webview': 'src/projectWebview.ts',
+      webview: 'src/webview.ts',
+    },
     bundle: true,
+    chunkNames: 'chunks/[name]-[hash]',
     define: {
       'process.env.NODE_ENV': '"production"',
     },
-    format: 'iife',
+    entryNames: '[name]',
+    format: 'esm',
     logLevel: 'info',
     minify: true,
-    outfile: 'dist/webview.js',
+    outdir: 'dist',
     platform: 'browser',
     plugins: [offlineZenUmlStyles],
     sourcemap: production ? false : 'linked',
-    target: ['chrome120'],
-  }),
-  build({
-    entryPoints: ['src/projectWebview.ts'],
-    bundle: true,
-    define: {
-      'process.env.NODE_ENV': '"production"',
-    },
-    format: 'iife',
-    logLevel: 'info',
-    minify: true,
-    outfile: 'dist/project-webview.js',
-    platform: 'browser',
-    plugins: [offlineZenUmlStyles],
-    sourcemap: production ? false : 'linked',
-    target: ['chrome120'],
-  }),
-  build({
-    entryPoints: ['src/documentationWebview.ts'],
-    bundle: true,
-    define: {
-      'process.env.NODE_ENV': '"production"',
-    },
-    format: 'iife',
-    logLevel: 'info',
-    minify: true,
-    outfile: 'dist/documentation-webview.js',
-    platform: 'browser',
-    plugins: [offlineZenUmlStyles],
-    sourcemap: production ? false : 'linked',
-    target: ['chrome120'],
-  }),
-  build({
-    entryPoints: ['src/cliRenderer.ts'],
-    bundle: true,
-    define: {
-      'process.env.NODE_ENV': '"production"',
-    },
-    format: 'iife',
-    logLevel: 'info',
-    minify: true,
-    outfile: 'dist/cli-renderer.js',
-    platform: 'browser',
-    plugins: [offlineZenUmlStyles],
-    sourcemap: false,
+    splitting: true,
     target: ['chrome120'],
   }),
   build({
