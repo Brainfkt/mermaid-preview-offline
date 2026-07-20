@@ -16,7 +16,7 @@ export function createDocumentationWebviewHtml(
     "default-src 'none'",
     `img-src ${options.cspSource} data: blob:`,
     `style-src ${options.cspSource} 'unsafe-inline'`,
-    `script-src 'nonce-${nonce}'`,
+    `script-src ${options.cspSource} 'nonce-${nonce}'`,
     "connect-src 'none'",
     "object-src 'none'",
     "frame-src 'none'",
@@ -49,7 +49,7 @@ export function createDocumentationWebviewHtml(
       <p>Place the cursor inside a Mermaid block or add a fenced Mermaid diagram to this document.</p>
     </section>
   </div>
-  <script nonce="${nonce}" src="${options.scriptUri}"></script>
+  <script type="module" nonce="${nonce}" src="${options.scriptUri}"></script>
 </body>
 </html>`;
 }

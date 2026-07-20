@@ -18,7 +18,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     "default-src 'none'",
     `img-src ${options.cspSource} data: blob:`,
     `style-src ${options.cspSource} 'unsafe-inline'`,
-    `script-src 'nonce-${options.nonce}'`,
+    `script-src ${options.cspSource} 'nonce-${options.nonce}'`,
     "connect-src 'none'",
     "object-src 'none'",
     "frame-src 'none'",
@@ -227,7 +227,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     <span id="zoom-status">100 %</span>
   </footer>
 
-  <script nonce="${options.nonce}" src="${options.scriptUri}"></script>
+  <script type="module" nonce="${options.nonce}" src="${options.scriptUri}"></script>
 </body>
 </html>`;
 }

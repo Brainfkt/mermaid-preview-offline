@@ -1,6 +1,3 @@
-import { icons as logosIcons } from '@iconify-json/logos';
-import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-theme';
-import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
 import {
@@ -19,6 +16,7 @@ import {
   type ExportArtifact,
 } from './exportRenderer';
 import { describeMermaidError } from './mermaidError';
+import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   DiagramTheme,
@@ -48,11 +46,7 @@ const DEFAULT_CONFIGURATION: PreviewConfiguration = {
   refreshMode: 'automatic',
 };
 
-mermaid.registerIconPacks([
-  { name: logosIcons.prefix, icons: logosIcons },
-  { name: materialIconThemeIcons.prefix, icons: materialIconThemeIcons },
-]);
-const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
+registerOfflineIconPacks();
 
 const vscode = acquireVsCodeApi();
 const rawPreviousState = vscode.getState();
@@ -128,6 +122,8 @@ let lastColorScheme = vscodeColorScheme();
 let minimapScale = 1;
 let minimapOffsetX = 0;
 let minimapOffsetY = 0;
+let minimapObjectUrl: string | undefined;
+let minimapViewportFrame: number | undefined;
 let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
 let exportProfiles: ExportProfile[] = [];
 let exportPreviewTimer: number | undefined;
@@ -165,6 +161,19 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       pendingDocument = false;
       updateLargeFileLabel(message.isLargeFile, message.byteLength);
       updateRefreshControls();
+      if (message.renderBlockedReason) {
+        latestSource = '';
+        latestRequest += 1;
+        activeRenderController?.abort();
+        lastSvg = '';
+        diagramSize.textContent = '—';
+        copyButton.disabled = true;
+        exportOpenButton.disabled = true;
+        displayError(new Error(message.renderBlockedReason), '');
+        renderStatus.textContent = 'Render paused';
+        showState('error');
+        break;
+      }
       scheduleRender(message.source, 0);
       break;
     case 'documentChanged':
@@ -322,7 +331,7 @@ viewport.addEventListener('scroll', () => {
   savedScrollLeft = viewport.scrollLeft;
   savedScrollTop = viewport.scrollTop;
   schedulePersistState();
-  updateMinimapViewport();
+  scheduleMinimapViewportUpdate();
 });
 
 installDragToPan();
@@ -349,6 +358,7 @@ new MutationObserver(() => {
 
 window.addEventListener('pagehide', () => {
   persistState();
+  clearMinimapThumbnail();
 });
 
 vscode.postMessage({ type: 'ready', hasPersistedState: hadPersistedState });
@@ -396,12 +406,10 @@ async function renderLatest(): Promise<void> {
   const renderId = `mermaid-preview-${request}`;
 
   try {
-    await mermaidExtensionsReady;
+    await prepareMermaidExtensions(source);
     throwIfCancelled(controller.signal, request);
     initializeMermaid(resolvedDiagramTheme());
 
-    await mermaid.parse(source);
-    throwIfCancelled(controller.signal, request);
     const { svg } = await mermaid.render(renderId, source);
     throwIfCancelled(controller.signal, request);
 
@@ -632,12 +640,26 @@ function formatDimension(value: number): string {
 }
 
 function refreshMinimapDiagram(svgSource: string): void {
+  clearMinimapThumbnail();
+  if (svgSource.length > 5 * 1024 * 1024) {
+    minimap.hidden = true;
+    return;
+  }
   const thumbnail = document.createElement('img');
   thumbnail.alt = '';
   thumbnail.decoding = 'async';
   thumbnail.draggable = false;
-  thumbnail.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgSource)}`;
+  minimapObjectUrl = URL.createObjectURL(new Blob([svgSource], { type: 'image/svg+xml' }));
+  thumbnail.src = minimapObjectUrl;
   minimapDiagram.replaceChildren(thumbnail);
+}
+
+function clearMinimapThumbnail(): void {
+  minimapDiagram.replaceChildren();
+  if (minimapObjectUrl) {
+    URL.revokeObjectURL(minimapObjectUrl);
+    minimapObjectUrl = undefined;
+  }
 }
 
 function updateMinimap(): void {
@@ -678,7 +700,7 @@ function updateMinimap(): void {
   minimapDiagram.style.height = `${contentHeight}px`;
   minimapDiagram.style.transform =
     `translate(${minimapOffsetX}px, ${minimapOffsetY}px) scale(${minimapScale})`;
-  updateMinimapViewport();
+  scheduleMinimapViewportUpdate();
 }
 
 function updateMinimapViewport(): void {
@@ -695,6 +717,14 @@ function updateMinimapViewport(): void {
   minimapWindow.style.top = `${top}px`;
   minimapWindow.style.width = `${Math.max(width, 8)}px`;
   minimapWindow.style.height = `${Math.max(height, 8)}px`;
+}
+
+function scheduleMinimapViewportUpdate(): void {
+  if (minimapViewportFrame !== undefined) return;
+  minimapViewportFrame = window.requestAnimationFrame(() => {
+    minimapViewportFrame = undefined;
+    updateMinimapViewport();
+  });
 }
 
 function updateThemePicker(): void {
@@ -979,9 +1009,8 @@ async function renderSvgForExport(source: string, theme: DiagramTheme): Promise<
   }
   const renderId = `mermaid-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
-    await mermaidExtensionsReady;
+    await prepareMermaidExtensions(source);
     initializeMermaid(resolvedTheme);
-    await mermaid.parse(source);
     return (await mermaid.render(renderId, source)).svg;
   } finally {
     cleanupFailedRender(renderId);

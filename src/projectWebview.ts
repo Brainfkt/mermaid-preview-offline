@@ -1,6 +1,3 @@
-import { icons as logosIcons } from '@iconify-json/logos';
-import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-theme';
-import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
 import {
@@ -10,6 +7,7 @@ import {
   type DiagramTemplate,
   type DiagramTemplateField,
 } from './diagramTemplates';
+import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import type { LineDiffSummary } from './visualDiff';
 
 interface VsCodeApi {
@@ -44,11 +42,7 @@ type GalleryItem =
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-mermaid.registerIconPacks([
-  { name: logosIcons.prefix, icons: logosIcons },
-  { name: materialIconThemeIcons.prefix, icons: materialIconThemeIcons },
-]);
-const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
+registerOfflineIconPacks();
 const vscode = acquireVsCodeApi();
 let renderSequence = 0;
 let renderQueue = Promise.resolve();
@@ -308,10 +302,12 @@ function initializeVisualDiff(): void {
   const zoomValue = element<HTMLElement>('diff-zoom-value');
   const opacity = element<HTMLInputElement>('overlay-opacity');
   const opacityValue = element<HTMLElement>('overlay-opacity-value');
+  let diffGeneration = 0;
 
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
     if (event.data.type !== 'visualDiffData') return;
     const data = event.data;
+    const generation = ++diffGeneration;
     title.textContent = data.title;
     subtitle.textContent = `${data.before.label} → ${data.after.label}`;
     beforeLabel.textContent = data.before.label;
@@ -322,9 +318,11 @@ function initializeVisualDiff(): void {
     void Promise.all([
       renderMermaid(beforeDiagram, data.before.source, beforeError),
       renderMermaid(afterDiagram, data.after.source, afterError),
-      renderMermaid(overlayBefore, data.before.source),
-      renderMermaid(overlayAfter, data.after.source),
-    ]);
+    ]).then(() => {
+      if (generation !== diffGeneration) return;
+      copyRenderedDiagram(beforeDiagram, overlayBefore, `before-${generation}`);
+      copyRenderedDiagram(afterDiagram, overlayAfter, `after-${generation}`);
+    });
   });
 
   sideBySideButton.addEventListener('click', () => setMode('side'));
@@ -349,6 +347,41 @@ function initializeVisualDiff(): void {
   }
 }
 
+function copyRenderedDiagram(
+  source: HTMLElement,
+  target: HTMLElement,
+  idSuffix: string,
+): void {
+  target.replaceChildren(
+    ...Array.from(source.childNodes, (node: ChildNode) => node.cloneNode(true)),
+  );
+  const idMap = new Map<string, string>();
+  for (const node of Array.from(target.querySelectorAll<HTMLElement>('[id]'))) {
+    const previous = node.id;
+    const next = `${previous}-${idSuffix}`;
+    idMap.set(previous, next);
+    node.id = next;
+  }
+  const replaceReference = (value: string): string => {
+    const direct = /^#(.+)$/u.exec(value)?.[1];
+    if (direct) return `#${idMap.get(direct) ?? direct}`;
+    return value.replace(/url\(#([^)]+)\)/gu, (match, id: string) => {
+      const replacement = idMap.get(id);
+      return replacement ? `url(#${replacement})` : match;
+    });
+  };
+  for (const node of Array.from(target.querySelectorAll('*'))) {
+    for (const attribute of Array.from(node.attributes)) {
+      const value = replaceReference(attribute.value);
+      if (value !== attribute.value) node.setAttribute(attribute.name, value);
+    }
+  }
+  target.querySelectorAll('style').forEach((style) => {
+    if (style.textContent) style.textContent = replaceReference(style.textContent);
+  });
+  target.hidden = source.hidden;
+}
+
 async function renderMermaid(
   target: HTMLElement,
   source: string,
@@ -357,7 +390,7 @@ async function renderMermaid(
 ): Promise<void> {
   const render = async (): Promise<void> => {
     try {
-      await mermaidExtensionsReady;
+      await prepareMermaidExtensions(source);
       const result = await mermaid.render(`mermaid-project-${++renderSequence}`, source);
       target.innerHTML = result.svg;
       target.dataset.renderSource = source;

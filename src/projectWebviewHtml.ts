@@ -135,7 +135,7 @@ function page(options: ProjectWebviewHtmlOptions, nonce: string, body: string): 
     "default-src 'none'",
     `img-src ${options.cspSource} data: blob:`,
     `style-src ${options.cspSource} 'unsafe-inline'`,
-    `script-src 'nonce-${nonce}'`,
+    `script-src ${options.cspSource} 'nonce-${nonce}'`,
     "connect-src 'none'",
     "object-src 'none'",
     "frame-src 'none'",
@@ -149,7 +149,7 @@ function page(options: ProjectWebviewHtmlOptions, nonce: string, body: string): 
   <title>${escapeHtml(options.title)}</title>
   <link rel="stylesheet" href="${options.styleUri}">
 </head>
-<body>${body}<script nonce="${nonce}" src="${options.scriptUri}"></script></body>
+<body>${body}<script type="module" nonce="${nonce}" src="${options.scriptUri}"></script></body>
 </html>`;
 }
 

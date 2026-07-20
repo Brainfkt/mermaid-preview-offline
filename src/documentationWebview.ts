@@ -1,9 +1,7 @@
-import { icons as logosIcons } from '@iconify-json/logos';
-import { icons as materialIconThemeIcons } from '@iconify-json/material-icon-theme';
-import zenuml from '@mermaid-js/mermaid-zenuml';
 import mermaid from 'mermaid';
 
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
+import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import type {
   DocumentationPreviewBlock,
   DocumentationWebviewToExtensionMessage,
@@ -17,11 +15,7 @@ interface VsCodeApi {
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-mermaid.registerIconPacks([
-  { name: logosIcons.prefix, icons: logosIcons },
-  { name: materialIconThemeIcons.prefix, icons: materialIconThemeIcons },
-]);
-const mermaidExtensionsReady = mermaid.registerExternalDiagrams([zenuml]);
+registerOfflineIconPacks();
 const vscode = acquireVsCodeApi();
 const list = element<HTMLElement>('documentation-list');
 const empty = element<HTMLElement>('documentation-empty');
@@ -32,6 +26,7 @@ let renderSequence = 0;
 let renderGeneration = 0;
 let renderQueue = Promise.resolve();
 let activeTheme: DiagramTheme = 'adaptive';
+const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 
 initializeMermaid(activeTheme);
 
@@ -64,9 +59,11 @@ async function showDocumentation(
   list.hidden = data.blocks.length === 0;
 
   for (const block of data.blocks) {
+    if (generation !== renderGeneration) return;
     const card = createDiagramCard(block);
     list.append(card.article);
     await queuedRender(card.diagram, card.error, block.source, generation);
+    if (generation !== renderGeneration) return;
   }
 }
 
@@ -123,7 +120,7 @@ async function queuedRender(
   const task = async (): Promise<void> => {
     if (generation !== renderGeneration) return;
     try {
-      await mermaidExtensionsReady;
+      await prepareMermaidExtensions(source);
       const { svg } = await mermaid.render(`mermaid-document-${++renderSequence}`, source);
       if (generation !== renderGeneration) return;
       target.innerHTML = svg;
@@ -152,7 +149,6 @@ async function renderDocumentationExport(
   const execute = async (): Promise<void> => {
     try {
       initializeMermaid(request.settings.theme);
-      await mermaidExtensionsReady;
       const artifacts: Array<{
         artifact: {
           dataBase64: string;
@@ -164,7 +160,9 @@ async function renderDocumentationExport(
         };
         blockId: string;
       }> = [];
+      let totalBase64Bytes = 0;
       for (const block of request.blocks) {
+        await prepareMermaidExtensions(block.source);
         const renderId = `mermaid-document-export-${++renderSequence}`;
         const { svg } = await mermaid.render(renderId, block.source);
         const artifact = await renderExportArtifact({
@@ -177,9 +175,16 @@ async function renderDocumentationExport(
           settings: request.settings,
           svg,
         });
+        const dataBase64 = artifactDataBase64(artifact);
+        totalBase64Bytes += dataBase64.length;
+        if (totalBase64Bytes > MAX_DOCUMENTATION_EXPORT_BASE64_BYTES) {
+          throw new Error(
+            'The combined documentation export exceeds 192 MB. Export fewer diagrams at a time.',
+          );
+        }
         artifacts.push({
           artifact: {
-            dataBase64: artifactDataBase64(artifact),
+            dataBase64,
             fileName: artifact.fileName,
             format: artifact.format,
             height: artifact.height,
