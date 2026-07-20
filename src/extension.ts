@@ -6,6 +6,11 @@ import {
 } from './mermaidPreviewProvider';
 import { MermaidEditorLayoutController } from './editorLayoutController';
 import { MermaidDocumentationFeatures } from './documentationFeatures';
+import {
+  GENERATE_ERD_FROM_SQL_COMMAND,
+  GENERATE_PACKAGE_DEPENDENCIES_COMMAND,
+  MermaidDiagramGenerationFeatures,
+} from './diagramGenerationFeatures';
 import { MERMAID_EXPORT_TASK_TYPE, MermaidExportTaskProvider } from './exportTaskProvider';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
 import { MermaidProjectFeatures } from './projectFeatures';
@@ -41,6 +46,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const exportTaskProvider = new MermaidExportTaskProvider(context);
   const projectFeatures = new MermaidProjectFeatures(context);
   const documentationFeatures = new MermaidDocumentationFeatures(context);
+  const diagramGenerationFeatures = new MermaidDiagramGenerationFeatures();
 
   context.subscriptions.push(
     layoutController,
@@ -88,6 +94,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand(GENERATE_FROM_TEMPLATE_COMMAND, async () => {
       await projectFeatures.showGallery('templates');
+    }),
+    vscode.commands.registerCommand(GENERATE_ERD_FROM_SQL_COMMAND, async () => {
+      await diagramGenerationFeatures.generateErdFromSql();
+    }),
+    vscode.commands.registerCommand(GENERATE_PACKAGE_DEPENDENCIES_COMMAND, async () => {
+      await diagramGenerationFeatures.generateDependencyGraphFromPackageJson();
     }),
     vscode.commands.registerCommand(COMPARE_GIT_VERSIONS_COMMAND, async (resource?: vscode.Uri) => {
       await projectFeatures.compareGitVersions(resource);
