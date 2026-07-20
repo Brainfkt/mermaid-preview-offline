@@ -5,7 +5,7 @@
       "scheme": "light",
       "elementCount": 307,
       "paletteHash": "0a17fd7a",
-      "ratio": 2.4426,
+      "ratio": 2.4385,
       "structureHash": "b1958801",
       "textHash": "40f7ea22"
     },
@@ -14,7 +14,7 @@
       "scheme": "light",
       "elementCount": 323,
       "paletteHash": "a7342096",
-      "ratio": 0.9309,
+      "ratio": 0.9371,
       "structureHash": "0861bf48",
       "textHash": "c499cb6b"
     },
@@ -23,7 +23,7 @@
       "scheme": "light",
       "elementCount": 225,
       "paletteHash": "860f327d",
-      "ratio": 1.2172,
+      "ratio": 1.1296,
       "structureHash": "24c81cff",
       "textHash": "ecb125d0"
     },
@@ -32,7 +32,7 @@
       "scheme": "light",
       "elementCount": 495,
       "paletteHash": "2e0e75e5",
-      "ratio": 2.3643,
+      "ratio": 2.431,
       "structureHash": "07e933e2",
       "textHash": "d3b2ed27"
     },
@@ -41,7 +41,7 @@
       "scheme": "light",
       "elementCount": 427,
       "paletteHash": "c0e90673",
-      "ratio": 0.4178,
+      "ratio": 0.4161,
       "structureHash": "b37fbd8c",
       "textHash": "6e76d205"
     },
@@ -50,7 +50,7 @@
       "scheme": "light",
       "elementCount": 1049,
       "paletteHash": "7d59b756",
-      "ratio": 1.1673,
+      "ratio": 1.1709,
       "structureHash": "80b523c6",
       "textHash": "be77cc62"
     },
@@ -59,7 +59,7 @@
       "scheme": "light",
       "elementCount": 279,
       "paletteHash": "0fa65ad3",
-      "ratio": 5.8416,
+      "ratio": 5.8661,
       "structureHash": "c27b912c",
       "textHash": "971e9b1a"
     },
@@ -67,9 +67,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "light",
       "elementCount": 121,
-      "paletteHash": "c5216d61",
+      "paletteHash": "b239ad87",
       "ratio": 1.9417,
-      "structureHash": "c38a59ab",
+      "structureHash": "5ecdc9d3",
       "textHash": "45a9c3e8"
     },
     {
@@ -77,7 +77,7 @@
       "scheme": "light",
       "elementCount": 36,
       "paletteHash": "356a486e",
-      "ratio": 1.5581,
+      "ratio": 1.5757,
       "structureHash": "56d75fa2",
       "textHash": "c9ad59a5"
     },
@@ -86,7 +86,7 @@
       "scheme": "light",
       "elementCount": 36,
       "paletteHash": "356a486e",
-      "ratio": 1.5527,
+      "ratio": 1.5634,
       "structureHash": "56d75fa2",
       "textHash": "4885c78c"
     },
@@ -104,7 +104,7 @@
       "scheme": "light",
       "elementCount": 335,
       "paletteHash": "9e37f65b",
-      "ratio": 1.4613,
+      "ratio": 1.4727,
       "structureHash": "97a78d73",
       "textHash": "f9021241"
     },
@@ -112,9 +112,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "light",
       "elementCount": 112,
-      "paletteHash": "626dab1a",
-      "ratio": 1.6243,
-      "structureHash": "131c394e",
+      "paletteHash": "933214c4",
+      "ratio": 1.6298,
+      "structureHash": "b4605c84",
       "textHash": "5b8971a2"
     },
     {
@@ -122,7 +122,7 @@
       "scheme": "light",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 0.4394,
+      "ratio": 0.4317,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -131,7 +131,7 @@
       "scheme": "light",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.3417,
+      "ratio": 0.333,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -140,7 +140,7 @@
       "scheme": "light",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.3495,
+      "ratio": 0.3387,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -149,7 +149,7 @@
       "scheme": "light",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 0.8857,
+      "ratio": 0.8646,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -158,7 +158,7 @@
       "scheme": "light",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.6706,
+      "ratio": 0.6506,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -167,25 +167,25 @@
       "scheme": "light",
       "elementCount": 860,
       "paletteHash": "04f5a1e2",
-      "ratio": 2.2154,
+      "ratio": 2.2467,
       "structureHash": "19b348b3",
       "textHash": "68727043"
     },
     {
       "fileName": "20-timeline.mmd",
       "scheme": "light",
-      "elementCount": 355,
+      "elementCount": 356,
       "paletteHash": "3fddda63",
-      "ratio": 3.006,
-      "structureHash": "5c060fdf",
-      "textHash": "ac8ab674"
+      "ratio": 2.8568,
+      "structureHash": "b64efde5",
+      "textHash": "8566c968"
     },
     {
       "fileName": "21-sankey.mmd",
       "scheme": "light",
       "elementCount": 144,
       "paletteHash": "e674ead4",
-      "ratio": 1.5,
+      "ratio": 1.4991,
       "structureHash": "727ed1eb",
       "textHash": "5da22809"
     },
@@ -203,7 +203,7 @@
       "scheme": "light",
       "elementCount": 209,
       "paletteHash": "2e6a7919",
-      "ratio": 2.9351,
+      "ratio": 2.8174,
       "structureHash": "72a84e8d",
       "textHash": "df1661ba"
     },
@@ -221,18 +221,18 @@
       "scheme": "light",
       "elementCount": 344,
       "paletteHash": "6975a1bb",
-      "ratio": 3.8235,
+      "ratio": 3.7276,
       "structureHash": "c635586c",
       "textHash": "d15a4a24"
     },
     {
       "fileName": "26-architecture.mmd",
       "scheme": "light",
-      "elementCount": 494,
-      "paletteHash": "3c7bc963",
+      "elementCount": 496,
+      "paletteHash": "1aeef50f",
       "ratio": 0.7425,
-      "structureHash": "af5cc14b",
-      "textHash": "a84811fd"
+      "structureHash": "841c58af",
+      "textHash": "b1b5b5d3"
     },
     {
       "fileName": "27-radar.mmd",
@@ -248,7 +248,7 @@
       "scheme": "light",
       "elementCount": 129,
       "paletteHash": "1aa5e62d",
-      "ratio": 2.3106,
+      "ratio": 2.3042,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },
@@ -257,7 +257,7 @@
       "scheme": "light",
       "elementCount": 251,
       "paletteHash": "ab1adeeb",
-      "ratio": 5.2217,
+      "ratio": 5.3967,
       "structureHash": "52949f69",
       "textHash": "d48ccac6"
     },
@@ -266,9 +266,9 @@
       "scheme": "light",
       "elementCount": 218,
       "paletteHash": "293589c0",
-      "ratio": 1.7328,
+      "ratio": 1.5759,
       "structureHash": "d08f1966",
-      "textHash": "cfccf496"
+      "textHash": "78750b3c"
     },
     {
       "fileName": "31-venn.mmd",
@@ -284,7 +284,7 @@
       "scheme": "light",
       "elementCount": 171,
       "paletteHash": "51abe993",
-      "ratio": 1.2109,
+      "ratio": 1.2229,
       "structureHash": "4d343da9",
       "textHash": "c89da179"
     },
@@ -311,7 +311,7 @@
       "scheme": "light",
       "elementCount": 100,
       "paletteHash": "514d994b",
-      "ratio": 0.7686,
+      "ratio": 0.6883,
       "structureHash": "5b21fc03",
       "textHash": "7ac09c26"
     },
@@ -320,7 +320,7 @@
       "scheme": "light",
       "elementCount": 178,
       "paletteHash": "1457b94b",
-      "ratio": 1.0113,
+      "ratio": 0.9739,
       "structureHash": "46d46de7",
       "textHash": "8fcd0f99"
     },
@@ -329,7 +329,7 @@
       "scheme": "light",
       "elementCount": 462,
       "paletteHash": "c8dfb63e",
-      "ratio": 0.3194,
+      "ratio": 0.3028,
       "structureHash": "7c866a50",
       "textHash": "3d5cbe44"
     },
@@ -338,7 +338,7 @@
       "scheme": "light",
       "elementCount": 648,
       "paletteHash": "461ffae2",
-      "ratio": 0.1901,
+      "ratio": 0.1803,
       "structureHash": "90d333b1",
       "textHash": "a2871cdd"
     },
@@ -347,7 +347,7 @@
       "scheme": "light",
       "elementCount": 427,
       "paletteHash": "e2060091",
-      "ratio": 0.4289,
+      "ratio": 0.4122,
       "structureHash": "57c027a1",
       "textHash": "f57675c4"
     },
@@ -374,7 +374,7 @@
       "scheme": "light",
       "elementCount": 297,
       "paletteHash": "66ee6014",
-      "ratio": 4.2564,
+      "ratio": 4.2887,
       "structureHash": "ca3cf693",
       "textHash": "5b941da9"
     },
@@ -383,7 +383,7 @@
       "scheme": "light",
       "elementCount": 204,
       "paletteHash": "a226efe6",
-      "ratio": 3.6507,
+      "ratio": 3.5443,
       "structureHash": "b2220a51",
       "textHash": "30bc796a"
     },
@@ -392,7 +392,7 @@
       "scheme": "dark",
       "elementCount": 310,
       "paletteHash": "e63f8e71",
-      "ratio": 2.4426,
+      "ratio": 2.4385,
       "structureHash": "a8a7f14e",
       "textHash": "40f7ea22"
     },
@@ -401,7 +401,7 @@
       "scheme": "dark",
       "elementCount": 326,
       "paletteHash": "a7342096",
-      "ratio": 0.9309,
+      "ratio": 0.9371,
       "structureHash": "5527a07b",
       "textHash": "c499cb6b"
     },
@@ -410,7 +410,7 @@
       "scheme": "dark",
       "elementCount": 225,
       "paletteHash": "860f327d",
-      "ratio": 1.2172,
+      "ratio": 1.1296,
       "structureHash": "24c81cff",
       "textHash": "ecb125d0"
     },
@@ -419,7 +419,7 @@
       "scheme": "dark",
       "elementCount": 498,
       "paletteHash": "f5e9b640",
-      "ratio": 2.3643,
+      "ratio": 2.431,
       "structureHash": "bb4f9bd3",
       "textHash": "d3b2ed27"
     },
@@ -428,7 +428,7 @@
       "scheme": "dark",
       "elementCount": 430,
       "paletteHash": "f9ffea2b",
-      "ratio": 0.4178,
+      "ratio": 0.4161,
       "structureHash": "5600280d",
       "textHash": "6e76d205"
     },
@@ -437,7 +437,7 @@
       "scheme": "dark",
       "elementCount": 1052,
       "paletteHash": "1803efe8",
-      "ratio": 1.1673,
+      "ratio": 1.1709,
       "structureHash": "54285e39",
       "textHash": "be77cc62"
     },
@@ -446,7 +446,7 @@
       "scheme": "dark",
       "elementCount": 279,
       "paletteHash": "0fa65ad3",
-      "ratio": 5.8416,
+      "ratio": 5.8661,
       "structureHash": "c27b912c",
       "textHash": "971e9b1a"
     },
@@ -454,9 +454,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "dark",
       "elementCount": 121,
-      "paletteHash": "c5216d61",
+      "paletteHash": "b239ad87",
       "ratio": 1.9417,
-      "structureHash": "c38a59ab",
+      "structureHash": "5ecdc9d3",
       "textHash": "45a9c3e8"
     },
     {
@@ -464,7 +464,7 @@
       "scheme": "dark",
       "elementCount": 36,
       "paletteHash": "e9a0b044",
-      "ratio": 1.5581,
+      "ratio": 1.5757,
       "structureHash": "56d75fa2",
       "textHash": "c9ad59a5"
     },
@@ -473,7 +473,7 @@
       "scheme": "dark",
       "elementCount": 36,
       "paletteHash": "e9a0b044",
-      "ratio": 1.5527,
+      "ratio": 1.5634,
       "structureHash": "56d75fa2",
       "textHash": "4885c78c"
     },
@@ -491,7 +491,7 @@
       "scheme": "dark",
       "elementCount": 338,
       "paletteHash": "95c9bd8b",
-      "ratio": 1.4613,
+      "ratio": 1.4727,
       "structureHash": "b0ecd516",
       "textHash": "f9021241"
     },
@@ -499,9 +499,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "dark",
       "elementCount": 116,
-      "paletteHash": "a8a85e2c",
-      "ratio": 1.6243,
-      "structureHash": "d44f9769",
+      "paletteHash": "fddb80ad",
+      "ratio": 1.6298,
+      "structureHash": "33579c96",
       "textHash": "5b8971a2"
     },
     {
@@ -509,7 +509,7 @@
       "scheme": "dark",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 0.4394,
+      "ratio": 0.4317,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -518,7 +518,7 @@
       "scheme": "dark",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.3417,
+      "ratio": 0.333,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -527,7 +527,7 @@
       "scheme": "dark",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.3495,
+      "ratio": 0.3387,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -536,7 +536,7 @@
       "scheme": "dark",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 0.8857,
+      "ratio": 0.8646,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -545,7 +545,7 @@
       "scheme": "dark",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.6706,
+      "ratio": 0.6506,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -554,25 +554,25 @@
       "scheme": "dark",
       "elementCount": 867,
       "paletteHash": "04f5a1e2",
-      "ratio": 2.2154,
+      "ratio": 2.2467,
       "structureHash": "625b4469",
       "textHash": "68727043"
     },
     {
       "fileName": "20-timeline.mmd",
       "scheme": "dark",
-      "elementCount": 355,
+      "elementCount": 356,
       "paletteHash": "3fddda63",
-      "ratio": 3.006,
-      "structureHash": "5c060fdf",
-      "textHash": "ac8ab674"
+      "ratio": 2.8568,
+      "structureHash": "b64efde5",
+      "textHash": "8566c968"
     },
     {
       "fileName": "21-sankey.mmd",
       "scheme": "dark",
       "elementCount": 144,
       "paletteHash": "a028920b",
-      "ratio": 1.5,
+      "ratio": 1.4991,
       "structureHash": "727ed1eb",
       "textHash": "5da22809"
     },
@@ -590,7 +590,7 @@
       "scheme": "dark",
       "elementCount": 209,
       "paletteHash": "2e6a7919",
-      "ratio": 2.9351,
+      "ratio": 2.8174,
       "structureHash": "72a84e8d",
       "textHash": "df1661ba"
     },
@@ -608,18 +608,18 @@
       "scheme": "dark",
       "elementCount": 344,
       "paletteHash": "6975a1bb",
-      "ratio": 3.8235,
+      "ratio": 3.7276,
       "structureHash": "c635586c",
       "textHash": "d15a4a24"
     },
     {
       "fileName": "26-architecture.mmd",
       "scheme": "dark",
-      "elementCount": 494,
-      "paletteHash": "3c7bc963",
+      "elementCount": 496,
+      "paletteHash": "1aeef50f",
       "ratio": 0.7425,
-      "structureHash": "af5cc14b",
-      "textHash": "a84811fd"
+      "structureHash": "841c58af",
+      "textHash": "b1b5b5d3"
     },
     {
       "fileName": "27-radar.mmd",
@@ -635,7 +635,7 @@
       "scheme": "dark",
       "elementCount": 129,
       "paletteHash": "baeeb5fe",
-      "ratio": 2.3106,
+      "ratio": 2.3042,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },
@@ -644,7 +644,7 @@
       "scheme": "dark",
       "elementCount": 254,
       "paletteHash": "e6b8a2eb",
-      "ratio": 5.2217,
+      "ratio": 5.3967,
       "structureHash": "952d5986",
       "textHash": "d48ccac6"
     },
@@ -653,9 +653,9 @@
       "scheme": "dark",
       "elementCount": 218,
       "paletteHash": "73f8cdc8",
-      "ratio": 1.7328,
+      "ratio": 1.5759,
       "structureHash": "d08f1966",
-      "textHash": "cfccf496"
+      "textHash": "78750b3c"
     },
     {
       "fileName": "31-venn.mmd",
@@ -671,7 +671,7 @@
       "scheme": "dark",
       "elementCount": 171,
       "paletteHash": "51abe993",
-      "ratio": 1.2109,
+      "ratio": 1.2229,
       "structureHash": "4d343da9",
       "textHash": "c89da179"
     },
@@ -698,7 +698,7 @@
       "scheme": "dark",
       "elementCount": 100,
       "paletteHash": "514d994b",
-      "ratio": 0.7686,
+      "ratio": 0.6883,
       "structureHash": "5b21fc03",
       "textHash": "7ac09c26"
     },
@@ -707,7 +707,7 @@
       "scheme": "dark",
       "elementCount": 178,
       "paletteHash": "1457b94b",
-      "ratio": 1.0113,
+      "ratio": 0.9739,
       "structureHash": "46d46de7",
       "textHash": "8fcd0f99"
     },
@@ -716,7 +716,7 @@
       "scheme": "dark",
       "elementCount": 462,
       "paletteHash": "c8dfb63e",
-      "ratio": 0.3194,
+      "ratio": 0.3028,
       "structureHash": "7c866a50",
       "textHash": "3d5cbe44"
     },
@@ -725,7 +725,7 @@
       "scheme": "dark",
       "elementCount": 648,
       "paletteHash": "461ffae2",
-      "ratio": 0.1901,
+      "ratio": 0.1803,
       "structureHash": "90d333b1",
       "textHash": "a2871cdd"
     },
@@ -734,7 +734,7 @@
       "scheme": "dark",
       "elementCount": 427,
       "paletteHash": "e2060091",
-      "ratio": 0.4289,
+      "ratio": 0.4122,
       "structureHash": "57c027a1",
       "textHash": "f57675c4"
     },
@@ -761,7 +761,7 @@
       "scheme": "dark",
       "elementCount": 300,
       "paletteHash": "c6ee30c3",
-      "ratio": 4.2564,
+      "ratio": 4.2887,
       "structureHash": "bbed3130",
       "textHash": "5b941da9"
     },
@@ -770,7 +770,7 @@
       "scheme": "dark",
       "elementCount": 207,
       "paletteHash": "c327917d",
-      "ratio": 3.6507,
+      "ratio": 3.5443,
       "structureHash": "e0900f7e",
       "textHash": "30bc796a"
     },
@@ -779,7 +779,7 @@
       "scheme": "high-contrast",
       "elementCount": 310,
       "paletteHash": "e63f8e71",
-      "ratio": 2.4426,
+      "ratio": 2.4385,
       "structureHash": "a8a7f14e",
       "textHash": "40f7ea22"
     },
@@ -788,7 +788,7 @@
       "scheme": "high-contrast",
       "elementCount": 326,
       "paletteHash": "a7342096",
-      "ratio": 0.9309,
+      "ratio": 0.9371,
       "structureHash": "5527a07b",
       "textHash": "c499cb6b"
     },
@@ -797,7 +797,7 @@
       "scheme": "high-contrast",
       "elementCount": 225,
       "paletteHash": "860f327d",
-      "ratio": 1.2172,
+      "ratio": 1.1296,
       "structureHash": "24c81cff",
       "textHash": "ecb125d0"
     },
@@ -806,7 +806,7 @@
       "scheme": "high-contrast",
       "elementCount": 498,
       "paletteHash": "f5e9b640",
-      "ratio": 2.3643,
+      "ratio": 2.431,
       "structureHash": "bb4f9bd3",
       "textHash": "d3b2ed27"
     },
@@ -815,7 +815,7 @@
       "scheme": "high-contrast",
       "elementCount": 430,
       "paletteHash": "f9ffea2b",
-      "ratio": 0.4178,
+      "ratio": 0.4161,
       "structureHash": "5600280d",
       "textHash": "6e76d205"
     },
@@ -824,7 +824,7 @@
       "scheme": "high-contrast",
       "elementCount": 1052,
       "paletteHash": "1803efe8",
-      "ratio": 1.1673,
+      "ratio": 1.1709,
       "structureHash": "54285e39",
       "textHash": "be77cc62"
     },
@@ -833,7 +833,7 @@
       "scheme": "high-contrast",
       "elementCount": 279,
       "paletteHash": "0fa65ad3",
-      "ratio": 5.8416,
+      "ratio": 5.8661,
       "structureHash": "c27b912c",
       "textHash": "971e9b1a"
     },
@@ -841,9 +841,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "high-contrast",
       "elementCount": 121,
-      "paletteHash": "c5216d61",
+      "paletteHash": "b239ad87",
       "ratio": 1.9417,
-      "structureHash": "c38a59ab",
+      "structureHash": "5ecdc9d3",
       "textHash": "45a9c3e8"
     },
     {
@@ -851,7 +851,7 @@
       "scheme": "high-contrast",
       "elementCount": 36,
       "paletteHash": "e9a0b044",
-      "ratio": 1.5581,
+      "ratio": 1.5757,
       "structureHash": "56d75fa2",
       "textHash": "c9ad59a5"
     },
@@ -860,7 +860,7 @@
       "scheme": "high-contrast",
       "elementCount": 36,
       "paletteHash": "e9a0b044",
-      "ratio": 1.5527,
+      "ratio": 1.5634,
       "structureHash": "56d75fa2",
       "textHash": "4885c78c"
     },
@@ -878,7 +878,7 @@
       "scheme": "high-contrast",
       "elementCount": 338,
       "paletteHash": "95c9bd8b",
-      "ratio": 1.4613,
+      "ratio": 1.4727,
       "structureHash": "b0ecd516",
       "textHash": "f9021241"
     },
@@ -886,9 +886,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "high-contrast",
       "elementCount": 116,
-      "paletteHash": "123e7315",
-      "ratio": 1.6243,
-      "structureHash": "bd221bfe",
+      "paletteHash": "de85e2dc",
+      "ratio": 1.6298,
+      "structureHash": "6b009c25",
       "textHash": "5b8971a2"
     },
     {
@@ -896,7 +896,7 @@
       "scheme": "high-contrast",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 0.4394,
+      "ratio": 0.4317,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -905,7 +905,7 @@
       "scheme": "high-contrast",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.3417,
+      "ratio": 0.333,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -914,7 +914,7 @@
       "scheme": "high-contrast",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.3495,
+      "ratio": 0.3387,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -923,7 +923,7 @@
       "scheme": "high-contrast",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 0.8857,
+      "ratio": 0.8646,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -932,7 +932,7 @@
       "scheme": "high-contrast",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.6706,
+      "ratio": 0.6506,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -941,25 +941,25 @@
       "scheme": "high-contrast",
       "elementCount": 867,
       "paletteHash": "04f5a1e2",
-      "ratio": 2.2154,
+      "ratio": 2.2467,
       "structureHash": "625b4469",
       "textHash": "68727043"
     },
     {
       "fileName": "20-timeline.mmd",
       "scheme": "high-contrast",
-      "elementCount": 355,
+      "elementCount": 356,
       "paletteHash": "3fddda63",
-      "ratio": 3.006,
-      "structureHash": "5c060fdf",
-      "textHash": "ac8ab674"
+      "ratio": 2.8568,
+      "structureHash": "b64efde5",
+      "textHash": "8566c968"
     },
     {
       "fileName": "21-sankey.mmd",
       "scheme": "high-contrast",
       "elementCount": 144,
       "paletteHash": "ce014957",
-      "ratio": 1.5,
+      "ratio": 1.4991,
       "structureHash": "727ed1eb",
       "textHash": "5da22809"
     },
@@ -977,7 +977,7 @@
       "scheme": "high-contrast",
       "elementCount": 209,
       "paletteHash": "2e6a7919",
-      "ratio": 2.9351,
+      "ratio": 2.8174,
       "structureHash": "72a84e8d",
       "textHash": "df1661ba"
     },
@@ -995,18 +995,18 @@
       "scheme": "high-contrast",
       "elementCount": 344,
       "paletteHash": "6975a1bb",
-      "ratio": 3.8235,
+      "ratio": 3.7276,
       "structureHash": "c635586c",
       "textHash": "d15a4a24"
     },
     {
       "fileName": "26-architecture.mmd",
       "scheme": "high-contrast",
-      "elementCount": 494,
-      "paletteHash": "3c7bc963",
+      "elementCount": 496,
+      "paletteHash": "1aeef50f",
       "ratio": 0.7425,
-      "structureHash": "af5cc14b",
-      "textHash": "a84811fd"
+      "structureHash": "841c58af",
+      "textHash": "b1b5b5d3"
     },
     {
       "fileName": "27-radar.mmd",
@@ -1022,7 +1022,7 @@
       "scheme": "high-contrast",
       "elementCount": 129,
       "paletteHash": "baeeb5fe",
-      "ratio": 2.3106,
+      "ratio": 2.3042,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },
@@ -1031,7 +1031,7 @@
       "scheme": "high-contrast",
       "elementCount": 254,
       "paletteHash": "e6b8a2eb",
-      "ratio": 5.2217,
+      "ratio": 5.3967,
       "structureHash": "952d5986",
       "textHash": "d48ccac6"
     },
@@ -1040,9 +1040,9 @@
       "scheme": "high-contrast",
       "elementCount": 218,
       "paletteHash": "73f8cdc8",
-      "ratio": 1.7328,
+      "ratio": 1.5759,
       "structureHash": "d08f1966",
-      "textHash": "cfccf496"
+      "textHash": "78750b3c"
     },
     {
       "fileName": "31-venn.mmd",
@@ -1058,7 +1058,7 @@
       "scheme": "high-contrast",
       "elementCount": 171,
       "paletteHash": "51abe993",
-      "ratio": 1.2109,
+      "ratio": 1.2229,
       "structureHash": "4d343da9",
       "textHash": "c89da179"
     },
@@ -1085,7 +1085,7 @@
       "scheme": "high-contrast",
       "elementCount": 100,
       "paletteHash": "514d994b",
-      "ratio": 0.7686,
+      "ratio": 0.6883,
       "structureHash": "5b21fc03",
       "textHash": "7ac09c26"
     },
@@ -1094,7 +1094,7 @@
       "scheme": "high-contrast",
       "elementCount": 178,
       "paletteHash": "1457b94b",
-      "ratio": 1.0113,
+      "ratio": 0.9739,
       "structureHash": "46d46de7",
       "textHash": "8fcd0f99"
     },
@@ -1103,7 +1103,7 @@
       "scheme": "high-contrast",
       "elementCount": 462,
       "paletteHash": "c8dfb63e",
-      "ratio": 0.3194,
+      "ratio": 0.3028,
       "structureHash": "7c866a50",
       "textHash": "3d5cbe44"
     },
@@ -1112,7 +1112,7 @@
       "scheme": "high-contrast",
       "elementCount": 648,
       "paletteHash": "461ffae2",
-      "ratio": 0.1901,
+      "ratio": 0.1803,
       "structureHash": "90d333b1",
       "textHash": "a2871cdd"
     },
@@ -1121,7 +1121,7 @@
       "scheme": "high-contrast",
       "elementCount": 427,
       "paletteHash": "e2060091",
-      "ratio": 0.4289,
+      "ratio": 0.4122,
       "structureHash": "57c027a1",
       "textHash": "f57675c4"
     },
@@ -1148,7 +1148,7 @@
       "scheme": "high-contrast",
       "elementCount": 300,
       "paletteHash": "fcdcd484",
-      "ratio": 4.2564,
+      "ratio": 4.2887,
       "structureHash": "bbed3130",
       "textHash": "5b941da9"
     },
@@ -1157,7 +1157,7 @@
       "scheme": "high-contrast",
       "elementCount": 207,
       "paletteHash": "c327917d",
-      "ratio": 3.6507,
+      "ratio": 3.5443,
       "structureHash": "e0900f7e",
       "textHash": "30bc796a"
     }

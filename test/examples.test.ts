@@ -122,6 +122,7 @@ void test('visual harnesses wait in real time through the Chromium debugging pip
 
   assert.match(browserHarness, /--remote-debugging-pipe/u);
   assert.match(browserHarness, /readHarnessResult/u);
+  assert.match(previewHarness, /diagramFontFamily: 'noto-sans'/u);
   assert.doesNotMatch(previewHarness, /--virtual-time-budget|--dump-dom/u);
   assert.doesNotMatch(projectHarness, /--virtual-time-budget|--dump-dom/u);
 });

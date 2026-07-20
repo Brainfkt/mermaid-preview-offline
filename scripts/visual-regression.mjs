@@ -144,7 +144,7 @@ const runner = `<script nonce="${nonce}">
       window.postMessage({
         type: 'configuration',
         configuration: {
-          diagramFontFamily: 'vscode',
+          diagramFontFamily: 'noto-sans',
           diagramTheme: 'adaptive',
           largeFileThresholdBytes: 524288,
           minimapEnabled: true,
@@ -280,8 +280,8 @@ const runner = `<script nonce="${nonce}">
       throw new Error('The renderer did not preserve the accented diagram labels.');
     }
     for (const [fontFamily, cssFamily] of [
-      ['noto-sans', 'Mermaid Offline Noto Sans'],
       ['inter', 'Mermaid Offline Inter'],
+      ['noto-sans', 'Mermaid Offline Noto Sans'],
       ['vscode', '-apple-system'],
     ]) {
       const previousSvg = document.querySelector('#diagram svg');
