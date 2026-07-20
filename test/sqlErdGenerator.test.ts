@@ -78,6 +78,28 @@ void test('table-level composite primary and foreign keys support quoted identif
   assert.match(mermaid, /parents o\|--o\{ children/u);
 });
 
+void test('quoted SQL punctuation is preserved in labels but removed from Mermaid identifiers', () => {
+  const mermaid = generateSqlErd(`
+    CREATE TABLE "a[b]" (
+      "c,d" decimal(10,2) PRIMARY KEY
+    );
+    CREATE TABLE "a,b" (
+      "c[d]" integer REFERENCES "a[b]" ("c,d")
+    );
+  `);
+
+  const entityLines = mermaid.split('\n').filter((line) => /^ {2}\S+\["/u.test(line));
+  assert.equal(entityLines.length, 2);
+  for (const line of entityLines) {
+    assert.match(line, /^ {2}[A-Za-z_][A-Za-z0-9_]*\["/u);
+  }
+  const columnLines = mermaid.split('\n').filter((line) => /^ {4}/u.test(line));
+  assert.match(columnLines[0] ?? '', /^ {4}decimal\(10,2\) [A-Za-z_][A-Za-z0-9_]* PK "c,d"$/u);
+  assert.match(columnLines[1] ?? '', /^ {4}integer [A-Za-z_][A-Za-z0-9_]* FK "c\[d\]"$/u);
+  assert.match(mermaid, /\["a\[b\]"\]/u);
+  assert.match(mermaid, /\["a,b"\]/u);
+});
+
 void test('unsupported or inconsistent SQL reports focused parser errors', () => {
   assert.throws(
     () => parseSqlSchema('SELECT 1;'),

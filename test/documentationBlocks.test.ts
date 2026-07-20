@@ -39,6 +39,25 @@ void test('extracts Mermaid fences from Markdown without treating other code as 
   assert.equal(mermaidBlockAtLine(blocks, 10), undefined);
 });
 
+void test('does not extract Mermaid examples nested inside a wider Markdown fence', () => {
+  const source = [
+    '````markdown',
+    '```mermaid',
+    'flowchart LR',
+    '  Example --> Only',
+    '```',
+    '````',
+    '',
+    '```mermaid',
+    'flowchart LR',
+    '  Real --> Diagram',
+    '```',
+  ].join('\n');
+  const blocks = extractMermaidBlocks(source, 'markdown');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0]?.source, 'flowchart LR\n  Real --> Diagram\n');
+});
+
 void test('MDX supports Mermaid fences and unterminated blocks', () => {
   const source = '<Callout />\r\n\r\n```{mermaid}\r\ngraph TD\r\n  A-->B';
   const blocks = extractMermaidBlocks(source, 'mdx');
@@ -76,6 +95,28 @@ void test('extracts Mermaid listing and source blocks from AsciiDoc', () => {
   assert.equal(documentationKind('plaintext', '/docs/system.adoc'), 'asciidoc');
 });
 
+void test('does not extract Mermaid examples nested inside another AsciiDoc block', () => {
+  const source = [
+    '[source,asciidoc]',
+    '----',
+    '[mermaid]',
+    '....',
+    'flowchart LR',
+    '  Example --> Only',
+    '....',
+    '----',
+    '',
+    '[mermaid]',
+    '....',
+    'flowchart LR',
+    '  Real --> Diagram',
+    '....',
+  ].join('\n');
+  const blocks = extractMermaidBlocks(source, 'asciidoc');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0]?.source, 'flowchart LR\n  Real --> Diagram\n');
+});
+
 void test('replaces complete source blocks with format-specific local image references', () => {
   const markdown = 'Intro\n\n  ```mermaid\n  graph TD\n  A-->B\n  ```\n\nOutro\n';
   const markdownBlocks = extractMermaidBlocks(markdown, 'markdown');
@@ -94,6 +135,23 @@ void test('replaces complete source blocks with format-specific local image refe
       documentationImageReference('asciidoc', 'guide.assets/diagram-1.svg', 'Diagram 1'),
     ),
     'image::guide.assets/diagram-1.svg[Diagram 1]\n',
+  );
+
+  assert.equal(
+    documentationImageReference(
+      'markdown',
+      'guide (old)/diagram).svg',
+      'Diagram ] one',
+    ),
+    '![Diagram \\] one](guide%20%28old%29/diagram%29.svg)',
+  );
+  assert.equal(
+    documentationImageReference(
+      'asciidoc',
+      'guide[old]/diagram (1).svg',
+      'Diagram ] one',
+    ),
+    'image::guide%5Bold%5D/diagram%20%281%29.svg[Diagram \\] one]',
   );
 });
 

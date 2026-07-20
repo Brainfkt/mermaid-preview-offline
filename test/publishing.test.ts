@@ -150,6 +150,7 @@ void test('Marketplace README links do not depend on the Marketplace document ba
   }
   for (const required of [
     'docs/USER_GUIDE.md',
+    'docs/USER_GUIDE.fr.md',
     'docs/SCREENSHOTS.md',
     'docs/PERFORMANCE.md',
     'examples/README.md',

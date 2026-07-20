@@ -131,6 +131,9 @@ void test('la politique CLI rejette les images distantes et les images locales n
     'flowchart LR\n  a@{ img: "data:image/png;base64,AQID" }',
   ));
   assert.doesNotThrow(() => assertOfflineImageReferences(
+    'flowchart LR\n  a@{ img: "data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns=%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%2F%3E" }',
+  ));
+  assert.doesNotThrow(() => assertOfflineImageReferences(
     'flowchart LR\n  a@{ img: "assets/a.png" }',
     { allowRelative: true },
   ));
