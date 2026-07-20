@@ -1,7 +1,8 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { runBrowserHarness } from './browser-harness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const compiledRoot = join(root, '.test-dist', 'src');
@@ -173,8 +174,24 @@ writeFileSync(diffPath, diffHtml);
 writeFileSync(join(outputDirectory, 'visual-diff-harness-http.html'), httpVersion(diffHtml));
 
 const chrome = findChrome();
-const galleryResult = runHarness(chrome, galleryPath, 'Diagram Studio');
-const diffResult = runHarness(chrome, diffPath, 'visual diff');
+const galleryResult = await runBrowserHarness({
+  chrome,
+  compiledRoot,
+  harnessPath: galleryPath,
+  label: 'Diagram Studio',
+  resultElementId: 'project-visual-results',
+  windowSize: '1280,800',
+});
+const diffResult = await runBrowserHarness({
+  chrome,
+  compiledRoot,
+  harnessPath: diffPath,
+  label: 'Visual diff',
+  resultElementId: 'project-visual-results',
+  windowSize: '1280,800',
+});
+if (galleryResult.error) throw new Error(`Diagram Studio: ${galleryResult.error}`);
+if (diffResult.error) throw new Error(`Visual diff: ${diffResult.error}`);
 if (galleryResult.cards !== examples.length || galleryResult.createMessage?.type !== 'createDiagram') {
   throw new Error('Diagram Studio did not complete the gallery and creation workflow.');
 }
@@ -244,25 +261,6 @@ function stubFor(data, assertions) {
       (async () => { ${assertions} })().catch((error) => finish({ error: error instanceof Error ? error.message : String(error) }));
     });
   </script>`;
-}
-
-function runHarness(chrome, path, label) {
-  const result = spawnSync(chrome, [
-    '--headless=new',
-    '--disable-gpu',
-    '--no-sandbox',
-    '--allow-file-access-from-files',
-    '--window-size=1280,800',
-    '--virtual-time-budget=120000',
-    '--dump-dom',
-    pathToFileURL(path).href,
-  ], { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 });
-  if (result.status !== 0) throw new Error(result.stderr || `${label} Chrome run failed.`);
-  const match = /<script id="project-visual-results" type="application\/json">([\s\S]*?)<\/script>/u.exec(result.stdout);
-  if (!match?.[1]) throw new Error(`${label} harness did not produce results.`);
-  const actual = JSON.parse(match[1]);
-  if (actual.error) throw new Error(`${label}: ${actual.error}`);
-  return actual;
 }
 
 function httpVersion(html) {

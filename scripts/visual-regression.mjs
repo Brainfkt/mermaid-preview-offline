@@ -1,7 +1,8 @@
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { runBrowserHarness } from './browser-harness.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const updateBaseline = process.argv.includes('--update');
@@ -407,11 +408,19 @@ const runner = `<script nonce="${nonce}">
         theme: 'default',
       },
     }, '*');
+    await waitFor(
+      () => document.querySelector('#export-dpi').value === '144' &&
+        document.querySelector('#export-metadata').checked,
+      'professional export configuration',
+    );
     document.querySelector('#export-open').click();
     await waitFor(
       () => document.querySelector('#export-dialog').open,
       'professional export dialog',
     );
+    if (!document.querySelector('#export-metadata').checked) {
+      throw new Error('Opening the professional export dialog reset the metadata setting.');
+    }
     await waitFor(
       () => document.querySelector('#export-preview-image').src.startsWith('data:image/png') ||
         !document.querySelector('#export-preview-error').hidden,
@@ -443,18 +452,33 @@ const runner = `<script nonce="${nonce}">
       () => /300 DPI · WEBP/u.test(document.querySelector('#export-preview-metrics').textContent),
       'updated WebP export preview',
     );
+    if (!document.querySelector('#export-metadata').checked) {
+      throw new Error('Updating the professional export form reset the metadata setting.');
+    }
     document.querySelector('#export-folder').click();
     if (postedMessages.at(-1)?.type !== 'exportFolder' ||
         postedMessages.at(-1)?.settings?.format !== 'webp') {
       throw new Error('Folder export did not forward the selected settings.');
     }
+    if (!document.querySelector('#export-metadata').checked) {
+      throw new Error('The professional export dialog lost the metadata setting.');
+    }
     const optimizedCopyStart = postedMessages.length;
     document.querySelector('#export-copy-svg-optimized').click();
     await waitFor(
       () => postedMessages.slice(optimizedCopyStart).some((message) =>
-        message.type === 'copySvg' && message.svg.includes('mermaid-preview-offline-metadata')),
-      'optimized SVG clipboard export',
+        message.type === 'copySvg') || !document.querySelector('#export-preview-error').hidden,
+      'optimized SVG clipboard export result',
     );
+    if (!document.querySelector('#export-preview-error').hidden) {
+      throw new Error('The optimized SVG clipboard export reports: ' +
+        document.querySelector('#export-preview-error').textContent);
+    }
+    const optimizedCopy = postedMessages.slice(optimizedCopyStart).find((message) =>
+      message.type === 'copySvg');
+    if (!optimizedCopy?.svg.includes('mermaid-preview-offline-metadata')) {
+      throw new Error('The optimized SVG clipboard export omitted source metadata.');
+    }
     const profileMessageStart = postedMessages.length;
     document.querySelector('#export-profile-name').value = 'Documentation';
     document.querySelector('#export-profile-save').click();
@@ -526,30 +550,13 @@ writeFileSync(
 );
 
 const chrome = findChrome();
-const result = spawnSync(
+const actual = await runBrowserHarness({
   chrome,
-  [
-    '--headless=new',
-    '--disable-gpu',
-    '--no-sandbox',
-    '--allow-file-access-from-files',
-    '--virtual-time-budget=120000',
-    '--dump-dom',
-    pathToFileURL(harnessPath).href,
-  ],
-  { encoding: 'utf8', maxBuffer: 128 * 1024 * 1024 },
-);
-if (result.status !== 0) {
-  throw new Error(result.stderr || `Chrome exited with status ${result.status}`);
-}
-
-const match = /<script id="visual-results" type="application\/json">([\s\S]*?)<\/script>/u.exec(
-  result.stdout,
-);
-if (!match?.[1]) {
-  throw new Error('The visual regression harness did not produce results.');
-}
-const actual = JSON.parse(match[1]);
+  compiledRoot,
+  harnessPath,
+  label: 'Visual regression harness',
+  resultElementId: 'visual-results',
+});
 if (actual.error) {
   throw new Error(actual.error);
 }
@@ -590,7 +597,10 @@ function compareResults(expected, actual) {
     }
     const ratioDelta = Math.abs(entry.ratio - baseline.ratio) / Math.max(baseline.ratio, 0.001);
     if (ratioDelta > 0.18) {
-      failures.push(`${key}: aspect ratio changed by ${Math.round(ratioDelta * 100)}%`);
+      failures.push(
+        `${key}: aspect ratio changed by ${Math.round(ratioDelta * 100)}% ` +
+        `(${baseline.ratio} → ${entry.ratio})`,
+      );
     }
   }
   if (JSON.stringify(expected.interfaceThemes) !== JSON.stringify(actual.interfaceThemes)) {

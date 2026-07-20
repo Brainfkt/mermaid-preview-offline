@@ -67,9 +67,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "light",
       "elementCount": 121,
-      "paletteHash": "40d07148",
-      "ratio": 3.1068,
-      "structureHash": "4e76c000",
+      "paletteHash": "c5216d61",
+      "ratio": 1.9417,
+      "structureHash": "c38a59ab",
       "textHash": "45a9c3e8"
     },
     {
@@ -112,9 +112,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "light",
       "elementCount": 112,
-      "paletteHash": "40ee553d",
+      "paletteHash": "626dab1a",
       "ratio": 1.6243,
-      "structureHash": "62985b77",
+      "structureHash": "131c394e",
       "textHash": "5b8971a2"
     },
     {
@@ -122,7 +122,7 @@
       "scheme": "light",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 1.0665,
+      "ratio": 0.4394,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -131,7 +131,7 @@
       "scheme": "light",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.7785,
+      "ratio": 0.3417,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -140,7 +140,7 @@
       "scheme": "light",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.7579,
+      "ratio": 0.3495,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -149,7 +149,7 @@
       "scheme": "light",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 1.4857,
+      "ratio": 0.8857,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -158,7 +158,7 @@
       "scheme": "light",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.7307,
+      "ratio": 0.6706,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -248,7 +248,7 @@
       "scheme": "light",
       "elementCount": 129,
       "paletteHash": "1aa5e62d",
-      "ratio": 2.3092,
+      "ratio": 2.3106,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },
@@ -454,9 +454,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "dark",
       "elementCount": 121,
-      "paletteHash": "40d07148",
-      "ratio": 3.1068,
-      "structureHash": "4e76c000",
+      "paletteHash": "c5216d61",
+      "ratio": 1.9417,
+      "structureHash": "c38a59ab",
       "textHash": "45a9c3e8"
     },
     {
@@ -499,9 +499,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "dark",
       "elementCount": 116,
-      "paletteHash": "a2fa8783",
+      "paletteHash": "a8a85e2c",
       "ratio": 1.6243,
-      "structureHash": "ca9deae8",
+      "structureHash": "d44f9769",
       "textHash": "5b8971a2"
     },
     {
@@ -509,7 +509,7 @@
       "scheme": "dark",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 1.0665,
+      "ratio": 0.4394,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -518,7 +518,7 @@
       "scheme": "dark",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.7785,
+      "ratio": 0.3417,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -527,7 +527,7 @@
       "scheme": "dark",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.7579,
+      "ratio": 0.3495,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -536,7 +536,7 @@
       "scheme": "dark",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 1.4857,
+      "ratio": 0.8857,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -545,7 +545,7 @@
       "scheme": "dark",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.7307,
+      "ratio": 0.6706,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -635,7 +635,7 @@
       "scheme": "dark",
       "elementCount": 129,
       "paletteHash": "baeeb5fe",
-      "ratio": 2.3092,
+      "ratio": 2.3106,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },
@@ -841,9 +841,9 @@
       "fileName": "08-gantt.mmd",
       "scheme": "high-contrast",
       "elementCount": 121,
-      "paletteHash": "40d07148",
-      "ratio": 3.1068,
-      "structureHash": "4e76c000",
+      "paletteHash": "c5216d61",
+      "ratio": 1.9417,
+      "structureHash": "c38a59ab",
       "textHash": "45a9c3e8"
     },
     {
@@ -886,9 +886,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "high-contrast",
       "elementCount": 116,
-      "paletteHash": "7e0b5965",
+      "paletteHash": "123e7315",
       "ratio": 1.6243,
-      "structureHash": "c774457e",
+      "structureHash": "bd221bfe",
       "textHash": "5b8971a2"
     },
     {
@@ -896,7 +896,7 @@
       "scheme": "high-contrast",
       "elementCount": 107,
       "paletteHash": "b14b8dbb",
-      "ratio": 1.0665,
+      "ratio": 0.4394,
       "structureHash": "03ff5d1a",
       "textHash": "713645e9"
     },
@@ -905,7 +905,7 @@
       "scheme": "high-contrast",
       "elementCount": 215,
       "paletteHash": "660a7fc4",
-      "ratio": 0.7785,
+      "ratio": 0.3417,
       "structureHash": "9c864743",
       "textHash": "c28a5ad0"
     },
@@ -914,7 +914,7 @@
       "scheme": "high-contrast",
       "elementCount": 218,
       "paletteHash": "e7266e76",
-      "ratio": 0.7579,
+      "ratio": 0.3495,
       "structureHash": "3df86016",
       "textHash": "46ab4db0"
     },
@@ -923,7 +923,7 @@
       "scheme": "high-contrast",
       "elementCount": 146,
       "paletteHash": "5e19f958",
-      "ratio": 1.4857,
+      "ratio": 0.8857,
       "structureHash": "ade41d5a",
       "textHash": "7e77a6b9"
     },
@@ -932,7 +932,7 @@
       "scheme": "high-contrast",
       "elementCount": 208,
       "paletteHash": "89f97d82",
-      "ratio": 0.7307,
+      "ratio": 0.6706,
       "structureHash": "b9adcffc",
       "textHash": "d5e6f692"
     },
@@ -1022,7 +1022,7 @@
       "scheme": "high-contrast",
       "elementCount": 129,
       "paletteHash": "baeeb5fe",
-      "ratio": 2.3092,
+      "ratio": 2.3106,
       "structureHash": "b120f63a",
       "textHash": "98d2db4d"
     },

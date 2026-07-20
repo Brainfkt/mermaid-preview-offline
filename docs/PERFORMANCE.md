@@ -117,7 +117,7 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 115/115 réussis.
+- Tests unitaires et d’intégration : 116/116 réussis.
 - Build de production : réussi, 14,37 Mio sur le budget de 20 Mio.
 - Package VSIX : réussi, 184 fichiers, 4,81 Mio compressés
   (5 040 965 octets). Les captures du dépôt en sont bien exclues.
