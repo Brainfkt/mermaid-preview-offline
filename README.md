@@ -2,7 +2,7 @@
   <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/icon.png" alt="Mermaid Preview Offline logo" width="112">
 </p>
 
-<h1 align="center">Mermaid Preview Offline 1.0</h1>
+<h1 align="center">Mermaid Preview Offline</h1>
 
 <p align="center">
   A fast, private Mermaid preview built into VS Code.<br>
