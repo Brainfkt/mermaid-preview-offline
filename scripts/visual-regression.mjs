@@ -305,13 +305,10 @@ const runner = `<script nonce="${nonce}">
       'isolated minimap SVG image',
     );
     const svgRootId = document.querySelector('#diagram svg')?.id;
-    const encodedSvgPrefix = 'data:image/svg+xml;charset=utf-8,';
-    const isolatedSvg = decodeURIComponent(minimapImage.src.slice(encodedSvgPrefix.length));
-    if (!minimapImage.src.startsWith(encodedSvgPrefix) ||
+    if (!minimapImage.src.startsWith('blob:') ||
         !svgRootId ||
-        !isolatedSvg.includes('id="' + svgRootId + '"') ||
         document.querySelector('#minimap-diagram svg')) {
-      throw new Error('The minimap did not preserve Mermaid scoped styles in an isolated SVG image.');
+      throw new Error('The minimap did not use an isolated Blob-backed SVG image.');
     }
     minimapTestViewport.style.width = '';
     minimapTestViewport.style.height = '';
@@ -453,7 +450,8 @@ const runner = `<script nonce="${nonce}">
   });
 </script>`;
 
-html = html.replace(`<script nonce="${nonce}" src="${webviewScript}"></script>`, `${stub}<script nonce="${nonce}" src="${webviewScript}"></script>${runner}`);
+const webviewModule = `<script type="module" nonce="${nonce}" src="${webviewScript}"></script>`;
+html = html.replace(webviewModule, `${stub}${webviewModule}${runner}`);
 const harnessPath = join(outputDirectory, 'harness.html');
 writeFileSync(harnessPath, html);
 const httpHarnessPath = join(outputDirectory, 'harness-http.html');
@@ -463,7 +461,8 @@ writeFileSync(
     .replaceAll(webviewScript, '/dist/webview.js')
     .replaceAll(stylesheet, '/media/preview.css')
     .replaceAll('img-src file:', "img-src 'self'")
-    .replaceAll('style-src file:', "style-src 'self'"),
+    .replaceAll('style-src file:', "style-src 'self'")
+    .replaceAll('script-src file:', "script-src 'self'"),
 );
 
 const chrome = findChrome();

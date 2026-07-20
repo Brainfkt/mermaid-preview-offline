@@ -167,9 +167,10 @@ if (diffResult.beforeLabel !== 'HEAD' || diffResult.afterLabel !== 'Working tree
 console.log(`Project visual regression passed: ${DIAGRAM_TEMPLATES.length} templates, ${examples.length} examples, and Git diff interactions.`);
 
 function injectHarness(html, stub) {
+  const projectModule = `<script type="module" nonce="${nonce}" src="${script}"></script>`;
   return html.replace(
-    `<script nonce="${nonce}" src="${script}"></script>`,
-    `${stub}<script nonce="${nonce}" src="${script}"></script>`,
+    projectModule,
+    `${stub}${projectModule}`,
   );
 }
 
@@ -249,7 +250,8 @@ function httpVersion(html) {
     .replaceAll(script, '/dist/project-webview.js')
     .replaceAll(stylesheet, '/media/project.css')
     .replaceAll('img-src file:', "img-src 'self'")
-    .replaceAll('style-src file:', "style-src 'self'");
+    .replaceAll('style-src file:', "style-src 'self'")
+    .replaceAll('script-src file:', "script-src 'self'");
 }
 
 function categoryOf(source) {
