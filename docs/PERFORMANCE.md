@@ -10,7 +10,7 @@ de la version 1.0.
 | Indicateur | v0.7 | v1.0 | Évolution |
 |---|---:|---:|---:|
 | JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,21 Mio | −76 % |
-| VSIX final | 20 913 638 octets | 6 810 065 octets | −67 % |
+| VSIX final | 20 913 638 octets | 6 810 053 octets | −67 % |
 | Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
 | Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
 | Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
@@ -104,7 +104,7 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 104/104 réussis.
+- Tests unitaires et d’intégration : 105/105 réussis.
 - Build de production : réussi, 14,21 Mio sur le budget de 20 Mio.
 - Package VSIX : réussi, 189 fichiers, 6,49 Mio compressés.
 - Cohérence du lockfile en mode npm hors ligne : réussie.

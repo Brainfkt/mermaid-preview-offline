@@ -195,7 +195,7 @@ function extractAsciiDocBlocks(
       }
     }
     const delimiter = lines[delimiterIndex]?.text.trim() ?? '';
-    if (!isAsciiDocBlockDelimiter(delimiter)) continue;
+    if (!isAsciiDocOpaqueDelimiter(delimiter)) continue;
 
     let closingIndex = delimiterIndex + 1;
     while (closingIndex < lines.length && lines[closingIndex]?.text.trim() !== delimiter) {
@@ -232,9 +232,9 @@ function extractAsciiDocBlocks(
         startOffset: line.start,
       }));
     }
-    // Delimited AsciiDoc blocks are literal at this level. Skipping all block
-    // kinds prevents examples such as [source,asciidoc] from leaking nested
-    // Mermaid declarations into the document preview/export.
+    // Opaque AsciiDoc containers are literal at this level. Compound example,
+    // sidebar, quote, and open blocks are intentionally not consumed here so
+    // their nested Mermaid blocks remain discoverable.
     lineIndex = endLine;
   }
   return blocks;
@@ -277,8 +277,8 @@ function isMermaidAsciiDocAttributes(value: string): boolean {
     .some((attribute) => attribute === 'mermaid');
 }
 
-function isAsciiDocBlockDelimiter(value: string): boolean {
-  return /^(?:--|-{4,}|\.{4,}|={4,}|_{4,}|\*{4,}|\+{4,}|\/{4,}|\|={3,}|,={3,})$/u
+function isAsciiDocOpaqueDelimiter(value: string): boolean {
+  return /^(?:-{4,}|\.{4,}|\+{4,}|\/{4,}|\|={3,}|,={3,})$/u
     .test(value);
 }
 

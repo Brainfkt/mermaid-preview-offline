@@ -117,6 +117,22 @@ void test('does not extract Mermaid examples nested inside another AsciiDoc bloc
   assert.equal(blocks[0]?.source, 'flowchart LR\n  Real --> Diagram\n');
 });
 
+void test('extracts Mermaid blocks nested inside compound AsciiDoc containers', () => {
+  const source = [
+    '.Architecture example',
+    '====',
+    '[mermaid]',
+    '....',
+    'flowchart LR',
+    '  Nested --> Diagram',
+    '....',
+    '====',
+  ].join('\n');
+  const blocks = extractMermaidBlocks(source, 'asciidoc');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0]?.source, 'flowchart LR\n  Nested --> Diagram\n');
+});
+
 void test('replaces complete source blocks with format-specific local image references', () => {
   const markdown = 'Intro\n\n  ```mermaid\n  graph TD\n  A-->B\n  ```\n\nOutro\n';
   const markdownBlocks = extractMermaidBlocks(markdown, 'markdown');
