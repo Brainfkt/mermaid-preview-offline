@@ -555,7 +555,7 @@ function matchingParenthesis(source: string, open: number): number | undefined {
 function safeMermaidIds(names: string[], prefix: string): Map<string, string> {
   const grouped = new Map<string, string[]>();
   for (const name of names) {
-    const base = mermaidAttributeToken(name.replaceAll('.', '_'), prefix).slice(0, 72);
+    const base = mermaidIdentifierToken(name.replaceAll('.', '_'), prefix).slice(0, 72);
     const entries = grouped.get(base) ?? [];
     entries.push(name);
     grouped.set(base, entries);
@@ -568,6 +568,17 @@ function safeMermaidIds(names: string[], prefix: string): Map<string, string> {
     }
   }
   return result;
+}
+
+function mermaidIdentifierToken(value: string, fallback: string): string {
+  const normalized = value
+    .normalize('NFKD')
+    .replace(/\p{Mark}/gu, '')
+    .replace(/[^A-Za-z0-9_]+/gu, '_')
+    .replace(/_+/gu, '_')
+    .replace(/^_+|_+$/gu, '');
+  const token = normalized || fallback;
+  return /^[A-Za-z_]/u.test(token) ? token : `${fallback}_${token}`;
 }
 
 function mermaidAttributeToken(value: string, fallback: string): string {
