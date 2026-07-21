@@ -9,6 +9,11 @@ export interface GeneratedIdentifiers {
   text: string;
 }
 
+export interface MermaidDeclarationLocation {
+  offset: number;
+  word: string;
+}
+
 export const MERMAID_KEYWORDS: readonly MermaidKeyword[] = [
   keyword('flowchart', 'Flowchart declaration', 'Starts a flowchart. Add a direction such as `LR`, `TD`, `TB`, `RL`, or `BT`.'),
   keyword('flowchart-elk', 'Flowchart declaration', 'Starts a flowchart rendered with the ELK layout engine. Add a direction such as `TB` or `LR`.'),
@@ -247,43 +252,70 @@ export function nearestDiagramDeclaration(value: string): string | undefined {
   return nearest?.value;
 }
 
-export function unclosedBlockCount(source: string): number {
-  const declaration = diagramDeclaration(source);
+export function unclosedBlockCount(source: string, declaration?: string): number {
+  const normalizedDeclaration = (
+    declaration ?? mermaidDeclarationLocation(source)?.word
+  )?.toLowerCase();
   const blockStart =
-    declaration === 'flowchart' || declaration === 'flowchart-elk' || declaration === 'graph'
+    normalizedDeclaration === 'flowchart' ||
+    normalizedDeclaration === 'flowchart-elk' ||
+    normalizedDeclaration === 'graph'
       ? FLOWCHART_BLOCK_START
-      : declaration === 'sequencediagram'
+      : normalizedDeclaration === 'sequencediagram'
         ? SEQUENCE_BLOCK_START
         : undefined;
   if (!blockStart) return 0;
 
   let depth = 0;
-  for (const line of source.split(/\r?\n/u)) {
+  visitSourceLines(source, (line) => {
     const content = line.trim();
     if (BLOCK_END.test(content)) depth = Math.max(depth - 1, 0);
     if (blockStart.test(content)) depth += 1;
-  }
+  });
   return depth;
 }
 
-function diagramDeclaration(source: string): string | undefined {
+export function mermaidDeclarationLocation(
+  source: string,
+): MermaidDeclarationLocation | undefined {
   let inFrontmatter = false;
-  let beforeDiagram = true;
-  for (const line of source.split(/\r?\n/u)) {
-    const content = line.trim();
-    if (!content || content.startsWith('%%')) continue;
-    if (inFrontmatter) {
-      if (content === '---') inFrontmatter = false;
-      continue;
+  let frontmatterClosed = false;
+  let declaration: MermaidDeclarationLocation | undefined;
+  visitSourceLines(source, (line, offset) => {
+    const trimmed = line.trim();
+    if (!frontmatterClosed && trimmed === '---') {
+      if (inFrontmatter) {
+        inFrontmatter = false;
+        frontmatterClosed = true;
+      } else if (offset === 0 || !source.slice(0, offset).trim()) {
+        inFrontmatter = true;
+      }
+      return;
     }
-    if (beforeDiagram && content === '---') {
-      inFrontmatter = true;
-      beforeDiagram = false;
-      continue;
+    if (inFrontmatter || !trimmed || trimmed.startsWith('%%')) {
+      return;
     }
-    return /^[A-Za-z][\w-]*/u.exec(content)?.[0]?.toLowerCase();
+    const word = /^\s*([A-Za-z][\w-]*)/u.exec(line)?.[1];
+    if (word) declaration = { offset: offset + line.indexOf(word), word };
+    return false;
+  });
+  return declaration;
+}
+
+function visitSourceLines(
+  source: string,
+  visitor: (line: string, offset: number) => false | void,
+): void {
+  let offset = 0;
+  while (offset <= source.length) {
+    const newline = source.indexOf('\n', offset);
+    const rawEnd = newline < 0 ? source.length : newline;
+    const contentEnd = rawEnd > offset && source.charCodeAt(rawEnd - 1) === 13
+      ? rawEnd - 1
+      : rawEnd;
+    if (visitor(source.slice(offset, contentEnd), offset) === false || newline < 0) return;
+    offset = newline + 1;
   }
-  return undefined;
 }
 
 function maskNonCode(source: string): string {

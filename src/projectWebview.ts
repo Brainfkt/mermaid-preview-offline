@@ -92,6 +92,8 @@ function initializeGallery(): void {
   let activeCategory = 'All';
   let selected: GalleryItem | undefined;
   let previewTimer: number | undefined;
+  let previewGeneration = 0;
+  let catalogGeneration = 0;
   let cardObserver: IntersectionObserver | undefined;
   const cardSources = new Map<Element, string>();
 
@@ -171,6 +173,7 @@ function initializeGallery(): void {
   }
 
   function renderCatalog(): void {
+    const generation = ++catalogGeneration;
     cardObserver?.disconnect();
     cardSources.clear();
     grid.replaceChildren();
@@ -206,7 +209,15 @@ function initializeGallery(): void {
         if (!entry.isIntersecting) continue;
         cardObserver?.unobserve(entry.target);
         const itemSource = cardSources.get(entry.target);
-        if (itemSource) void renderMermaid(entry.target as HTMLElement, itemSource, undefined, true);
+        if (itemSource) {
+          void renderMermaid(
+            entry.target as HTMLElement,
+            itemSource,
+            undefined,
+            true,
+            () => generation === catalogGeneration,
+          );
+        }
       }
     }, { root: document.querySelector('.catalog'), rootMargin: '180px' });
     for (const target of cardSources.keys()) cardObserver.observe(target);
@@ -284,12 +295,19 @@ function initializeGallery(): void {
   }
 
   function schedulePreview(value: string, delay = 160): void {
+    const generation = ++previewGeneration;
     if (previewTimer !== undefined) window.clearTimeout(previewTimer);
     previewTimer = window.setTimeout(() => {
       previewTimer = undefined;
       previewPlaceholder.hidden = true;
       preview.hidden = false;
-      void renderMermaid(preview, value, previewError);
+      void renderMermaid(
+        preview,
+        value,
+        previewError,
+        false,
+        () => generation === previewGeneration,
+      );
     }, delay);
   }
 }
@@ -329,8 +347,20 @@ function initializeVisualDiff(): void {
     element<HTMLElement>('diff-changed').textContent = String(data.summary.changed);
     element<HTMLElement>('diff-removed').textContent = String(data.summary.removed);
     void Promise.all([
-      renderMermaid(beforeDiagram, data.before.source, beforeError),
-      renderMermaid(afterDiagram, data.after.source, afterError),
+      renderMermaid(
+        beforeDiagram,
+        data.before.source,
+        beforeError,
+        false,
+        () => generation === diffGeneration,
+      ),
+      renderMermaid(
+        afterDiagram,
+        data.after.source,
+        afterError,
+        false,
+        () => generation === diffGeneration,
+      ),
     ]).then(() => {
       if (generation !== diffGeneration) return;
       copyRenderedDiagram(beforeDiagram, overlayBefore, `before-${generation}`);
@@ -394,11 +424,18 @@ async function renderMermaid(
   source: string,
   errorTarget?: HTMLElement,
   compact = false,
+  isCurrent: () => boolean = () => true,
 ): Promise<void> {
   const render = async (): Promise<void> => {
+    if (!target.isConnected || !isCurrent()) return;
     try {
       await prepareMermaidExtensions(source, activeFontFamily);
+      if (!target.isConnected || !isCurrent()) return;
       const result = await mermaid.render(`mermaid-project-${++renderSequence}`, source);
+      if (!target.isConnected || !isCurrent()) {
+        removeTemporaryProjectRenderNodes();
+        return;
+      }
       target.innerHTML = result.svg;
       target.dataset.renderSource = source;
       errorTarget?.setAttribute('hidden', '');
@@ -415,12 +452,16 @@ async function renderMermaid(
         message.textContent = 'Preview unavailable';
         target.append(message);
       }
-      document.querySelectorAll('body > [id^="dmermaid-project-"]').forEach((node) => node.remove());
+      removeTemporaryProjectRenderNodes();
     }
   };
   const queued = renderQueue.then(render, render);
   renderQueue = queued.then(() => undefined, () => undefined);
   await queued;
+}
+
+function removeTemporaryProjectRenderNodes(): void {
+  document.querySelectorAll('body > [id^="dmermaid-project-"]').forEach((node) => node.remove());
 }
 
 function initializeMermaid(fontFamily: DiagramFontFamily): void {

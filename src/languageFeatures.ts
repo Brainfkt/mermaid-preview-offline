@@ -7,9 +7,11 @@ import {
   identifierAt,
   identifierOffsets,
   MERMAID_KEYWORDS,
+  mermaidDeclarationLocation,
   nearestDiagramDeclaration,
   unclosedBlockCount,
 } from './mermaidLanguage';
+import { mermaidValidationDelay } from './validationPolicy';
 
 const FORMAT_COMMAND = 'mermaidPreviewOffline.formatDocument';
 const INSERT_COMMAND = 'mermaidPreviewOffline.insertElement';
@@ -147,12 +149,15 @@ class MermaidValidator implements vscode.Disposable {
     this.generation.set(key, nextGeneration);
     const previousTimer = this.timers.get(key);
     if (previousTimer) clearTimeout(previousTimer);
+    const lastLine = document.lineAt(Math.max(0, document.lineCount - 1));
+    const characterCount = document.offsetAt(lastLine.range.end);
+    const validationDelay = mermaidValidationDelay(characterCount, delay);
     this.timers.set(
       key,
       setTimeout(() => {
         this.timers.delete(key);
         this.validate(document, nextGeneration);
-      }, delay),
+      }, validationDelay),
     );
   }
 
@@ -175,7 +180,7 @@ class MermaidValidator implements vscode.Disposable {
     }
 
     if (!this.isCurrent(document, key, generation, version)) return;
-    const issue = staticMermaidIssue(document);
+    const issue = staticMermaidIssue(document, source);
     if (!issue) {
       this.diagnostics.clearHost(document.uri);
       return;
@@ -451,9 +456,9 @@ function nextNodeIdentifier(source: string): string {
 
 function staticMermaidIssue(
   document: vscode.TextDocument,
+  source: string,
 ): { code: string; message: string; range: vscode.Range } | undefined {
-  const source = document.getText();
-  const declaration = declarationLocation(source);
+  const declaration = mermaidDeclarationLocation(source);
   if (declaration && !DIAGRAM_DECLARATIONS.has(declaration.word.toLowerCase())) {
     return {
       code: 'declaration',
@@ -477,7 +482,7 @@ function staticMermaidIssue(
     };
   }
 
-  const missingEnds = unclosedBlockCount(source);
+  const missingEnds = unclosedBlockCount(source, declaration?.word);
   if (missingEnds > 0) {
     const lastLine = document.lineAt(document.lineCount - 1);
     return {
@@ -485,36 +490,6 @@ function staticMermaidIssue(
       message: `${missingEnds} Mermaid block${missingEnds === 1 ? '' : 's'} missing an “end”.`,
       range: lastLine.range,
     };
-  }
-  return undefined;
-}
-
-function declarationLocation(source: string): { offset: number; word: string } | undefined {
-  const lines = source.split(/(?<=\n)/u);
-  let offset = 0;
-  let inFrontmatter = false;
-  let frontmatterClosed = false;
-  for (const line of lines) {
-    const text = line.replace(/\r?\n$/u, '');
-    const trimmed = text.trim();
-    if (!frontmatterClosed && trimmed === '---') {
-      if (inFrontmatter) {
-        inFrontmatter = false;
-        frontmatterClosed = true;
-      } else if (offset === 0 || !source.slice(0, offset).trim()) {
-        inFrontmatter = true;
-      }
-      offset += line.length;
-      continue;
-    }
-    if (inFrontmatter || !trimmed || trimmed.startsWith('%%')) {
-      offset += line.length;
-      continue;
-    }
-    const match = /^\s*([A-Za-z][\w-]*)/u.exec(text);
-    const word = match?.[1];
-    if (!word) return undefined;
-    return { offset: offset + text.indexOf(word), word };
   }
   return undefined;
 }

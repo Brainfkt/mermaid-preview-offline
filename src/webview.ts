@@ -468,6 +468,7 @@ async function renderLatest(): Promise<void> {
     diagram.innerHTML = svg;
     diagram.dataset.version = String(latestVersion);
     lastSvg = svg;
+    clearMinimapThumbnail();
     lastSvgFontFamily = fontFamily;
     lastSvgTheme = theme;
     const svgElement = diagram.querySelector('svg');
@@ -476,7 +477,6 @@ async function renderLatest(): Promise<void> {
     }
 
     readNaturalSize(svgElement);
-    refreshMinimapDiagram(svg);
     showState('diagram');
     copyButton.disabled = false;
     exportOpenButton.disabled = false;
@@ -718,11 +718,9 @@ function formatDimension(value: number): string {
   return Math.round(value).toLocaleString();
 }
 
-function refreshMinimapDiagram(svgSource: string): void {
-  clearMinimapThumbnail();
+function createMinimapThumbnail(svgSource: string): HTMLImageElement | undefined {
   if (svgSource.length > 5 * 1024 * 1024) {
-    minimap.hidden = true;
-    return;
+    return undefined;
   }
   const thumbnail = document.createElement('img');
   thumbnail.alt = '';
@@ -731,6 +729,7 @@ function refreshMinimapDiagram(svgSource: string): void {
   minimapObjectUrl = URL.createObjectURL(new Blob([svgSource], { type: 'image/svg+xml' }));
   thumbnail.src = minimapObjectUrl;
   minimapDiagram.replaceChildren(thumbnail);
+  return thumbnail;
 }
 
 function clearMinimapThumbnail(): void {
@@ -748,11 +747,12 @@ function updateMinimap(): void {
   const visible = configuration.minimapEnabled && !diagram.hidden && hasOverflow;
   minimap.hidden = !visible;
   if (!visible) {
+    clearMinimapThumbnail();
     return;
   }
 
   const svg = diagram.querySelector('svg');
-  const thumbnail = minimapDiagram.querySelector('img');
+  const thumbnail = minimapDiagram.querySelector('img') ?? createMinimapThumbnail(lastSvg);
   if (!svg || !thumbnail) {
     minimap.hidden = true;
     return;

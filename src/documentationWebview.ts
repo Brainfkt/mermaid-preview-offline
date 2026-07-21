@@ -19,6 +19,18 @@ interface VsCodeApi {
   postMessage(message: DocumentationWebviewToExtensionMessage): void;
 }
 
+interface DocumentationCard {
+  article: HTMLElement;
+  canvas: HTMLElement;
+  controllerConfiguration: string;
+  diagram: HTMLElement;
+  error: HTMLElement;
+  index: HTMLElement;
+  location: HTMLElement;
+  settled: boolean;
+  source: string;
+}
+
 declare function acquireVsCodeApi(): VsCodeApi;
 
 registerOfflineIconPacks();
@@ -36,6 +48,7 @@ let activeFontFamily: DiagramFontFamily = 'vscode';
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 const diagramControllers = new Map<string, DocumentationDiagramController>();
 const diagramStates = new Map<string, DocumentationDiagramState>();
+const documentationCards = new Map<string, DocumentationCard>();
 
 initializeMermaid(activeTheme, activeFontFamily);
 
@@ -56,6 +69,8 @@ async function showDocumentation(
   data: Extract<ExtensionToDocumentationWebviewMessage, { type: 'documentationData' }>,
 ): Promise<void> {
   const generation = ++renderGeneration;
+  const renderConfigurationChanged = activeTheme !== data.theme ||
+    activeFontFamily !== data.fontFamily;
   activeTheme = data.theme;
   activeFontFamily = data.fontFamily;
   initializeMermaid(activeTheme, activeFontFamily);
@@ -64,15 +79,55 @@ async function showDocumentation(
   summary.textContent = data.mode === 'cursor'
     ? `Diagram under the cursor · ${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} in this document`
     : `${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} rendered locally`;
-  saveAndDisposeDiagramControllers();
-  list.replaceChildren();
   empty.hidden = data.blocks.length > 0;
   list.hidden = data.blocks.length === 0;
+  const controllerConfiguration = documentationControllerConfiguration(data);
+  const nextCards = new Map<string, DocumentationCard>();
+  const cardsToRender: Array<{ block: DocumentationPreviewBlock; card: DocumentationCard }> = [];
 
   for (const block of data.blocks) {
+    const existing = documentationCards.get(block.id);
+    if (
+      existing?.settled &&
+      existing.source === block.source &&
+      !renderConfigurationChanged
+    ) {
+      updateDiagramCard(existing, block);
+      if (existing.controllerConfiguration !== controllerConfiguration) {
+        disposeDiagramController(block.id);
+        existing.controllerConfiguration = controllerConfiguration;
+        if (existing.diagram.querySelector('svg')) {
+          diagramControllers.set(
+            block.id,
+            createDiagramController(existing, block, data, diagramStates.get(block.id)),
+          );
+        }
+      }
+      nextCards.set(block.id, existing);
+      continue;
+    }
+
+    if (existing) {
+      disposeDiagramController(block.id);
+      existing.article.remove();
+    }
+    const card = createDiagramCard(block, controllerConfiguration);
+    nextCards.set(block.id, card);
+    cardsToRender.push({ block, card });
+  }
+
+  for (const [id, card] of documentationCards) {
+    if (nextCards.has(id)) continue;
+    disposeDiagramController(id);
+    diagramStates.delete(id);
+    card.article.remove();
+  }
+  documentationCards.clear();
+  for (const [id, card] of nextCards) documentationCards.set(id, card);
+  reconcileDocumentationCardOrder(nextCards.values());
+
+  for (const { block, card } of cardsToRender) {
     if (generation !== renderGeneration) return;
-    const card = createDiagramCard(block);
-    list.append(card.article);
     const rendered = await queuedRender(
       card.diagram,
       card.error,
@@ -81,34 +136,31 @@ async function showDocumentation(
       generation,
     );
     if (generation !== renderGeneration) return;
+    card.settled = true;
     if (rendered) {
-      const controller = new DocumentationDiagramController(
-        card.article,
-        card.canvas,
-        card.diagram,
-        {
-          maxHeight: data.maxHeight,
-          navigation: data.navigation,
-          resizable: data.resizable,
-          source: block.source,
-        },
-        diagramStates.get(block.id),
+      diagramControllers.set(
+        block.id,
+        createDiagramController(card, block, data, diagramStates.get(block.id)),
       );
-      diagramControllers.set(block.id, controller);
     }
-  }
-  const activeIds = new Set(data.blocks.map((block) => block.id));
-  for (const id of diagramStates.keys()) {
-    if (!activeIds.has(id)) diagramStates.delete(id);
   }
 }
 
-function createDiagramCard(block: DocumentationPreviewBlock): {
-  article: HTMLElement;
-  canvas: HTMLElement;
-  diagram: HTMLElement;
-  error: HTMLElement;
-} {
+function reconcileDocumentationCardOrder(cards: Iterable<DocumentationCard>): void {
+  let current = list.firstElementChild;
+  for (const card of cards) {
+    if (card.article === current) {
+      current = current.nextElementSibling;
+    } else {
+      list.insertBefore(card.article, current);
+    }
+  }
+}
+
+function createDiagramCard(
+  block: DocumentationPreviewBlock,
+  controllerConfiguration: string,
+): DocumentationCard {
   const article = document.createElement('article');
   article.className = 'documentation-card';
   article.dataset.blockId = block.id;
@@ -146,7 +198,63 @@ function createDiagramCard(block: DocumentationPreviewBlock): {
   error.hidden = true;
   canvas.append(diagram, error);
   article.append(header, canvas);
-  return { article, canvas, diagram, error };
+  return {
+    article,
+    canvas,
+    controllerConfiguration,
+    diagram,
+    error,
+    index,
+    location,
+    settled: false,
+    source: block.source,
+  };
+}
+
+function updateDiagramCard(card: DocumentationCard, block: DocumentationPreviewBlock): void {
+  card.article.dataset.blockId = block.id;
+  card.index.textContent = `Diagram ${block.index + 1}`;
+  card.location.textContent = lineLabel(block.startLine, block.endLine);
+}
+
+function documentationControllerConfiguration(
+  data: Extract<ExtensionToDocumentationWebviewMessage, { type: 'documentationData' }>,
+): string {
+  return [
+    data.maxHeight,
+    data.navigation.controlsVisibility,
+    data.navigation.mouseNavigation,
+    data.resizable ? 'resizable' : 'fixed',
+  ].join('\0');
+}
+
+function createDiagramController(
+  card: DocumentationCard,
+  block: DocumentationPreviewBlock,
+  data: Extract<ExtensionToDocumentationWebviewMessage, { type: 'documentationData' }>,
+  state?: DocumentationDiagramState,
+): DocumentationDiagramController {
+  card.canvas.style.height = '';
+  card.canvas.style.maxHeight = '';
+  return new DocumentationDiagramController(
+    card.article,
+    card.canvas,
+    card.diagram,
+    {
+      maxHeight: data.maxHeight,
+      navigation: data.navigation,
+      resizable: data.resizable,
+      source: block.source,
+    },
+    state,
+  );
+}
+
+function disposeDiagramController(id: string): void {
+  const controller = diagramControllers.get(id);
+  if (!controller) return;
+  diagramStates.set(id, controller.dispose());
+  diagramControllers.delete(id);
 }
 
 async function queuedRender(

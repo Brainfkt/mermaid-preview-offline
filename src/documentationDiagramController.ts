@@ -25,6 +25,7 @@ export class DocumentationDiagramController {
   private readonly abortController = new AbortController();
   private readonly controls: HTMLElement;
   private readonly panButton: HTMLButtonElement;
+  private readonly resizeHandle?: HTMLElement;
   private readonly resizeObserver: ResizeObserver;
   private autoFit = true;
   private customHeight: number | undefined;
@@ -52,7 +53,10 @@ export class DocumentationDiagramController {
     if (this.customHeight !== undefined) {
       this.canvas.style.height = `${this.customHeight}px`;
     }
-    if (options.resizable) this.article.append(this.createResizeHandle());
+    if (options.resizable) {
+      this.resizeHandle = this.createResizeHandle();
+      this.article.append(this.resizeHandle);
+    }
     this.installNavigation();
     this.resizeObserver = new ResizeObserver(() => {
       if (this.autoFit) this.fit();
@@ -65,6 +69,8 @@ export class DocumentationDiagramController {
     const state = this.snapshot();
     this.abortController.abort();
     this.resizeObserver.disconnect();
+    this.controls.remove();
+    this.resizeHandle?.remove();
     return state;
   }
 

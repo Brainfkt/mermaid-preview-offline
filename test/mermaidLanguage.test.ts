@@ -7,6 +7,7 @@ import {
   generateMissingIdentifiers,
   identifierAt,
   identifierOffsets,
+  mermaidDeclarationLocation,
   nearestDiagramDeclaration,
   unclosedBlockCount,
 } from '../src/mermaidLanguage';
@@ -82,6 +83,16 @@ void test('common declaration typos and missing block terminators are detected',
   assert.equal(unclosedBlockCount('sequenceDiagram\nalt Success\nA->>B: ok\n'), 1);
   assert.equal(unclosedBlockCount('sequenceDiagram\npar Work\nA->>B: one\n'), 1);
   assert.equal(unclosedBlockCount('flowchart LR\nsubgraph A\nend\n'), 0);
+});
+
+void test('diagram declarations are located without losing frontmatter or comment offsets', () => {
+  const source = '---\r\ntitle: Audit\r\n---\r\n%% comment\r\n  sequenceDiagram\r\n';
+  const offset = source.indexOf('sequenceDiagram');
+  assert.deepEqual(mermaidDeclarationLocation(source), {
+    offset,
+    word: 'sequenceDiagram',
+  });
+  assert.equal(unclosedBlockCount(`${source}  alt Success\r\n`, 'sequenceDiagram'), 1);
 });
 
 void test('block keywords in other diagram families do not require Mermaid end statements', () => {
