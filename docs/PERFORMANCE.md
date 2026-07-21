@@ -1,23 +1,23 @@
-# Revue des performances — version 1.0
+# Revue des performances — version 1.1
 
 Cette revue couvre les chemins d’exécution de l’aperçu VS Code, du Diagram
 Studio, des aperçus de documentation, des différences visuelles, des exports et
 de la CLI. Elle exclut volontairement la revue cyber, conformément au périmètre
-de la version 1.0.
+de la version 1.1.
 
 ## Résultat
 
-| Indicateur | v0.7 | v1.0.1 | Évolution |
+| Indicateur | v0.7 | v1.1.0 | Évolution |
 |---|---:|---:|---:|
-| JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 14,37 Mio | −76 % |
-| VSIX final | 20 913 638 octets | 5 040 965 octets | −76 % |
+| JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 17,41 Mio | −71 % |
+| VSIX final | 20 913 638 octets | 5 853 737 octets | −72 % |
 | Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
 | Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
 | Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
 
 Les valeurs temporelles sont des mesures locales de microbenchmarks et peuvent
 varier selon la machine. Les tailles sont celles des artefacts produits lors de
-la préparation de la version 1.0.
+la préparation de la version 1.1.
 
 ## Correctifs appliqués
 
@@ -27,8 +27,8 @@ la préparation de la version 1.0.
   lieu d’embarquer quatre copies complètes de Mermaid.
 - Les implémentations de diagrammes Mermaid sont découpées en chunks et chargées
   à la demande.
-- ZenUML et les deux collections Iconify ne sont chargés que lorsqu’un diagramme
-  les utilise.
+- ZenUML, tidy-tree et les trois collections Iconify ne sont chargés ou
+  enregistrés que lorsqu’un diagramme en a besoin.
 - La CLI charge directement le moteur modulaire local et ne transfère plus un
   script d’environ 15 Mio à Chromium par CDP à chaque lancement.
 - La CLI et les tâches utilisent le pipe de débogage natif de Chromium, avec
@@ -117,12 +117,13 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 116/116 réussis.
-- Build de production : réussi, 14,37 Mio sur le budget de 20 Mio.
-- Package VSIX : réussi, 184 fichiers, 4,81 Mio compressés
-  (5 040 965 octets). Les captures du dépôt en sont bien exclues.
+- Tests unitaires et d’intégration : 121/121 réussis.
+- Régression visuelle : 132/132 rendus réussis, plus Diagram Studio et le diff visuel.
+- Build de production : réussi, 17,41 Mio sur le budget de 20 Mio.
+- Package VSIX : réussi, 188 fichiers, 5,58 Mio compressés
+  (5 853 737 octets). Les captures du dépôt en sont bien exclues.
 - Cohérence du lockfile en mode npm hors ligne : réussie.
 
-Les tests nécessitant l’ouverture locale de Chromium n’ont pas été lancés dans
-la session sans accès Trusted. Ils restent couverts par le pipeline visuel de la
-release.
+Les tests nécessitant Chromium ont été exécutés localement avec les connexions
+réseau bloquées par le harness, puis la baseline mise à jour a repassé le contrôle
+strict sans différence.
