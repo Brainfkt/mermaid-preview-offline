@@ -42,9 +42,12 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
         <span id="editor-layout-label">Preview</span>
       </button>
       <span class="divider" aria-hidden="true"></span>
-      <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
-      <button class="button button--zoom" id="fit" type="button" title="Fit diagram (0)">Fit</button>
-      <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      <div class="toolbar__group toolbar__navigation" id="diagram-navigation-controls">
+        <button class="button button--icon button--pan" id="pan-mode" type="button" title="Toggle pan mode" aria-label="Toggle pan mode" aria-pressed="false">↔</button>
+        <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
+        <button class="button button--zoom" id="fit" type="button" title="Fit diagram (0)">Fit</button>
+        <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
+      </div>
       <span class="divider" aria-hidden="true"></span>
       <button class="button button--icon button--refresh" id="refresh" type="button" title="Refresh diagram (R)" aria-label="Refresh diagram">
         ${icon('refresh')}

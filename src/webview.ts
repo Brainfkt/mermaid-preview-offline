@@ -79,6 +79,8 @@ const copyButton = element<HTMLButtonElement>('copy-svg');
 const exportOpenButton = element<HTMLButtonElement>('export-open');
 const themeSelect = element<HTMLSelectElement>('diagram-theme');
 const themePicker = element<HTMLElement>('theme-picker');
+const navigationControls = element<HTMLElement>('diagram-navigation-controls');
+const panModeButton = element<HTMLButtonElement>('pan-mode');
 const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
 const editorLayoutLabel = element<HTMLElement>('editor-layout-label');
 const exportDialog = element<HTMLDialogElement>('export-dialog');
@@ -136,6 +138,7 @@ let exportPreviewTimer: number | undefined;
 let exportPreviewGeneration = 0;
 let exportJob = Promise.resolve();
 let exportDialogRequested = false;
+let panModeEnabled = false;
 
 themeSelect.value = diagramTheme;
 updateThemePicker();
@@ -153,6 +156,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       themeSelect.value = diagramTheme;
       updateThemePicker();
       updateRefreshControls();
+      updateNavigationConfiguration();
       updateMinimap();
       if (
         latestSource &&
@@ -251,6 +255,7 @@ bindButton('error-open-source', openSourceOnly);
 bindButton('error-retry', retryRender);
 bindButton('refresh', refreshDocument);
 bindButton('fullscreen', () => vscode.postMessage({ type: 'toggleFullscreen' }));
+bindButton('pan-mode', togglePanMode);
 bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
 bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
 bindButton('fit', fitDiagram);
@@ -329,14 +334,30 @@ window.addEventListener('keydown', (event) => {
 viewport.addEventListener(
   'wheel',
   (event) => {
-    if (!event.ctrlKey && !event.metaKey) {
+    if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       return;
     }
     event.preventDefault();
-    setZoom(zoom + (event.deltaY < 0 ? 0.1 : -0.1), false);
+    const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.012 : 0.002));
+    setZoomAtPoint(zoom * factor, event.clientX, event.clientY);
   },
   { passive: false },
 );
+
+for (const target of [viewport, navigationControls]) {
+  target.addEventListener('mouseenter', updateNavigationControlsVisibility);
+  target.addEventListener('mouseleave', updateNavigationControlsVisibility);
+  target.addEventListener('focusin', updateNavigationControlsVisibility);
+  target.addEventListener('focusout', updateNavigationControlsVisibility);
+}
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Alt') updatePanAffordance(true);
+});
+window.addEventListener('keyup', (event) => {
+  if (event.key === 'Alt') updatePanAffordance(false);
+});
+window.addEventListener('blur', () => updatePanAffordance(false));
 
 viewport.addEventListener('scroll', () => {
   savedScrollLeft = viewport.scrollLeft;
@@ -347,6 +368,7 @@ viewport.addEventListener('scroll', () => {
 
 installDragToPan();
 installMinimapNavigation();
+updateNavigationConfiguration();
 
 new ResizeObserver(() => {
   if (autoFit && !diagram.hidden) {
@@ -509,6 +531,29 @@ function setZoom(value: number, shouldAutoFit: boolean): void {
   zoom = clamp(value, 0.15, 4);
   autoFit = shouldAutoFit;
   applyZoom();
+  persistState();
+}
+
+function setZoomAtPoint(value: number, clientX: number, clientY: number): void {
+  const svg = diagram.querySelector('svg');
+  if (!svg) {
+    setZoom(value, false);
+    return;
+  }
+  const oldZoom = zoom;
+  const oldBounds = svg.getBoundingClientRect();
+  const diagramX = (clientX - oldBounds.left) / oldZoom;
+  const diagramY = (clientY - oldBounds.top) / oldZoom;
+  zoom = clamp(value, 0.15, 4);
+  autoFit = false;
+  applyZoom();
+  const newBounds = svg.getBoundingClientRect();
+  viewport.scrollBy({
+    left: newBounds.left + diagramX * zoom - clientX,
+    top: newBounds.top + diagramY * zoom - clientY,
+  });
+  savedScrollLeft = viewport.scrollLeft;
+  savedScrollTop = viewport.scrollTop;
   persistState();
 }
 
@@ -1172,16 +1217,20 @@ function throwIfCancelled(signal: AbortSignal, request: number): void {
 
 function installDragToPan(): void {
   let pointerId: number | undefined;
+  let moved = false;
+  let suppressNextClick = false;
   let startX = 0;
   let startY = 0;
   let startScrollLeft = 0;
   let startScrollTop = 0;
 
   viewport.addEventListener('pointerdown', (event) => {
-    if (event.button !== 0 || diagram.hidden) {
+    if (event.button !== 0 || diagram.hidden || !canPanWithPointer(event.altKey)) {
       return;
     }
+    event.preventDefault();
     pointerId = event.pointerId;
+    moved = false;
     startX = event.clientX;
     startY = event.clientY;
     startScrollLeft = viewport.scrollLeft;
@@ -1194,6 +1243,9 @@ function installDragToPan(): void {
     if (pointerId !== event.pointerId) {
       return;
     }
+    if (Math.abs(event.clientX - startX) > 3 || Math.abs(event.clientY - startY) > 3) {
+      moved = true;
+    }
     viewport.scrollLeft = startScrollLeft - (event.clientX - startX);
     viewport.scrollTop = startScrollTop - (event.clientY - startY);
   });
@@ -1203,10 +1255,62 @@ function installDragToPan(): void {
       return;
     }
     pointerId = undefined;
+    suppressNextClick = moved;
     viewport.classList.remove('viewport--dragging');
+    updatePanAffordance(event.altKey);
   };
   viewport.addEventListener('pointerup', stopDragging);
   viewport.addEventListener('pointercancel', stopDragging);
+  viewport.addEventListener('click', (event) => {
+    if (suppressNextClick) {
+      suppressNextClick = false;
+      event.preventDefault();
+      return;
+    }
+    if (!event.altKey || diagram.hidden) return;
+    event.preventDefault();
+    setZoomAtPoint(zoom * (event.shiftKey ? 0.8 : 1.25), event.clientX, event.clientY);
+  });
+}
+
+function togglePanMode(): void {
+  panModeEnabled = !panModeEnabled;
+  panModeButton.setAttribute('aria-pressed', String(panModeEnabled));
+  panModeButton.title = panModeEnabled ? 'Disable pan mode' : 'Enable pan mode';
+  updatePanAffordance(false);
+}
+
+function canPanWithPointer(altKey: boolean): boolean {
+  return panModeEnabled ||
+    configuration.navigation.mouseNavigation === 'always' ||
+    (configuration.navigation.mouseNavigation === 'alt' && altKey);
+}
+
+function updatePanAffordance(altKey: boolean): void {
+  viewport.classList.toggle(
+    'viewport--pan-ready',
+    !diagram.hidden && canPanWithPointer(altKey),
+  );
+}
+
+function updateNavigationConfiguration(): void {
+  const visibility = configuration.navigation.controlsVisibility;
+  navigationControls.hidden = visibility === 'never';
+  navigationControls.classList.toggle(
+    'toolbar__navigation--conditional',
+    visibility === 'onHoverOrFocus',
+  );
+  updateNavigationControlsVisibility();
+  updatePanAffordance(false);
+}
+
+function updateNavigationControlsVisibility(): void {
+  const visible = configuration.navigation.controlsVisibility === 'always' ||
+    viewport.matches(':hover') ||
+    navigationControls.matches(':hover') ||
+    viewport.contains(document.activeElement) ||
+    navigationControls.contains(document.activeElement);
+  navigationControls.classList.toggle('toolbar__navigation--visible', visible);
 }
 
 function installMinimapNavigation(): void {

@@ -78,6 +78,16 @@ select {
   gap: 3px;
 }
 
+.toolbar__navigation {
+  transition: opacity 120ms ease, visibility 120ms ease;
+}
+
+.toolbar__navigation--conditional:not(.toolbar__navigation--visible) {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
 .button {
   position: relative;
   min-height: 28px;
@@ -132,6 +142,17 @@ select:focus-visible {
 .button--zoom-step {
   font-size: 18px;
   font-weight: 400;
+}
+
+.button--pan {
+  color: var(--preview-muted);
+  font-size: 16px;
+}
+
+.button--pan[aria-pressed='true'] {
+  border-color: color-mix(in srgb, var(--preview-accent) 55%, transparent);
+  color: var(--preview-accent-fg);
+  background: color-mix(in srgb, var(--preview-accent) 72%, transparent);
 }
 
 .button--zoom {
@@ -251,8 +272,10 @@ select:focus-visible {
     transparent 0.8px
   );
   background-size: 18px 18px;
-  cursor: grab;
+  cursor: default;
 }
+
+.viewport--pan-ready { cursor: grab; }
 
 .viewport:focus-visible {
   outline: 1px solid var(--vscode-focusBorder);
