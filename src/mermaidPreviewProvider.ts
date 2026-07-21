@@ -319,6 +319,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'chooseEditorMode':
           await this.layoutController.chooseMode(document.uri, webviewPanel);
           break;
+        case 'cycleEditorMode':
+          await this.layoutController.cyclePreviewMode(document.uri, webviewPanel);
+          break;
         case 'setEditorMode':
           await this.layoutController.applyMode(document.uri, message.mode, webviewPanel);
           break;
@@ -846,6 +849,7 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   if (
     candidate.type === 'requestDocument' ||
     candidate.type === 'chooseEditorMode' ||
+    candidate.type === 'cycleEditorMode' ||
     candidate.type === 'toggleFullscreen'
   ) {
     return true;

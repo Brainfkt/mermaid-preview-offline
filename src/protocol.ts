@@ -83,6 +83,7 @@ export interface SerializedExportArtifact {
 export type WebviewToExtensionMessage =
   | { type: 'ready'; hasPersistedState: boolean }
   | { type: 'chooseEditorMode' }
+  | { type: 'cycleEditorMode' }
   | { type: 'setEditorMode'; mode: MermaidEditorMode }
   | { type: 'toggleFullscreen' }
   | { type: 'requestDocument' }

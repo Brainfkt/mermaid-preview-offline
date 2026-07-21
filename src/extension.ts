@@ -20,6 +20,7 @@ const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
 const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
 const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
+const CYCLE_LAYOUT_COMMAND = 'mermaidPreviewOffline.cycleEditorLayout';
 const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
 const NEW_DIAGRAM_COMMAND = 'mermaidPreviewOffline.newDiagram';
 const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
@@ -76,6 +77,12 @@ export function activate(context: vscode.ExtensionContext): void {
       const uri = mermaidUri(resource);
       if (uri) {
         await layoutController.chooseMode(uri);
+      }
+    }),
+    vscode.commands.registerCommand(CYCLE_LAYOUT_COMMAND, async (resource?: vscode.Uri) => {
+      const uri = mermaidUri(resource);
+      if (uri) {
+        await layoutController.cyclePreviewMode(uri);
       }
     }),
     vscode.commands.registerCommand(EXPORT_COMMAND, async (resource?: vscode.Uri) => {

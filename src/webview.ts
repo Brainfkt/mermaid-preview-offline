@@ -206,6 +206,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
     case 'editorMode':
       editorMode = message.mode;
       updateEditorMode();
+      requestAnimationFrame(focusPreviewSurface);
       break;
     case 'exportConfiguration':
       exportSettings = normalizeExportSettings(message.settings);
@@ -305,6 +306,18 @@ themeSelect.addEventListener('change', () => {
 });
 
 window.addEventListener('keydown', (event) => {
+  if (
+    event.key.toLowerCase() === 'p' &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.altKey &&
+    !exportDialog.open &&
+    !isTypingTarget(event.target)
+  ) {
+    event.preventDefault();
+    vscode.postMessage({ type: 'cycleEditorMode' });
+    return;
+  }
   if (isInteractiveTarget(event.target)) {
     return;
   }
@@ -368,6 +381,7 @@ viewport.addEventListener('scroll', () => {
 
 installDragToPan();
 installMinimapNavigation();
+installPreviewFocus();
 updateNavigationConfiguration();
 
 new ResizeObserver(() => {
@@ -688,10 +702,10 @@ function updateEditorMode(): void {
     source: 'Source only',
   };
   editorLayoutLabel.textContent = labels[editorMode];
-  editorLayoutButton.title = `Editor layout: ${descriptions[editorMode]}`;
+  editorLayoutButton.title = `Editor layout: ${descriptions[editorMode]} (P to cycle)`;
   editorLayoutButton.setAttribute(
     'aria-label',
-    `Choose editor layout, current layout: ${descriptions[editorMode]}`,
+    `Choose editor layout, current layout: ${descriptions[editorMode]}; press P to cycle preview layouts`,
   );
 }
 
@@ -1208,6 +1222,33 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
     target instanceof HTMLSelectElement ||
     target instanceof HTMLTextAreaElement ||
     target instanceof HTMLInputElement
+  );
+}
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLSelectElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLInputElement ||
+    (target instanceof HTMLElement && target.isContentEditable)
+  );
+}
+
+function focusPreviewSurface(): void {
+  if (!exportDialog.open) {
+    viewport.focus({ preventScroll: true });
+  }
+}
+
+function installPreviewFocus(): void {
+  window.addEventListener(
+    'pointerdown',
+    (event) => {
+      if (!isInteractiveTarget(event.target) && !exportDialog.open) {
+        focusPreviewSurface();
+      }
+    },
+    { capture: true },
   );
 }
 

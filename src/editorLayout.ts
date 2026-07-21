@@ -1,5 +1,7 @@
 import type { MermaidEditorMode } from './protocol';
 
+const PREVIEW_MODE_CYCLE: readonly MermaidEditorMode[] = ['preview', 'beside', 'above'];
+
 export interface EditorLayoutGroup {
   groups?: EditorLayoutGroup[];
   orientation?: number;
@@ -15,6 +17,11 @@ export const BESIDE_ORIENTATION = 0;
 export const ABOVE_ORIENTATION = 1;
 
 export type SplitEditorTabKind = 'other' | 'preview' | 'source';
+
+export function nextPreviewMode(mode: MermaidEditorMode): MermaidEditorMode {
+  const index = PREVIEW_MODE_CYCLE.indexOf(mode);
+  return PREVIEW_MODE_CYCLE[(index + 1) % PREVIEW_MODE_CYCLE.length] ?? 'preview';
+}
 
 export function editorLayoutFor(mode: MermaidEditorMode, ratio: number): EditorLayout {
   if (mode === 'preview' || mode === 'source') {

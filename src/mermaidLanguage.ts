@@ -101,6 +101,8 @@ const RESERVED_IDENTIFIERS = new Set(
 );
 
 const BLOCK_START = /^(?:subgraph|loop|alt|opt|par|rect|critical|break)\b/iu;
+const FLOWCHART_BLOCK_START = /^subgraph\b/iu;
+const SEQUENCE_BLOCK_START = /^(?:loop|alt|opt|par|rect|critical|break)\b/iu;
 const BRANCH = /^(?:else|and)(?:\b|$)/iu;
 const BLOCK_END = /^end(?:\b|$)/iu;
 const BRACE_BRANCH = /^\}\s*else\b.*\{\s*$/iu;
@@ -246,13 +248,42 @@ export function nearestDiagramDeclaration(value: string): string | undefined {
 }
 
 export function unclosedBlockCount(source: string): number {
+  const declaration = diagramDeclaration(source);
+  const blockStart =
+    declaration === 'flowchart' || declaration === 'flowchart-elk' || declaration === 'graph'
+      ? FLOWCHART_BLOCK_START
+      : declaration === 'sequencediagram'
+        ? SEQUENCE_BLOCK_START
+        : undefined;
+  if (!blockStart) return 0;
+
   let depth = 0;
   for (const line of source.split(/\r?\n/u)) {
     const content = line.trim();
     if (BLOCK_END.test(content)) depth = Math.max(depth - 1, 0);
-    if (BLOCK_START.test(content)) depth += 1;
+    if (blockStart.test(content)) depth += 1;
   }
   return depth;
+}
+
+function diagramDeclaration(source: string): string | undefined {
+  let inFrontmatter = false;
+  let beforeDiagram = true;
+  for (const line of source.split(/\r?\n/u)) {
+    const content = line.trim();
+    if (!content || content.startsWith('%%')) continue;
+    if (inFrontmatter) {
+      if (content === '---') inFrontmatter = false;
+      continue;
+    }
+    if (beforeDiagram && content === '---') {
+      inFrontmatter = true;
+      beforeDiagram = false;
+      continue;
+    }
+    return /^[A-Za-z][\w-]*/u.exec(content)?.[0]?.toLowerCase();
+  }
+  return undefined;
 }
 
 function maskNonCode(source: string): string {

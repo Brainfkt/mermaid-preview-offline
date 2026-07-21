@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import {
   editorLayoutFor,
   editorLayoutMatches,
+  nextPreviewMode,
   readSourceRatio,
   shouldApplyEditorLayout,
   shouldCloseRemainingSplitTab,
@@ -125,6 +126,13 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
         this.pendingMode = undefined;
       }
     });
+  }
+
+  public async cyclePreviewMode(
+    uri: vscode.Uri,
+    preferredPanel?: vscode.WebviewPanel,
+  ): Promise<void> {
+    await this.applyMode(uri, nextPreviewMode(this.getMode()), preferredPanel);
   }
 
   public async restoreModeForPanel(
