@@ -58,6 +58,13 @@ Beside and Above use a real VS Code text editor, so syntax coloring, completion,
 hover help, formatting, diagnostics, snippets, quick fixes, and rename continue
 to work. Drag VS Code's editor-group separator to resize the pair. The extension
 stores that proportion per file and restores it when the split is recreated.
+With the preview focused, press `P` repeatedly to cycle through Preview only,
+Beside, Above, and back to Preview only. From the Mermaid source editor, use
+`Alt+P` (`Option+P` on macOS) to enter or continue that cycle; plain `P` remains
+available for typing.
+Click anywhere on the diagram canvas or minimap to focus the preview. The focus
+is also restored after each layout transition, and `P` continues to work when a
+toolbar button has focus. Export form fields keep their normal keyboard input.
 
 Only one companion source/preview pair follows the active Mermaid source. When
 you select another Mermaid text tab in Beside or Above, its preview replaces the

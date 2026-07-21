@@ -64,6 +64,14 @@ les snippets, les corrections rapides et le renommage restent donc disponibles.
 Faites glisser le séparateur des groupes d’éditeurs VS Code pour redimensionner
 la paire. L’extension mémorise cette proportion pour chaque fichier et la
 restaure lorsque la vue fractionnée est recréée.
+Lorsque l’aperçu possède le focus, appuyez plusieurs fois sur `P` pour parcourir
+Preview only, Beside, Above, puis revenir à Preview only. Depuis l’éditeur source
+Mermaid, utilisez `Alt+P` (`Option+P` sous macOS) pour rejoindre ou poursuivre ce
+cycle ; la touche `P` seule reste ainsi disponible pour écrire.
+Cliquez n’importe où sur le canevas du diagramme ou la minicarte pour donner le
+focus à l’aperçu. Le focus est également restauré après chaque changement de
+disposition, et `P` continue de fonctionner lorsqu’un bouton de la barre d’outils
+possède le focus. Les champs du formulaire d’export conservent leur saisie normale.
 
 Une seule paire source/aperçu compagnon suit la source Mermaid active. Lorsque
 vous sélectionnez un autre onglet texte Mermaid en mode Beside ou Above, son
