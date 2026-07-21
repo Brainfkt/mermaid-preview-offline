@@ -112,9 +112,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "light",
       "elementCount": 112,
-      "paletteHash": "933214c4",
+      "paletteHash": "fb3cce04",
       "ratio": 1.6298,
-      "structureHash": "b4605c84",
+      "structureHash": "a71f58f0",
       "textHash": "5b8971a2"
     },
     {
@@ -372,11 +372,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "light",
-      "elementCount": 297,
-      "paletteHash": "66ee6014",
-      "ratio": 4.2887,
-      "structureHash": "ca3cf693",
-      "textHash": "5b941da9"
+      "elementCount": 320,
+      "paletteHash": "1549028b",
+      "ratio": 3.6118,
+      "structureHash": "01c7dd73",
+      "textHash": "00947ff7"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -386,6 +386,15 @@
       "ratio": 3.5443,
       "structureHash": "b2220a51",
       "textHash": "30bc796a"
+    },
+    {
+      "fileName": "44-mindmap-tidy-tree.mmd",
+      "scheme": "light",
+      "elementCount": 348,
+      "paletteHash": "2956ef1a",
+      "ratio": 2.2458,
+      "structureHash": "7c3bff73",
+      "textHash": "301f7b47"
     },
     {
       "fileName": "01-flowchart.mmd",
@@ -499,9 +508,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "dark",
       "elementCount": 116,
-      "paletteHash": "fddb80ad",
+      "paletteHash": "32b62328",
       "ratio": 1.6298,
-      "structureHash": "33579c96",
+      "structureHash": "7db20305",
       "textHash": "5b8971a2"
     },
     {
@@ -759,11 +768,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "dark",
-      "elementCount": 300,
-      "paletteHash": "c6ee30c3",
-      "ratio": 4.2887,
-      "structureHash": "bbed3130",
-      "textHash": "5b941da9"
+      "elementCount": 323,
+      "paletteHash": "744d5fca",
+      "ratio": 3.6118,
+      "structureHash": "04873090",
+      "textHash": "00947ff7"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -773,6 +782,15 @@
       "ratio": 3.5443,
       "structureHash": "e0900f7e",
       "textHash": "30bc796a"
+    },
+    {
+      "fileName": "44-mindmap-tidy-tree.mmd",
+      "scheme": "dark",
+      "elementCount": 355,
+      "paletteHash": "2956ef1a",
+      "ratio": 2.2458,
+      "structureHash": "8491ee29",
+      "textHash": "301f7b47"
     },
     {
       "fileName": "01-flowchart.mmd",
@@ -886,9 +904,9 @@
       "fileName": "13-gitgraph.mmd",
       "scheme": "high-contrast",
       "elementCount": 116,
-      "paletteHash": "de85e2dc",
+      "paletteHash": "a8de5c47",
       "ratio": 1.6298,
-      "structureHash": "6b009c25",
+      "structureHash": "d684b3fc",
       "textHash": "5b8971a2"
     },
     {
@@ -1146,11 +1164,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "high-contrast",
-      "elementCount": 300,
-      "paletteHash": "fcdcd484",
-      "ratio": 4.2887,
-      "structureHash": "bbed3130",
-      "textHash": "5b941da9"
+      "elementCount": 323,
+      "paletteHash": "3b04c581",
+      "ratio": 3.6118,
+      "structureHash": "04873090",
+      "textHash": "00947ff7"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -1160,6 +1178,15 @@
       "ratio": 3.5443,
       "structureHash": "e0900f7e",
       "textHash": "30bc796a"
+    },
+    {
+      "fileName": "44-mindmap-tidy-tree.mmd",
+      "scheme": "high-contrast",
+      "elementCount": 355,
+      "paletteHash": "2956ef1a",
+      "ratio": 2.2458,
+      "structureHash": "8491ee29",
+      "textHash": "301f7b47"
     }
   ],
   "interfaceThemes": [
