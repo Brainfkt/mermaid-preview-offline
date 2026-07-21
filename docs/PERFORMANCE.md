@@ -111,7 +111,7 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
   nécessitent aucun téléchargement à l’exécution. Le SVG original reste
   volontairement inchangé et ne reçoit pas de face embarquée à l’export.
 - Le pipeline CI exécute la vérification sur macOS, Windows et Linux, puis les
-  43 exemples dans trois familles de thème.
+  44 exemples dans trois familles de thème, soit 132 rendus.
 
 ## Validation de release
 

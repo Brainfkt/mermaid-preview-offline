@@ -39,7 +39,7 @@ void test('le manifeste pointe vers le dépôt autonome', () => {
 });
 
 void test('le publisher et les commandes de publication sont configurés', () => {
-  assert.equal(manifest.version, '1.0.1');
+  assert.equal(manifest.version, '1.1.0');
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
@@ -184,7 +184,7 @@ void test('CI verifies supported platforms and all visual fixtures', () => {
     assert.match(workflow, new RegExp(operatingSystem, 'u'));
   }
   assert.match(workflow, /npm run test:visual/u);
-  assert.match(workflow, /Render 43 examples in 3 themes/u);
+  assert.match(workflow, /Render 44 examples in 3 themes/u);
 });
 
 void test('Marketplace README links do not depend on the Marketplace document base URL', () => {

@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.0 — User guide
+# Mermaid Preview Offline 1.1 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,8 +7,8 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.0 feature set. For exact Mermaid syntax and
-stability, see the [43-example catalogue](../examples/README.md) and
+This guide covers the complete 1.1 feature set. For exact Mermaid syntax and
+stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
 ## Quick start
@@ -115,12 +115,16 @@ its budget.
 | Action | Control |
 |---|---|
 | Fit the full diagram | Toolbar **Fit**, or `Ctrl/Cmd + 0` |
-| Zoom in or out | Toolbar `+` / `-`, keyboard `+` / `-`, or `Ctrl/Cmd + mouse wheel` |
-| Pan | Drag the preview canvas or use normal scrolling |
+| Zoom in or out | Toolbar or keyboard `+` / `-`; `Ctrl/Cmd` or `Alt/Option` + wheel for pointer-centered zoom and trackpad pinch |
+| Zoom from the canvas | `Alt/Option` + click to zoom in; add `Shift` to zoom out |
+| Pan | Drag according to `navigation.mouse`, or toggle **Pan** for explicit pan mode |
 | Navigate an overflowing diagram | Click or drag inside the minimap |
 | Maximize the active editor group | Toolbar **Full screen** |
 
-Zoom is constrained to a practical 15–400% range. The minimap appears only when
+Zoom is constrained to a practical 15–400% range. Set
+`mermaidPreviewOffline.navigation.mouse` to `always`, `alt`, or `never`, and
+`mermaidPreviewOffline.navigation.controls` to `always`, `onHoverOrFocus`, or
+`never`. The minimap appears only when
 it is enabled and the diagram exceeds the viewport. Its rectangle represents
 the visible area; click or drag to move that area across a large diagram.
 
@@ -209,11 +213,11 @@ labels and diagram-specific syntax.
 ## Diagram and asset compatibility
 
 Mermaid `11.16.0` is bundled and pinned. The validated catalogue includes these
-43 files and capabilities:
+44 files and capabilities:
 
 | Group | Included coverage |
 |---|---|
-| Flow and general | Flowchart, flowchart with ELK, mindmap, timeline, pie, donut, quadrant, Venn, Ishikawa, Cynefin, and tree view |
+| Flow and general | Flowchart, flowchart with ELK, mindmap with default and tidy-tree layouts, timeline, pie, donut, quadrant, Venn, Ishikawa, Cynefin, and tree view |
 | UML and software design | Sequence, class, state, entity relationship, requirement, five C4 variants, ZenUML, architecture, and packet |
 | Planning and product | User journey, Gantt, Git graph, Kanban, Wardley Map, Event Modeling, and swimlanes |
 | Data and charts | Sankey, XY chart, radar, treemap, and block diagram |
@@ -239,9 +243,10 @@ a diagram with `zenuml`; no runtime download is needed. See
 
 ### Iconify icons
 
-The `logos` and `material-icon-theme` Iconify packs are bundled and registered
-locally. Use normal Mermaid icon syntax such as `icon: "logos:react"`. Other
-Iconify packs are not included and are not downloaded automatically. See
+The `logos`, `mdi`, and `material-icon-theme` Iconify packs are bundled and
+registered locally. Use normal Mermaid icon syntax such as `icon: "logos:react"`
+or `icon: "mdi:account-edit"`. Other Iconify packs are not included and are not
+downloaded automatically. See
 `examples/42-icon-packs.mmd`.
 
 ![An offline delivery pipeline rendered with the bundled Iconify packs](../media/screenshots/icon-packs-2.png)
@@ -429,7 +434,7 @@ The eight bundled templates are:
 
 ![Diagram Studio with eight customizable templates and a live entity-relationship preview](../media/screenshots/gallery-templates.png)
 
-Run **Mermaid Preview: Browse Example Gallery…** to search the 43 bundled
+Run **Mermaid Preview: Browse Example Gallery…** to search the 44 bundled
 examples, filter by category, inspect their rendered result, and create an
 editable workspace copy.
 
@@ -478,7 +483,8 @@ The extension detects Mermaid blocks in Markdown (`.md`, `.markdown`), MDX
 
 ### Supported block forms
 
-Markdown and MDX can use backtick or tilde fences, including attribute syntax:
+Markdown and MDX can use backtick or tilde fences, including attribute syntax,
+or `::: mermaid` containers:
 
 ````markdown
 ```mermaid
@@ -490,7 +496,17 @@ flowchart LR
 sequenceDiagram
   Editor->>Preview: Update
 ~~~
+
+::: mermaid
+mindmap
+  root((Documentation))
+    Preview
+    Export
+:::
 ````
+
+Use `mermaidPreviewOffline.documentation.languages` to recognize additional
+exact identifiers such as `mermaid-example` in fences and containers.
 
 AsciiDoc can use either Mermaid attributes or source attributes with a matching
 four-or-more-character block delimiter:
@@ -514,7 +530,10 @@ sequenceDiagram
 Place the cursor inside a block and run **Preview Block Under Cursor** to focus
 that block. Run **Preview All Blocks in Document** to open a live document view.
 It updates after source edits. Select **Go to source**, or double-click a diagram
-canvas, to reveal and select the matching source block.
+canvas, to reveal and select the matching source block. Each card has independent
+pointer-centered zoom, trackpad pinch, pan mode, and restored viewport state.
+When resizing is enabled, drag the handle below a card or focus it and use the
+arrow keys; `documentation.maxHeight` can cap its height.
 
 ![Markdown source beside a live document preview containing multiple Mermaid diagrams](../media/screenshots/preview-markdown.png)
 
@@ -568,6 +587,11 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Resource-level debounce in milliseconds, 0–2000. Large files use at least 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Resource-level threshold, 64–10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Resource-level minimap availability. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Direct panning policy: `always`, `alt`, or `never`; explicit pan mode remains available. |
+| `mermaidPreviewOffline.navigation.controls` | `always` | Navigation controls: `always`, `onHoverOrFocus`, or `never`. |
+| `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Exact Markdown/MDX identifiers recognized as Mermaid. |
+| `mermaidPreviewOffline.documentation.resizable` | `true` | Enables vertical resizing for documentation diagram cards. |
+| `mermaidPreviewOffline.documentation.maxHeight` | empty | Optional validated maximum such as `720px` or `80vh`. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Workspace/window preview theme. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Window-level diagram typography: `vscode`, `noto-sans`, or `inter`. Noto Sans and Inter are bundled for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Resource-level default: SVG, PNG, WebP, or PDF. |
@@ -692,7 +716,8 @@ diff, use **Preview Diff Visually** instead.
 ### Documentation preview finds no block
 
 Place the cursor between the opening and closing delimiters. For Markdown/MDX,
-use a `mermaid` fence or `{.mermaid}` attribute. For AsciiDoc, use `[mermaid]` or
+use a configured Mermaid fence, `{.mermaid}` attribute, or `::: mermaid`
+container. For AsciiDoc, use `[mermaid]` or
 `[source,mermaid]` followed by matching `....` or `----` delimiters.
 
 ### Restored layout or position is stale
@@ -703,8 +728,8 @@ creates a new state identity.
 
 ### The environment is offline
 
-Preview, editing assistance, bundled examples, ZenUML, the two bundled Iconify
-packs, local images, exports, Studio, generators, and documentation views remain
+Preview, editing assistance, bundled examples, ZenUML, tidy-tree, the three
+bundled Iconify packs, local images, exports, Studio, generators, and documentation views remain
 available. Marketplace installation, extension updates, and opening external
 GitHub links naturally require connectivity.
 

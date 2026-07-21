@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.0
+
+- added Azure DevOps-style `::: mermaid` documentation blocks, exact source
+  navigation and export support, plus configurable Mermaid language identifiers
+  for Markdown and MDX fences and containers;
+- added independent pan and pointer-centered zoom to every diagram in the live
+  documentation view, including trackpad pinch, Alt-click zoom, an explicit pan
+  mode, and restoration of each block's viewport;
+- added vertically resizable documentation cards with keyboard-accessible
+  handles, preserved visible areas, and a validated configurable maximum height;
+- added window settings for direct mouse navigation (`always`, `alt`, or
+  `never`) and navigation-control visibility (`never`, `onHoverOrFocus`, or
+  `always`) across file and documentation previews;
+- bundled and lazy-loaded the Iconify `mdi` collection for offline Material
+  Design Icons;
+- bundled and registered `@mermaid-js/layout-tidy-tree` for mindmap layouts,
+  with a new validated example and visual regression coverage;
+- expanded the offline example catalogue to 44 diagrams and the visual suite to
+  132 light, dark, and high-contrast renders.
+
 ## 1.0.1
 
 - made workspace-local image syntax render as literal code in both user guides

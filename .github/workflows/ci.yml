@@ -37,7 +37,7 @@ jobs:
         run: npm run verify
 
   visual-regression:
-    name: Render 43 examples in 3 themes
+    name: Render 44 examples in 3 themes
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

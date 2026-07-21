@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.0 — Guide utilisateur
+# Mermaid Preview Offline 1.1 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,9 +8,9 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.0. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.1. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
-[catalogue de 43 exemples](../examples/README.md) et la
+[catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
 
 ## Démarrage rapide
@@ -127,12 +127,16 @@ son budget.
 | Action | Commande |
 |---|---|
 | Ajuster le diagramme entier | **Fit** dans la barre d’outils, ou `Ctrl/Cmd + 0` |
-| Faire un zoom avant ou arrière | `+` / `-` dans la barre d’outils, `+` / `-` au clavier, ou `Ctrl/Cmd + mouse wheel` |
-| Déplacer la vue | Faites glisser le canevas de l’aperçu ou utilisez le défilement normal |
+| Faire un zoom avant ou arrière | `+` / `-` dans la barre d’outils ou au clavier ; `Ctrl/Cmd` ou `Alt/Option` + molette pour un zoom centré sur le pointeur et le pincement trackpad |
+| Zoomer depuis le canevas | `Alt/Option` + clic pour zoomer ; ajoutez `Shift` pour dézoomer |
+| Déplacer la vue | Faites glisser selon `navigation.mouse`, ou activez **Pan** pour le mode explicite |
 | Parcourir un diagramme qui dépasse | Cliquez ou faites glisser dans la minimap |
 | Agrandir le groupe d’éditeurs actif | **Full screen** dans la barre d’outils |
 
-Le zoom est limité à une plage pratique de 15 à 400 %. La minimap apparaît
+Le zoom est limité à une plage pratique de 15 à 400 %. Réglez
+`mermaidPreviewOffline.navigation.mouse` sur `always`, `alt` ou `never`, et
+`mermaidPreviewOffline.navigation.controls` sur `always`, `onHoverOrFocus` ou
+`never`. La minimap apparaît
 uniquement lorsqu’elle est activée et que le diagramme dépasse la zone visible.
 Son rectangle représente la zone affichée ; cliquez ou faites-le glisser pour
 déplacer cette zone dans un grand diagramme.
@@ -230,11 +234,11 @@ d’un projet, examinez la source modifiée, car les identifiants Mermaid peuven
 ## Compatibilité des diagrammes et des ressources
 
 Mermaid `11.16.0` est intégré et épinglé. Le catalogue validé couvre les
-43 fichiers et fonctionnalités suivants :
+44 fichiers et fonctionnalités suivants :
 
 | Groupe | Couverture incluse |
 |---|---|
-| Flux et général | Flowchart, flowchart avec ELK, mindmap, timeline, pie, donut, quadrant, Venn, Ishikawa, Cynefin et tree view |
+| Flux et général | Flowchart, flowchart avec ELK, mindmap avec layouts par défaut et tidy-tree, timeline, pie, donut, quadrant, Venn, Ishikawa, Cynefin et tree view |
 | UML et conception logicielle | Sequence, class, state, entity relationship, cinq variantes C4, ZenUML, architecture et packet |
 | Planification et produit | User journey, Gantt, Git graph, Kanban, Wardley Map, Event Modeling et swimlanes |
 | Données et graphiques | Sankey, XY chart, radar, treemap et block diagram |
@@ -261,9 +265,9 @@ pendant l’exécution. Consultez `examples/41-zenuml.mmd`.
 
 ### Icônes Iconify
 
-Les packs Iconify `logos` et `material-icon-theme` sont intégrés et enregistrés
-localement. Utilisez la syntaxe d’icône Mermaid habituelle, par exemple
-`icon: "logos:react"`. Les autres packs Iconify ne sont pas inclus et ne sont
+Les packs Iconify `logos`, `mdi` et `material-icon-theme` sont intégrés et
+enregistrés localement. Utilisez la syntaxe d’icône Mermaid habituelle, par
+exemple `icon: "logos:react"` ou `icon: "mdi:account-edit"`. Les autres packs ne sont
 pas téléchargés automatiquement. Consultez `examples/42-icon-packs.mmd`.
 
 ![Un pipeline de livraison hors ligne rendu avec les packs Iconify intégrés](../media/screenshots/icon-packs-2.png)
@@ -459,7 +463,7 @@ Les huit modèles intégrés sont :
 ![Diagram Studio avec huit modèles Mermaid personnalisables et l’aperçu en direct d’un modèle entité-association](../media/screenshots/gallery-templates.png)
 
 Exécutez **Mermaid Preview: Browse Example Gallery…** pour effectuer une
-recherche dans les 43 exemples intégrés, filtrer par catégorie, examiner leur
+recherche dans les 44 exemples intégrés, filtrer par catégorie, examiner leur
 rendu et créer une copie modifiable dans l’espace de travail.
 
 La version 1.0 propose également deux générateurs de projet locaux :
@@ -510,7 +514,7 @@ L’extension détecte les blocs Mermaid dans Markdown (`.md`, `.markdown`), MDX
 ### Formes de blocs prises en charge
 
 Markdown et MDX acceptent les fences à accents graves ou tildes, y compris la
-syntaxe avec attribut :
+syntaxe avec attribut, ainsi que les conteneurs `::: mermaid` :
 
 ````markdown
 ```mermaid
@@ -522,7 +526,18 @@ flowchart LR
 sequenceDiagram
   Editor->>Preview: Update
 ~~~
+
+::: mermaid
+mindmap
+  root((Documentation))
+    Preview
+    Export
+:::
 ````
+
+Utilisez `mermaidPreviewOffline.documentation.languages` pour reconnaître des
+identifiants exacts supplémentaires comme `mermaid-example` dans les fences et
+les conteneurs.
 
 AsciiDoc accepte les attributs Mermaid ou les attributs source suivis d’un
 délimiteur de bloc correspondant d’au moins quatre caractères :
@@ -547,7 +562,11 @@ Placez le curseur dans un bloc et exécutez **Preview Block Under Cursor** pour
 le cibler. Exécutez **Preview All Blocks in Document** pour ouvrir une vue en
 direct du document. Elle se met à jour après les modifications de la source.
 Sélectionnez **Go to source**, ou double-cliquez sur le canevas d’un diagramme,
-pour afficher et sélectionner le bloc source correspondant.
+pour afficher et sélectionner le bloc source correspondant. Chaque carte possède
+son zoom centré sur le pointeur, son pincement trackpad, son mode pan et son état
+restauré. Si le redimensionnement est actif, faites glisser la poignée inférieure
+ou utilisez les flèches lorsqu’elle a le focus ; `documentation.maxHeight` peut
+limiter sa hauteur.
 
 ![La source Markdown à côté de l’aperçu en direct de plusieurs diagrammes Mermaid intégrés](../media/screenshots/preview-markdown.png)
 
@@ -602,6 +621,11 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Délai par ressource en millisecondes, de 0 à 2000. Les fichiers volumineux utilisent au moins 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Seuil par ressource, de 64 à 10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Disponibilité de la minimap par ressource. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Politique de déplacement direct : `always`, `alt` ou `never` ; le mode pan explicite reste disponible. |
+| `mermaidPreviewOffline.navigation.controls` | `always` | Contrôles de navigation : `always`, `onHoverOrFocus` ou `never`. |
+| `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Identifiants Markdown/MDX exacts reconnus comme Mermaid. |
+| `mermaidPreviewOffline.documentation.resizable` | `true` | Active le redimensionnement vertical des cartes documentaires. |
+| `mermaidPreviewOffline.documentation.maxHeight` | vide | Maximum validé facultatif, par exemple `720px` ou `80vh`. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Thème d’aperçu de l’espace de travail ou de la fenêtre. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Typographie des diagrammes à l’échelle de la fenêtre : `vscode`, `noto-sans` ou `inter`. Noto Sans et Inter sont intégrées pour les sorties portables. |
 | `mermaidPreviewOffline.export.format` | `png` | Valeur par défaut de la ressource : SVG, PNG, WebP ou PDF. |
@@ -736,7 +760,8 @@ comparer un diff texte déjà ouvert, utilisez **Preview Diff Visually**.
 ### L’aperçu de documentation ne trouve aucun bloc
 
 Placez le curseur entre les délimiteurs d’ouverture et de fermeture. Pour
-Markdown/MDX, utilisez une fence `mermaid` ou l’attribut `{.mermaid}`. Pour
+Markdown/MDX, utilisez une fence configurée, l’attribut `{.mermaid}` ou un
+conteneur `::: mermaid`. Pour
 AsciiDoc, utilisez `[mermaid]` ou `[source,mermaid]` suivi des délimiteurs
 correspondants `....` ou `----`.
 
@@ -749,7 +774,7 @@ d’état.
 
 ### L’environnement est hors ligne
 
-L’aperçu, l’assistance à l’édition, les exemples intégrés, ZenUML, les deux packs
+L’aperçu, l’assistance à l’édition, les exemples intégrés, ZenUML, tidy-tree, les trois packs
 Iconify intégrés, les images locales, les exports, Studio, les générateurs et les
 vues de documentation restent disponibles. L’installation depuis la Marketplace,
 les mises à jour de l’extension et l’ouverture de liens GitHub externes

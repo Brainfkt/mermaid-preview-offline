@@ -21,7 +21,7 @@
   ·
   <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md">User guide</a>
   ·
-  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/README.md">Browse 43 examples</a>
+  <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/README.md">Browse 44 examples</a>
   ·
   <a href="https://github.com/Brainfkt/mermaid-preview-offline/blob/main/examples/COMPATIBILITY.md">Compatibility matrix</a>
   ·
@@ -83,10 +83,11 @@ losing the selected layout.
 
 ## Bundled assets work offline too
 
-The official ZenUML plug-in and the Iconify `logos` and
-`material-icon-theme` collections are bundled locally and loaded only when a
-diagram uses them. Relative images inside the workspace are converted to `data:`
-URIs, so exported SVGs stay portable and do not depend on local file paths.
+The official ZenUML and tidy-tree layout plug-ins and the Iconify `logos`,
+`mdi`, and `material-icon-theme` collections are bundled locally and loaded
+only when a diagram uses them. Relative images inside the workspace are
+converted to `data:` URIs, so exported SVGs stay portable and do not depend on
+local file paths.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icon-packs-2.png" alt="Bundled Iconify packs used in a complete offline Mermaid delivery pipeline" width="49%">
@@ -169,18 +170,23 @@ workspaces.
 - Direct PNG clipboard copy, recursive folder export, and a task-ready offline CLI.
 - Configurable DPI, scale, margin, transparent or colored background, export
   theme, metadata, and file name templates.
-- Diagram Studio with eight customizable templates and all 43 bundled examples.
+- Diagram Studio with eight customizable templates and all 44 bundled examples.
 - Local SQL-schema generation of Mermaid entity-relationship diagrams.
 - Local `package.json` dependency-graph generation.
 - Rendered Git comparisons with side-by-side and color-coded overlay views.
 - Preview the Mermaid block under the cursor in Markdown, MDX, or AsciiDoc.
-- Render every Mermaid block in a live document view with source navigation.
+- Render every Mermaid block in a live document view with independent pan,
+  pointer-centered zoom, trackpad pinch, source navigation, and restored state.
+- Resize documentation diagrams vertically and cap their height through settings.
+- Recognize fenced and `::: mermaid` Markdown/MDX blocks, with configurable
+  Mermaid language identifiers.
 - Export documentation copies that replace Mermaid blocks with local SVG or PNG images.
 - Dark, light, and high-contrast VS Code theme support.
 - Mermaid syntax highlighting for `.mmd` and `.mermaid` files.
 - Mermaid `11.16.0` bundled and pinned for reproducible rendering.
 - Official `@mermaid-js/mermaid-zenuml` plug-in bundled locally.
-- Iconify `logos` and `material-icon-theme` packs bundled locally.
+- Iconify `logos`, `mdi`, and `material-icon-theme` packs bundled locally.
+- Tidy-tree mindmap layout bundled locally.
 - Relative SVG, PNG, JPEG, GIF, WebP, AVIF, BMP, and ICO images embedded as
   data URIs.
 - No telemetry, analytics, remote fonts, or runtime downloads.
@@ -234,8 +240,9 @@ and current limitations.
 | `R` | Refresh the diagram |
 | `Ctrl/Cmd + 0` | Fit the diagram to the viewport |
 | `+` / `-` | Zoom in or out |
-| `Ctrl/Cmd + mouse wheel` | Fine zoom control |
-| Drag | Pan across the canvas |
+| `Ctrl/Cmd` or `Alt/Option` + mouse wheel | Pointer-centered zoom and trackpad pinch |
+| `Alt/Option` + click; add `Shift` | Zoom in; zoom out with `Shift` |
+| Drag or **Pan** | Pan according to the configured mouse policy, or toggle explicit pan mode |
 | **Copy SVG** | Copy the current original rendered SVG to the clipboard |
 | **Export** | Preview and save PNG, WebP, PDF, optimized SVG, or original SVG |
 | Export dialog | Copy PNG/original SVG/optimized SVG, save profiles, or export a folder |
@@ -248,6 +255,11 @@ and current limitations.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Set the automatic refresh delay in milliseconds. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Show the minimap when the diagram exceeds the viewport. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Pan directly with `always`, require Alt/Option with `alt`, or use only explicit pan mode with `never`. |
+| `mermaidPreviewOffline.navigation.controls` | `always` | Show controls `always`, `onHoverOrFocus`, or `never`. |
+| `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Recognize additional exact Markdown/MDX block language identifiers. |
+| `mermaidPreviewOffline.documentation.resizable` | `true` | Allow vertical resizing of documentation diagram cards. |
+| `mermaidPreviewOffline.documentation.maxHeight` | empty | Cap documentation cards with a validated CSS length such as `720px` or `80vh`. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose a theme shared by every preview in the workspace. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Follow VS Code's font, or use bundled Noto Sans/Inter for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Choose the default professional export format. |
@@ -300,7 +312,7 @@ the same oversized operation.
 | **Mermaid: Rename Identifier** | Rename the identifier under the cursor throughout the file. |
 | **Mermaid Preview: Export Diagram…** | Open the export preview and settings. |
 | **Mermaid Preview: New Diagram from Template…** | Create a file from one of eight editable templates. |
-| **Mermaid Preview: Browse Example Gallery…** | Search and inspect the 43 bundled examples. |
+| **Mermaid Preview: Browse Example Gallery…** | Search and inspect the 44 bundled examples. |
 | **Mermaid Preview: Generate Custom Diagram…** | Open the Diagram Studio generator view. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Generate an ER diagram from a local SQL schema. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate a dependency graph from a local package manifest. |
@@ -320,7 +332,7 @@ Run **Mermaid Preview: New Diagram from Template…** to open Diagram Studio.
 Choose one of eight templates, customize its fields, inspect the live rendered
 result, optionally edit the generated Mermaid source, and create the file in the
 workspace. **Mermaid Preview: Browse Example Gallery…** switches directly to a
-searchable visual catalog of all 43 examples shipped with the extension.
+searchable visual catalog of all 44 examples shipped with the extension.
 
 ![Diagram Studio showing its eight customizable Mermaid templates and a live entity-relationship preview](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/gallery-templates.png)
 
@@ -347,7 +359,7 @@ select the corresponding block in a native text editor.
 ![A Markdown source document beside the live preview of all embedded Mermaid blocks](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/preview-markdown.png)
 
 Markdown and MDX support backtick or tilde fences, including attribute-style
-MDX fences:
+MDX fences, and Azure DevOps-style containers:
 
 ````markdown
 ```mermaid
@@ -359,7 +371,18 @@ flowchart LR
 sequenceDiagram
   Editor->>Preview: Update
 ~~~
+
+::: mermaid
+mindmap
+  root((Documentation))
+    Preview
+    Export
+:::
 ````
+
+Add exact language identifiers such as `mermaid-example` through
+`mermaidPreviewOffline.documentation.languages`. Every diagram card has its own
+zoom, pan mode, and restored viewport; drag its lower handle to resize it.
 
 AsciiDoc supports both diagram and source block forms:
 
@@ -475,7 +498,7 @@ npm run test:visual
 npm run package:vsix
 ```
 
-The visual suite renders all 43 examples in light, dark, and high-contrast
+The visual suite renders all 44 examples in light, dark, and high-contrast
 themes. The VSIX is generated in `artifacts/`. To debug the extension, open the
 repository in VS Code and launch **Run Mermaid Preview Offline** with `F5`.
 

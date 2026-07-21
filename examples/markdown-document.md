@@ -1,7 +1,7 @@
 # Mermaid documentation example
 
 This Markdown document contains several Mermaid diagrams for testing Mermaid
-Preview Offline 1.0.0.
+Preview Offline 1.1.0.
 
 Place the cursor anywhere between the opening and closing fences, then run
 **Mermaid Preview: Preview Block Under Cursor**. You can also run **Mermaid
@@ -73,3 +73,13 @@ stateDiagram-v2
 
 Everything is rendered locally: the document and diagram source never leave
 the workspace.
+
+## Azure DevOps-style container
+
+The third block exercises the `::: mermaid` form introduced in version 1.1.
+
+::: mermaid
+flowchart LR
+  Wiki[Documentation container] --> Preview[Independent preview]
+  Preview --> Resize[Resize and navigate]
+:::
