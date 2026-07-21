@@ -1,5 +1,6 @@
 import type { ExportProfile, ExportSettings } from './exportSettings';
 import type { DiagramFontFamily } from './diagramFont';
+import type { DiagramNavigationConfiguration } from './navigationSettings';
 
 export const DIAGRAM_THEMES = [
   'adaptive',
@@ -19,6 +20,7 @@ export interface PreviewConfiguration {
   diagramTheme: DiagramTheme;
   largeFileThresholdBytes: number;
   minimapEnabled: boolean;
+  navigation: DiagramNavigationConfiguration;
   refreshDelay: number;
   refreshMode: RefreshMode;
 }

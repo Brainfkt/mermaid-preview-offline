@@ -7,6 +7,7 @@ import {
   documentationKind,
   extractMermaidBlocks,
   mermaidBlockAtLine,
+  normalizeMermaidLanguageIds,
   replaceMermaidBlocks,
   type DocumentationKind,
   type MermaidDocumentationBlock,
@@ -27,6 +28,11 @@ import {
 } from './documentationTracking';
 import { sanitizeFileName, type ExportFormat } from './exportSettings';
 import { inlineLocalImages } from './localImages';
+import {
+  normalizeDiagramControlsVisibility,
+  normalizeDiagramMouseNavigation,
+  normalizeDocumentationMaxHeight,
+} from './navigationSettings';
 import { readExportConfiguration } from './mermaidPreviewProvider';
 import type { DiagramTheme, SerializedExportArtifact } from './protocol';
 import { loadWorkspaceImage } from './workspaceImages';
@@ -80,7 +86,9 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (
           event.affectsConfiguration('mermaidPreviewOffline.diagramTheme') ||
-          event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily')
+          event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily') ||
+          event.affectsConfiguration('mermaidPreviewOffline.documentation') ||
+          event.affectsConfiguration('mermaidPreviewOffline.navigation')
         ) {
           this.schedulePreviewRefresh(0);
         }
@@ -100,7 +108,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     if (!document) return;
     const kind = documentationKind(document.languageId, document.uri.path);
     if (!kind) return;
-    const blocks = extractMermaidBlocks(document.getText(), kind);
+    const blocks = extractMermaidBlocks(
+      document.getText(),
+      kind,
+      configuredDocumentationLanguages(document.uri),
+    );
     const editor = vscode.window.activeTextEditor;
     const cursorLine = editor?.document.uri.toString() === document.uri.toString()
       ? editor.selection.active.line
@@ -139,7 +151,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const kind = documentationKind(document.languageId, document.uri.path);
     if (!kind) return;
     const source = document.getText();
-    const blocks = extractMermaidBlocks(source, kind);
+    const blocks = extractMermaidBlocks(
+      source,
+      kind,
+      configuredDocumentationLanguages(document.uri),
+    );
     if (blocks.length === 0) {
       void vscode.window.showWarningMessage('No Mermaid blocks were found in this document.');
       return;
@@ -327,7 +343,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const panel = this.panel;
     if (!context || !panel || context.uri.toString() !== document.uri.toString()) return;
     const generation = ++this.refreshGeneration;
-    const blocks = extractMermaidBlocks(document.getText(), context.kind);
+    const blocks = extractMermaidBlocks(
+      document.getText(),
+      context.kind,
+      configuredDocumentationLanguages(document.uri),
+    );
     this.previewBlocks = blocks;
     const selectedBlock = context.selectedBlockAnchorOffset === undefined
       ? undefined
@@ -351,7 +371,10 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       fileName: fileNameOf(document.uri),
       fontFamily: configuredDiagramFontFamily(document.uri),
       kind: context.kind,
+      maxHeight: configuredDocumentationMaxHeight(),
       mode: context.mode,
+      navigation: configuredDiagramNavigation(),
+      resizable: configuredDocumentationResizable(),
       theme: configuredDiagramTheme(),
       totalBlocks: blocks.length,
       type: 'documentationData',
@@ -514,6 +537,38 @@ function configuredDiagramTheme(): DiagramTheme {
     theme === 'base'
     ? theme
     : 'adaptive';
+}
+
+function configuredDocumentationLanguages(resource?: vscode.Uri): string[] {
+  const languages = vscode.workspace
+    .getConfiguration('mermaidPreviewOffline.documentation', resource)
+    .get<unknown>('languages', ['mermaid']);
+  return normalizeMermaidLanguageIds(languages);
+}
+
+function configuredDocumentationResizable(): boolean {
+  return vscode.workspace
+    .getConfiguration('mermaidPreviewOffline.documentation')
+    .get<boolean>('resizable', true);
+}
+
+function configuredDocumentationMaxHeight(): string {
+  const value = vscode.workspace
+    .getConfiguration('mermaidPreviewOffline.documentation')
+    .get<unknown>('maxHeight', '');
+  return normalizeDocumentationMaxHeight(value);
+}
+
+function configuredDiagramNavigation() {
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.navigation');
+  return {
+    controlsVisibility: normalizeDiagramControlsVisibility(
+      configuration.get<unknown>('controls', 'always'),
+    ),
+    mouseNavigation: normalizeDiagramMouseNavigation(
+      configuration.get<unknown>('mouse', 'always'),
+    ),
+  };
 }
 
 function defaultDocumentationExportUri(source: vscode.Uri): vscode.Uri | undefined {

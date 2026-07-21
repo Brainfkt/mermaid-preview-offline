@@ -30,6 +30,7 @@ import type {
 } from './protocol';
 import { formatByteLength } from './renderPolicy';
 import { resolveDiagramTheme, type PreviewColorScheme } from './theme';
+import { DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION } from './navigationSettings';
 
 interface VsCodeApi {
   getState(): unknown;
@@ -44,6 +45,7 @@ const DEFAULT_CONFIGURATION: PreviewConfiguration = {
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
   minimapEnabled: true,
+  navigation: DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION,
   refreshDelay: 140,
   refreshMode: 'automatic',
 };

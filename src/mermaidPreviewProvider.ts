@@ -14,6 +14,10 @@ import {
 } from './exportSettings';
 import { inlineLocalImages } from './localImages';
 import type { MermaidDiagnosticStore } from './languageFeatures';
+import {
+  normalizeDiagramControlsVisibility,
+  normalizeDiagramMouseNavigation,
+} from './navigationSettings';
 import { isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   PersistedPreviewState,
@@ -719,12 +723,18 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
   const minimapEnabled = configuration.get<boolean>('minimap.enabled', true);
+  const mouseNavigation = configuration.get<unknown>('navigation.mouse', 'always');
+  const controlsVisibility = configuration.get<unknown>('navigation.controls', 'always');
 
   return {
     diagramFontFamily: normalizeDiagramFontFamily(configuredFontFamily),
     diagramTheme: isDiagramTheme(configuredTheme) ? configuredTheme : 'adaptive',
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
     minimapEnabled,
+    navigation: {
+      controlsVisibility: normalizeDiagramControlsVisibility(controlsVisibility),
+      mouseNavigation: normalizeDiagramMouseNavigation(mouseNavigation),
+    },
     refreshDelay: clampInteger(refreshDelay, 0, 2_000),
     refreshMode: refreshMode === 'manual' ? 'manual' : 'automatic',
   };

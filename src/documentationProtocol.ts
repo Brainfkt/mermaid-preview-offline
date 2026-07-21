@@ -1,6 +1,7 @@
 import type { ExportSettings } from './exportSettings';
 import type { DocumentationKind } from './documentationBlocks';
 import type { DiagramFontFamily } from './diagramFont';
+import type { DiagramNavigationConfiguration } from './navigationSettings';
 import type { DiagramTheme, SerializedExportArtifact } from './protocol';
 
 export type DocumentationPreviewMode = 'all' | 'cursor';
@@ -19,7 +20,10 @@ export type ExtensionToDocumentationWebviewMessage =
       fileName: string;
       fontFamily: DiagramFontFamily;
       kind: DocumentationKind;
+      maxHeight: string;
       mode: DocumentationPreviewMode;
+      navigation: DiagramNavigationConfiguration;
+      resizable: boolean;
       theme: DiagramTheme;
       totalBlocks: number;
       type: 'documentationData';

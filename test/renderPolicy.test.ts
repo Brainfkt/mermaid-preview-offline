@@ -14,6 +14,7 @@ const configuration: PreviewConfiguration = {
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
   minimapEnabled: true,
+  navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
   refreshDelay: 140,
   refreshMode: 'automatic',
 };

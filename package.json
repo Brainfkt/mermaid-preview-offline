@@ -497,6 +497,66 @@
           "scope": "resource",
           "description": "Shows a navigable minimap when the rendered diagram is larger than the preview viewport."
         },
+        "mermaidPreviewOffline.navigation.mouse": {
+          "type": "string",
+          "enum": [
+            "always",
+            "alt",
+            "never"
+          ],
+          "enumDescriptions": [
+            "Drag to pan without holding a modifier key.",
+            "Drag to pan only while holding Alt or Option.",
+            "Disable direct drag-to-pan; the explicit pan mode remains available."
+          ],
+          "default": "always",
+          "scope": "window",
+          "description": "Controls direct mouse panning in file and documentation previews."
+        },
+        "mermaidPreviewOffline.navigation.controls": {
+          "type": "string",
+          "enum": [
+            "never",
+            "onHoverOrFocus",
+            "always"
+          ],
+          "enumDescriptions": [
+            "Hide diagram navigation controls.",
+            "Show navigation controls while the diagram is hovered or focused.",
+            "Always show navigation controls."
+          ],
+          "default": "always",
+          "scope": "window",
+          "description": "Controls the visibility of pan and zoom controls."
+        },
+        "mermaidPreviewOffline.documentation.languages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64,
+            "pattern": "^[A-Za-z0-9_+.-]+$"
+          },
+          "maxItems": 32,
+          "uniqueItems": true,
+          "default": [
+            "mermaid"
+          ],
+          "scope": "resource",
+          "description": "Language identifiers recognized as Mermaid in Markdown and MDX fences or ::: containers."
+        },
+        "mermaidPreviewOffline.documentation.resizable": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Allows documentation diagram cards to be resized vertically."
+        },
+        "mermaidPreviewOffline.documentation.maxHeight": {
+          "type": "string",
+          "default": "",
+          "scope": "window",
+          "description": "Optional maximum documentation diagram height, for example 400, 400px, or 80vh."
+        },
         "mermaidPreviewOffline.diagramTheme": {
           "type": "string",
           "enum": [
@@ -642,6 +702,8 @@
   "dependencies": {
     "@iconify-json/logos": "1.2.11",
     "@iconify-json/material-icon-theme": "1.2.69",
+    "@iconify-json/mdi": "1.2.3",
+    "@mermaid-js/layout-tidy-tree": "0.2.2",
     "@mermaid-js/mermaid-zenuml": "0.2.3",
     "mermaid": "11.16.0"
   },
