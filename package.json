@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -74,6 +74,7 @@
     "onCustomEditor:brainfkt.mermaidPreviewOffline",
     "onCommand:mermaidPreviewOffline.openPreview",
     "onCommand:mermaidPreviewOffline.openPreviewToSide",
+    "onCommand:mermaidPreviewOffline.openPreviewNewWindow",
     "onCommand:mermaidPreviewOffline.chooseEditorLayout",
     "onCommand:mermaidPreviewOffline.cycleEditorLayout",
     "onCommand:mermaidPreviewOffline.openPreviewOnly",
@@ -152,6 +153,11 @@
         "command": "mermaidPreviewOffline.openPreviewToSide",
         "title": "Mermaid Preview: Open Preview to the Side",
         "icon": "$(split-horizontal)"
+      },
+      {
+        "command": "mermaidPreviewOffline.openPreviewNewWindow",
+        "title": "Mermaid Preview: Open Preview in New Window",
+        "icon": "$(open-preview)"
       },
       {
         "command": "mermaidPreviewOffline.chooseEditorLayout",
@@ -418,7 +424,12 @@
               "dark",
               "forest",
               "neutral",
-              "base"
+              "base",
+              "neo",
+              "neo-dark",
+              "redux-color",
+              "redux-dark-color",
+              "sketch"
             ],
             "default": "default"
           },
@@ -442,6 +453,11 @@
             "minimum": 72,
             "maximum": 600,
             "default": 144
+          },
+          "density": {
+            "type": "string",
+            "enum": ["compact", "comfortable", "spacious"],
+            "default": "comfortable"
           },
           "margin": {
             "type": "number",
@@ -579,7 +595,12 @@
             "dark",
             "forest",
             "neutral",
-            "base"
+            "base",
+            "neo",
+            "neo-dark",
+            "redux-color",
+            "redux-dark-color",
+            "sketch"
           ],
           "enumDescriptions": [
             "Follow the active VS Code color theme.",
@@ -587,11 +608,44 @@
             "Use Mermaid's dark theme.",
             "Use Mermaid's forest theme.",
             "Use Mermaid's neutral theme.",
-            "Use Mermaid's customizable base theme."
+            "Use Mermaid's customizable base theme.",
+            "Use Mermaid's modern Neo theme.",
+            "Use Mermaid's modern dark Neo theme.",
+            "Use Mermaid's colorful Redux theme.",
+            "Use Mermaid's colorful dark Redux theme.",
+            "Use a deterministic hand-drawn look."
           ],
           "default": "adaptive",
           "scope": "window",
           "description": "Mermaid color theme shared by every preview in the current workspace."
+        },
+        "mermaidPreviewOffline.diagramDensity": {
+          "type": "string",
+          "enum": ["compact", "comfortable", "spacious"],
+          "default": "comfortable",
+          "scope": "window",
+          "description": "Spacing density shared by diagrams in the current workspace."
+        },
+        "mermaidPreviewOffline.canvas.background": {
+          "type": "string",
+          "enum": ["editor", "white", "paper", "soft-gray", "soft-blue", "soft-rose", "slate", "midnight", "custom"],
+          "default": "editor",
+          "scope": "window",
+          "description": "Preview canvas background, independent from the VS Code theme."
+        },
+        "mermaidPreviewOffline.canvas.customColor": {
+          "type": "string",
+          "default": "#ffffff",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "scope": "window",
+          "description": "Custom preview canvas color."
+        },
+        "mermaidPreviewOffline.canvas.pattern": {
+          "type": "string",
+          "enum": ["none", "dots", "grid"],
+          "default": "dots",
+          "scope": "window",
+          "description": "Optional pattern drawn over the preview canvas background."
         },
         "mermaidPreviewOffline.diagramFontFamily": {
           "type": "string",
@@ -629,7 +683,12 @@
             "dark",
             "forest",
             "neutral",
-            "base"
+            "base",
+            "neo",
+            "neo-dark",
+            "redux-color",
+            "redux-dark-color",
+            "sketch"
           ],
           "default": "default",
           "scope": "resource",
@@ -663,11 +722,12 @@
           "type": "string",
           "enum": [
             "transparent",
-            "color"
+            "color",
+            "preview"
           ],
           "default": "transparent",
           "scope": "resource",
-          "description": "Use a transparent or colored export background. PDFs always have an opaque page."
+          "description": "Use a transparent, custom color, or current preview canvas background. PDFs always have an opaque page."
         },
         "mermaidPreviewOffline.export.backgroundColor": {
           "type": "string",

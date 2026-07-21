@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.2.0
+
+- added a visual appearance gallery with the six classic choices plus Neo,
+  Neo Dark, Vibrant, Vibrant Dark, and deterministic Sketch rendering;
+- added compact, comfortable, and spacious diagram density across file
+  previews, documentation, Diagram Studio, visual diffs, exports, tasks, and
+  the offline CLI;
+- added workspace-wide canvas backgrounds with VS Code, light, dark, custom
+  color, dots, grid, and pattern-free presets, independent from the editor
+  color theme;
+- made Adaptive and Sketch choose light or dark diagram colors from the canvas
+  surface, and added an export option that reuses the preview background;
+- added in-diagram search with keyboard navigation and focused highlighting;
+- added click-to-source navigation for rendered nodes, clusters, mindmaps,
+  timelines, and sequence actors;
+- added a presentation mode for multi-block documentation previews and a
+  pop-out action for file and documentation previews;
+- extended browser visual coverage and unit tests for the shared appearance
+  model while preserving offline rendering and existing 1.1.x settings.
+
 ## 1.1.2
 
 - updated documentation previews incrementally so unchanged Mermaid cards,

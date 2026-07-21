@@ -81,7 +81,11 @@ transition.
 Large diagrams remain easy to inspect with fit-to-window, incremental zoom,
 drag-to-pan navigation, and a draggable minimap that appears only when the
 diagram exceeds the viewport. The active editor group can be maximized without
-losing the selected layout.
+losing the selected layout. Press `/` or `Ctrl/Cmd+F` to find labels inside the
+rendered diagram, click a rendered node to reveal its source line, or use the
+pop-out button to move the preview into a separate VS Code window.
+
+![Search inside a rendered Mermaid diagram with matching nodes highlighted and the rest dimmed](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/search.png)
 
 ![A zoomed Mermaid mindmap with the draggable minimap visible in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/minimap.png)
 
@@ -100,16 +104,16 @@ local file paths.
 
 <p align="center"><em>Bundled Iconify packs and workspace-relative images render without a network request.</em></p>
 
-## Six selectable diagram themes
+## Classic and modern diagram themes
 
-Choose **Adaptive**, **Default**, **Dark**, **Forest**, **Neutral**, or **Base**
-directly from the preview. Adaptive follows VS Code's active color scheme;
-explicit themes remain stable when you need a deliberate presentation style.
+Choose **Adaptive**, **Default**, **Dark**, **Forest**, **Neutral**, **Base**,
+**Neo**, **Neo Dark**, **Vibrant**, **Vibrant Dark**, or **Sketch** from the
+visual appearance gallery. Adaptive and Sketch choose their light or dark
+palette from the canvas itself. Select Compact, Comfortable, or Spacious
+density, then pick a VS Code, light, dark, or custom background with no pattern,
+dots, or a grid. The canvas choice is independent from the VS Code color theme.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/theme-forest.png" alt="A complete Mermaid mindmap rendered with the Forest theme selected" width="49%">
-  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/theme-neutral.png" alt="The same Mermaid mindmap rendered with the Neutral theme selected" width="49%">
-</p>
+![The appearance gallery showing classic, Neo, Vibrant, and Sketch themes together with density, pattern, and canvas background controls](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/appearance.png)
 
 ## Diagram typography
 
@@ -146,6 +150,11 @@ scale, DPI, margin, background, metadata, optimization, and file-name tokens.
 Reusable profiles keep documentation and release exports consistent across
 workspaces.
 
+The toolbar's **Copy SVG** action places the current original vector diagram on
+the clipboard without opening the export dialog.
+
+![Copying the current Mermaid SVG from the preview while a search result remains highlighted](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/copy-svg.png)
+
 ![The professional Mermaid export dialog with a live Gantt preview and output settings](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/export-window.png)
 
 ## Features
@@ -165,7 +174,11 @@ workspaces.
 - Fit-to-window, incremental zoom, drag-to-pan, and an optional minimap.
 - Editor-group full screen for focused reading.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
-- Six workspace-wide diagram themes selectable directly from the preview.
+- Eleven workspace-wide classic and modern appearances in a visual gallery.
+- Independent canvas colors, custom backgrounds, dots/grid patterns, and three
+  diagram densities shared by preview, Studio, diffs, documentation, and export.
+- In-diagram search and click-to-source navigation for rendered elements.
+- Documentation presentation mode and preview pop-out to a new VS Code window.
 - VS Code-native diagram typography by default, with offline Noto Sans and
   Inter presets for portable exports and complete Latin accents.
 - A modern glass interface that remains native to VS Code themes.
