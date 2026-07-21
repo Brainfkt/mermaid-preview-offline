@@ -64,7 +64,11 @@ Above use VS Code's real text editor, so completion, formatting, snippets, quick
 fixes, and diagnostics remain available. Their native group ratio is restored
 per file. Selecting another Mermaid source tab immediately replaces the
 companion preview, while the extension keeps a single source/preview pair for
-the active document.
+the active document. With the preview focused, press `P` repeatedly to cycle
+through Preview only, Beside, and Above. Use `Alt+P` from the Mermaid source
+editor (`Option+P` on macOS), so plain `P` remains available for typing. Clicking
+the canvas or minimap focuses the preview, and focus follows every layout
+transition.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/editor-layout.png" alt="VS Code quick pick offering Preview only, Source only, Beside, and Above Mermaid editor layouts" width="720">
