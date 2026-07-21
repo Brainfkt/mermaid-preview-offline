@@ -27,6 +27,8 @@ void test('export settings normalize unsafe or excessive values', () => {
     {
       background: 'color',
       backgroundColor: '#abcdef',
+      previewBackgroundColor: '#ffffff',
+      density: 'comfortable',
       dpi: 600,
       fileNameTemplate: '{name}.{format}',
       format: 'webp',

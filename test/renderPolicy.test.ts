@@ -9,8 +9,10 @@ import {
   renderBlockReason,
 } from '../src/renderPolicy';
 
-const configuration: PreviewConfiguration = {
-  diagramFontFamily: 'vscode',
+  const configuration: PreviewConfiguration = {
+    diagramDensity: 'comfortable',
+    diagramFontFamily: 'vscode',
+    diagramSurface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
   minimapEnabled: true,

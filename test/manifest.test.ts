@@ -273,6 +273,17 @@ void test('refresh, large-file, diagram-theme, and diagram-font settings are con
     'forest',
     'neutral',
     'base',
+    'neo',
+    'neo-dark',
+    'redux-color',
+    'redux-dark-color',
+    'sketch',
+  ]);
+  assert.deepEqual(properties['mermaidPreviewOffline.diagramDensity']?.enum, [
+    'compact', 'comfortable', 'spacious',
+  ]);
+  assert.deepEqual(properties['mermaidPreviewOffline.canvas.pattern']?.enum, [
+    'none', 'dots', 'grid',
   ]);
   assert.equal(properties['mermaidPreviewOffline.diagramTheme']?.scope, 'window');
   assert.deepEqual(properties['mermaidPreviewOffline.diagramFontFamily']?.enum, [
