@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -75,6 +75,7 @@
     "onCommand:mermaidPreviewOffline.openPreview",
     "onCommand:mermaidPreviewOffline.openPreviewToSide",
     "onCommand:mermaidPreviewOffline.chooseEditorLayout",
+    "onCommand:mermaidPreviewOffline.cycleEditorLayout",
     "onCommand:mermaidPreviewOffline.openPreviewOnly",
     "onCommand:mermaidPreviewOffline.openSourceOnly",
     "onCommand:mermaidPreviewOffline.openBeside",
@@ -155,6 +156,11 @@
       {
         "command": "mermaidPreviewOffline.chooseEditorLayout",
         "title": "Mermaid Preview: Choose Editor Layout",
+        "icon": "$(layout)"
+      },
+      {
+        "command": "mermaidPreviewOffline.cycleEditorLayout",
+        "title": "Mermaid Preview: Cycle Preview Layout",
         "icon": "$(layout)"
       },
       {
@@ -256,6 +262,14 @@
         "command": "mermaidPreviewOffline.exportDocumentation",
         "title": "Mermaid Preview: Export Document with Diagram Images…",
         "icon": "$(export)"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "mermaidPreviewOffline.cycleEditorLayout",
+        "key": "alt+p",
+        "mac": "alt+p",
+        "when": "editorLangId == mermaid && editorTextFocus"
       }
     ],
     "menus": {
