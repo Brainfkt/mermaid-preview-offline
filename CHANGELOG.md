@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.1.1
+
+- fixed false `missing-end` diagnostics when mindmaps, Ishikawa diagrams, and
+  ZenUML diagrams contain labels or constructs beginning with Mermaid sequence
+  block keywords such as `critical` or `par`;
+- added `P` cycling through Preview only, Beside, and Above while the preview is
+  focused, plus `Alt+P` from the Mermaid source editor to enter or continue the
+  same preview-layout cycle without interfering with text input;
+- made clicks on the diagram, empty canvas, and minimap focus the preview, kept
+  `P` available after layout transitions and toolbar clicks, and excluded export
+  form fields from the shortcut.
+
 ## 1.1.0
 
 - added Azure DevOps-style `::: mermaid` documentation blocks, exact source
