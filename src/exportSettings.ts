@@ -1,14 +1,17 @@
-import type { DiagramTheme } from './protocol';
+import { DIAGRAM_THEMES, type DiagramDensity, type DiagramTheme } from './protocol';
+import { normalizeDiagramDensity } from './appearance';
 
 export const EXPORT_FORMATS = ['svg', 'png', 'webp', 'pdf'] as const;
 export type ExportFormat = (typeof EXPORT_FORMATS)[number];
-export type ExportBackground = 'transparent' | 'color';
+export type ExportBackground = 'transparent' | 'color' | 'preview';
 export type ExportSvgVariant = 'optimized' | 'original';
 
 export interface ExportSettings {
   background: ExportBackground;
   backgroundColor: string;
+  previewBackgroundColor: string;
   dpi: number;
+  density: DiagramDensity;
   fileNameTemplate: string;
   format: ExportFormat;
   includeMetadata: boolean;
@@ -40,7 +43,9 @@ export interface ExportNameContext {
 export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
   background: 'transparent',
   backgroundColor: '#ffffff',
+  previewBackgroundColor: '#ffffff',
   dpi: 144,
+  density: 'comfortable',
   fileNameTemplate: '{name}-{theme}@{scale}x.{format}',
   format: 'png',
   includeMetadata: false,
@@ -51,18 +56,13 @@ export const DEFAULT_EXPORT_SETTINGS: ExportSettings = {
   theme: 'default',
 };
 
-const DIAGRAM_THEMES = new Set<DiagramTheme>([
-  'adaptive',
-  'default',
-  'dark',
-  'forest',
-  'neutral',
-  'base',
-]);
+const EXPORT_DIAGRAM_THEMES = new Set<DiagramTheme>(DIAGRAM_THEMES);
 
 export function normalizeExportSettings(value: unknown): ExportSettings {
   const candidate = isRecord(value) ? value : {};
-  const background = candidate.background === 'color' ? 'color' : 'transparent';
+  const background = candidate.background === 'color' || candidate.background === 'preview'
+    ? candidate.background
+    : 'transparent';
   const theme = isDiagramTheme(candidate.theme) ? candidate.theme : DEFAULT_EXPORT_SETTINGS.theme;
   const format = isExportFormat(candidate.format)
     ? candidate.format
@@ -75,7 +75,12 @@ export function normalizeExportSettings(value: unknown): ExportSettings {
       typeof candidate.backgroundColor === 'string' && isCssHexColor(candidate.backgroundColor)
         ? candidate.backgroundColor.toLowerCase()
         : DEFAULT_EXPORT_SETTINGS.backgroundColor,
+    previewBackgroundColor:
+      typeof candidate.previewBackgroundColor === 'string' && isCssHexColor(candidate.previewBackgroundColor)
+        ? candidate.previewBackgroundColor.toLowerCase()
+        : DEFAULT_EXPORT_SETTINGS.previewBackgroundColor,
     dpi: clampNumber(candidate.dpi, 72, 600, DEFAULT_EXPORT_SETTINGS.dpi),
+    density: normalizeDiagramDensity(candidate.density),
     fileNameTemplate:
       typeof candidate.fileNameTemplate === 'string' && candidate.fileNameTemplate.trim()
         ? candidate.fileNameTemplate.trim().slice(0, 160)
@@ -170,7 +175,7 @@ export function isExportFormat(value: unknown): value is ExportFormat {
 }
 
 function isDiagramTheme(value: unknown): value is DiagramTheme {
-  return typeof value === 'string' && DIAGRAM_THEMES.has(value as DiagramTheme);
+  return typeof value === 'string' && EXPORT_DIAGRAM_THEMES.has(value as DiagramTheme);
 }
 
 function isCssHexColor(value: string): boolean {

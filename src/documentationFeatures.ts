@@ -3,6 +3,10 @@ import { Buffer } from 'node:buffer';
 import * as vscode from 'vscode';
 
 import {
+  normalizeDiagramDensity,
+  normalizeDiagramSurface,
+} from './appearance';
+import {
   documentationImageReference,
   documentationKind,
   extractMermaidBlocks,
@@ -34,6 +38,7 @@ import {
   normalizeDocumentationMaxHeight,
 } from './navigationSettings';
 import { readExportConfiguration } from './mermaidPreviewProvider';
+import { isDiagramTheme } from './previewState';
 import type { DiagramTheme, SerializedExportArtifact } from './protocol';
 import { loadWorkspaceImage } from './workspaceImages';
 
@@ -86,6 +91,8 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (
           event.affectsConfiguration('mermaidPreviewOffline.diagramTheme') ||
+          event.affectsConfiguration('mermaidPreviewOffline.diagramDensity') ||
+          event.affectsConfiguration('mermaidPreviewOffline.canvas') ||
           event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily') ||
           event.affectsConfiguration('mermaidPreviewOffline.documentation') ||
           event.affectsConfiguration('mermaidPreviewOffline.navigation')
@@ -283,6 +290,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       await this.revealSource(message.blockId);
       return;
     }
+    if (message.type === 'openInNewWindow') {
+      this.panel?.reveal(vscode.ViewColumn.Active, true);
+      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      return;
+    }
     const pending = this.pendingExports.get(message.requestId);
     if (!pending) return;
     clearTimeout(pending.timer);
@@ -368,6 +380,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     this.dirtyWhileHidden = false;
     await panel.webview.postMessage({
       blocks: preparedBlocks,
+      density: configuredDiagramDensity(),
       fileName: fileNameOf(document.uri),
       fontFamily: configuredDiagramFontFamily(document.uri),
       kind: context.kind,
@@ -375,6 +388,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       mode: context.mode,
       navigation: configuredDiagramNavigation(),
       resizable: configuredDocumentationResizable(),
+      surface: configuredDiagramSurface(),
       theme: configuredDiagramTheme(),
       totalBlocks: blocks.length,
       type: 'documentationData',
@@ -530,13 +544,22 @@ function configuredDiagramTheme(): DiagramTheme {
   const theme = vscode.workspace
     .getConfiguration('mermaidPreviewOffline')
     .get<unknown>('diagramTheme', 'adaptive');
-  return theme === 'default' ||
-    theme === 'dark' ||
-    theme === 'forest' ||
-    theme === 'neutral' ||
-    theme === 'base'
-    ? theme
-    : 'adaptive';
+  return isDiagramTheme(theme) ? theme : 'adaptive';
+}
+
+function configuredDiagramDensity() {
+  return normalizeDiagramDensity(
+    vscode.workspace.getConfiguration('mermaidPreviewOffline').get('diagramDensity'),
+  );
+}
+
+function configuredDiagramSurface() {
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  return normalizeDiagramSurface({
+    customColor: configuration.get('customColor'),
+    pattern: configuration.get('pattern'),
+    preset: configuration.get('background'),
+  });
 }
 
 function configuredDocumentationLanguages(resource?: vscode.Uri): string[] {
@@ -640,6 +663,7 @@ function isDocumentationWebviewMessage(
     type?: unknown;
   };
   if (candidate.type === 'ready') return true;
+  if (candidate.type === 'openInNewWindow') return true;
   if (candidate.type === 'revealSource') return typeof candidate.blockId === 'string';
   if (candidate.type === 'documentationExportError') {
     return typeof candidate.requestId === 'string' && typeof candidate.message === 'string';

@@ -1,5 +1,6 @@
 import mermaid from 'mermaid';
 
+import { DEFAULT_DIAGRAM_SURFACE, diagramSpacing, resolveDiagramAppearance } from './appearance';
 import { normalizeDiagramFontFamily, type DiagramFontFamily } from './diagramFont';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
 import { normalizeExportSettings, type ExportSettings } from './exportSettings';
@@ -30,6 +31,13 @@ window.mermaidOfflineCli = {
     const settings = normalizeExportSettings(request.settings);
     const fontFamily = normalizeDiagramFontFamily(request.fontFamily);
     const renderId = `mermaid-cli-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const appearance = resolveDiagramAppearance(
+      settings.theme,
+      'light',
+      DEFAULT_DIAGRAM_SURFACE,
+      settings.density,
+    );
+    const spacing = diagramSpacing(appearance.density);
     try {
       await prepareMermaidExtensions(request.source, fontFamily);
       mermaid.initialize({
@@ -37,10 +45,12 @@ window.mermaidOfflineCli = {
         deterministicIDSeed: 'mermaid-preview-offline-cli',
         startOnLoad: false,
         securityLevel: 'strict',
-        theme: settings.theme === 'adaptive' ? 'default' : settings.theme,
+        theme: appearance.theme,
+        look: appearance.look,
+        handDrawnSeed: appearance.handDrawnSeed,
         fontFamily: resolvedDiagramFontStack(fontFamily),
-        flowchart: { htmlLabels: false, useMaxWidth: false },
-        sequence: { useMaxWidth: false },
+        flowchart: { htmlLabels: false, useMaxWidth: false, ...spacing.flowchart },
+        sequence: { useMaxWidth: false, ...spacing.sequence },
       });
       const { svg } = await mermaid.render(renderId, request.source);
       const artifact = await renderExportArtifact({

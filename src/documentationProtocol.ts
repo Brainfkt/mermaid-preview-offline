@@ -2,7 +2,12 @@ import type { ExportSettings } from './exportSettings';
 import type { DocumentationKind } from './documentationBlocks';
 import type { DiagramFontFamily } from './diagramFont';
 import type { DiagramNavigationConfiguration } from './navigationSettings';
-import type { DiagramTheme, SerializedExportArtifact } from './protocol';
+import type {
+  DiagramDensity,
+  DiagramSurfaceConfiguration,
+  DiagramTheme,
+  SerializedExportArtifact,
+} from './protocol';
 
 export type DocumentationPreviewMode = 'all' | 'cursor';
 
@@ -17,6 +22,8 @@ export interface DocumentationPreviewBlock {
 export type ExtensionToDocumentationWebviewMessage =
   | {
       blocks: DocumentationPreviewBlock[];
+      density: DiagramDensity;
+      surface: DiagramSurfaceConfiguration;
       fileName: string;
       fontFamily: DiagramFontFamily;
       kind: DocumentationKind;
@@ -39,6 +46,7 @@ export type ExtensionToDocumentationWebviewMessage =
 
 export type DocumentationWebviewToExtensionMessage =
   | { type: 'ready' }
+  | { type: 'openInNewWindow' }
   | { blockId: string; type: 'revealSource' }
   | {
       artifacts: Array<{ artifact: SerializedExportArtifact; blockId: string }>;

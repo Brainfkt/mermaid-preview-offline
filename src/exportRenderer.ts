@@ -152,13 +152,16 @@ export function prepareSvg(
     `font-family:${resolvedDiagramFontStack(normalizedFontFamily)}!important;}`;
   root.insertBefore(fontStyle, root.firstChild);
 
-  if (settings.background === 'color') {
+  if (settings.background !== 'transparent') {
     const background = documentNode.createElementNS('http://www.w3.org/2000/svg', 'rect');
     background.setAttribute('x', formatNumber(size.x - margin));
     background.setAttribute('y', formatNumber(size.y - margin));
     background.setAttribute('width', formatNumber(size.width + margin * 2));
     background.setAttribute('height', formatNumber(size.height + margin * 2));
-    background.setAttribute('fill', settings.backgroundColor);
+    background.setAttribute(
+      'fill',
+      settings.background === 'preview' ? settings.previewBackgroundColor : settings.backgroundColor,
+    );
     background.setAttribute('data-mermaid-export-background', 'true');
     root.insertBefore(background, root.firstChild);
   }

@@ -1,6 +1,13 @@
 import { Buffer } from 'node:buffer';
 import * as vscode from 'vscode';
 
+import {
+  isDiagramDensity,
+  isDiagramSurfaceConfiguration,
+  diagramSurfaceColor,
+  normalizeDiagramDensity,
+  normalizeDiagramSurface,
+} from './appearance';
 import { isEditorMode } from './editorLayoutController';
 import type { MermaidEditorLayoutController } from './editorLayoutController';
 import { normalizeDiagramFontFamily } from './diagramFont';
@@ -328,8 +335,21 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'toggleFullscreen':
           await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
           break;
+        case 'openInNewWindow':
+          webviewPanel.reveal(webviewPanel.viewColumn, false);
+          await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+          break;
         case 'requestDocument':
           queueDocument(0);
+          break;
+        case 'revealSourceLine':
+          await this.revealSourceLine(document, webviewPanel, message.line);
+          break;
+        case 'setDiagramDensity':
+          await updateDiagramDensity(message.density);
+          break;
+        case 'setDiagramSurface':
+          await updateDiagramSurface(message.surface);
           break;
         case 'setDiagramTheme':
           await updateDiagramTheme(message.theme);
@@ -402,6 +422,26 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
   private exportProfiles(): ExportProfile[] {
     return normalizeExportProfiles(this.context.globalState.get(EXPORT_PROFILES_KEY));
+  }
+
+  private async revealSourceLine(
+    document: vscode.TextDocument,
+    panel: vscode.WebviewPanel,
+    requestedLine: number,
+  ): Promise<void> {
+    await this.layoutController.applyMode(document.uri, 'beside', panel);
+    const line = Math.min(Math.max(Math.round(requestedLine), 0), Math.max(document.lineCount - 1, 0));
+    const position = new vscode.Position(line, 0);
+    const editor = await vscode.window.showTextDocument(document, {
+      preserveFocus: false,
+      preview: false,
+      selection: new vscode.Range(position, position),
+      viewColumn: vscode.ViewColumn.One,
+    });
+    editor.revealRange(
+      new vscode.Range(position, position),
+      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
+    );
   }
 
   private async recordEligibleReviewSession(): Promise<void> {
@@ -722,6 +762,10 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const windowConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline');
   const configuredFontFamily = windowConfiguration.get<unknown>('diagramFontFamily', 'vscode');
   const configuredTheme = windowConfiguration.get<unknown>('diagramTheme', 'adaptive');
+  const diagramDensity = normalizeDiagramDensity(
+    windowConfiguration.get<unknown>('diagramDensity', 'comfortable'),
+  );
+  const canvasConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
   const refreshMode = configuration.get<unknown>('refreshMode', 'automatic');
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
@@ -730,7 +774,13 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const controlsVisibility = configuration.get<unknown>('navigation.controls', 'always');
 
   return {
+    diagramDensity,
     diagramFontFamily: normalizeDiagramFontFamily(configuredFontFamily),
+    diagramSurface: normalizeDiagramSurface({
+      customColor: canvasConfiguration.get<unknown>('customColor', '#ffffff'),
+      pattern: canvasConfiguration.get<unknown>('pattern', 'dots'),
+      preset: canvasConfiguration.get<unknown>('background', 'editor'),
+    }),
     diagramTheme: isDiagramTheme(configuredTheme) ? configuredTheme : 'adaptive',
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
     minimapEnabled,
@@ -745,13 +795,25 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
 
 export function readExportConfiguration(resource: vscode.Uri): ExportSettings {
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.export', resource);
+  const canvasConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  const surface = normalizeDiagramSurface({
+    customColor: canvasConfiguration.get<unknown>('customColor', '#ffffff'),
+    pattern: canvasConfiguration.get<unknown>('pattern', 'dots'),
+    preset: canvasConfiguration.get<unknown>('background', 'editor'),
+  });
+  const editorBackground = vscode.workspace.getConfiguration('workbench')
+    .get<string>('colorCustomizations.editor.background', '#ffffff');
   return normalizeExportSettings({
     background: configuration.get<unknown>('background', DEFAULT_EXPORT_SETTINGS.background),
     backgroundColor: configuration.get<unknown>(
       'backgroundColor',
       DEFAULT_EXPORT_SETTINGS.backgroundColor,
     ),
+    previewBackgroundColor: diagramSurfaceColor(surface, editorBackground) ?? '#ffffff',
     dpi: configuration.get<unknown>('dpi', DEFAULT_EXPORT_SETTINGS.dpi),
+    density: normalizeDiagramDensity(
+      vscode.workspace.getConfiguration('mermaidPreviewOffline').get('diagramDensity'),
+    ),
     fileNameTemplate: configuration.get<unknown>(
       'fileNameTemplate',
       DEFAULT_EXPORT_SETTINGS.fileNameTemplate,
@@ -780,6 +842,36 @@ async function updateDiagramTheme(theme: PreviewConfiguration['diagramTheme']): 
   await vscode.workspace
     .getConfiguration('mermaidPreviewOffline')
     .update('diagramTheme', theme, target);
+}
+
+async function updateDiagramDensity(
+  density: PreviewConfiguration['diagramDensity'],
+): Promise<void> {
+  await updateWindowConfiguration('diagramDensity', density);
+}
+
+async function updateDiagramSurface(
+  surface: PreviewConfiguration['diagramSurface'],
+): Promise<void> {
+  const target = workspaceConfigurationTarget();
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  await Promise.all([
+    configuration.update('background', surface.preset, target),
+    configuration.update('customColor', surface.customColor, target),
+    configuration.update('pattern', surface.pattern, target),
+  ]);
+}
+
+async function updateWindowConfiguration(key: string, value: unknown): Promise<void> {
+  await vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .update(key, value, workspaceConfigurationTarget());
+}
+
+function workspaceConfigurationTarget(): vscode.ConfigurationTarget {
+  return vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
 }
 
 function clampInteger(value: number, minimum: number, maximum: number): number {
@@ -841,6 +933,8 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     rendered?: unknown;
     settings?: unknown;
     state?: unknown;
+    surface?: unknown;
+    density?: unknown;
     svg?: unknown;
     theme?: unknown;
     type?: unknown;
@@ -850,7 +944,8 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     candidate.type === 'requestDocument' ||
     candidate.type === 'chooseEditorMode' ||
     candidate.type === 'cycleEditorMode' ||
-    candidate.type === 'toggleFullscreen'
+    candidate.type === 'toggleFullscreen' ||
+    candidate.type === 'openInNewWindow'
   ) {
     return true;
   }
@@ -865,6 +960,15 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   }
   if (candidate.type === 'setDiagramTheme') {
     return isDiagramTheme(candidate.theme);
+  }
+  if (candidate.type === 'setDiagramDensity') {
+    return isDiagramDensity(candidate.density);
+  }
+  if (candidate.type === 'setDiagramSurface') {
+    return isDiagramSurfaceConfiguration(candidate.surface);
+  }
+  if (candidate.type === 'revealSourceLine') {
+    return typeof candidate.line === 'number' && Number.isFinite(candidate.line);
   }
   if (candidate.type === 'clearDiagnostic') {
     return typeof candidate.version === 'number' && typeof candidate.rendered === 'boolean';

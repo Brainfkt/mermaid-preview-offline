@@ -41,7 +41,11 @@ export function createDocumentationWebviewHtml(
           <p id="documentation-summary">Looking for Mermaid blocks…</p>
         </div>
       </div>
-      <span class="documentation-format" id="documentation-format">Markdown</span>
+      <div class="documentation-actions">
+        <button id="documentation-present" type="button" title="Present diagrams">Present</button>
+        <button id="documentation-popout" type="button" title="Open in a new VS Code window">Pop out</button>
+        <span class="documentation-format" id="documentation-format">Markdown</span>
+      </div>
     </header>
     <main class="documentation-list" id="documentation-list" aria-live="polite"></main>
     <section class="documentation-empty" id="documentation-empty" hidden>
@@ -49,6 +53,11 @@ export function createDocumentationWebviewHtml(
       <h2>No Mermaid blocks found</h2>
       <p>Place the cursor inside a Mermaid block or add a fenced Mermaid diagram to this document.</p>
     </section>
+    <div class="presentation-controls" id="presentation-controls" hidden>
+      <span id="presentation-counter">1 / 1</span>
+      <span>← → navigate · Esc exit</span>
+      <button id="presentation-exit" type="button">Exit</button>
+    </div>
   </div>
   <script type="module" nonce="${nonce}" src="${options.scriptUri}"></script>
 </body>

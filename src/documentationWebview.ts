@@ -1,19 +1,28 @@
 import mermaid from 'mermaid';
 
 import {
+  DEFAULT_DIAGRAM_SURFACE,
+  diagramSpacing,
+  diagramSurfaceColor,
+  isDarkHexColor,
+  resolveDiagramAppearance,
+} from './appearance';
+
+import {
   DocumentationDiagramController,
   type DocumentationDiagramState,
 } from './documentationDiagramController';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
 import type { DiagramFontFamily } from './diagramFont';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
+import { normalizeExportSettings } from './exportSettings';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import type {
   DocumentationPreviewBlock,
   DocumentationWebviewToExtensionMessage,
   ExtensionToDocumentationWebviewMessage,
 } from './documentationProtocol';
-import type { DiagramTheme } from './protocol';
+import type { DiagramDensity, DiagramSurfaceConfiguration, DiagramTheme } from './protocol';
 
 interface VsCodeApi {
   postMessage(message: DocumentationWebviewToExtensionMessage): void;
@@ -40,17 +49,31 @@ const empty = element<HTMLElement>('documentation-empty');
 const title = element<HTMLElement>('documentation-title');
 const summary = element<HTMLElement>('documentation-summary');
 const format = element<HTMLElement>('documentation-format');
+const presentButton = element<HTMLButtonElement>('documentation-present');
+const presentationControls = element<HTMLElement>('presentation-controls');
+const presentationCounter = element<HTMLElement>('presentation-counter');
 let renderSequence = 0;
 let renderGeneration = 0;
 let renderQueue = Promise.resolve();
 let activeTheme: DiagramTheme = 'adaptive';
 let activeFontFamily: DiagramFontFamily = 'vscode';
+let activeDensity: DiagramDensity = 'comfortable';
+let activeSurface: DiagramSurfaceConfiguration = DEFAULT_DIAGRAM_SURFACE;
+let presentationMode = false;
+let presentationIndex = 0;
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 const diagramControllers = new Map<string, DocumentationDiagramController>();
 const diagramStates = new Map<string, DocumentationDiagramState>();
 const documentationCards = new Map<string, DocumentationCard>();
 
 initializeMermaid(activeTheme, activeFontFamily);
+
+element<HTMLButtonElement>('documentation-popout').addEventListener('click', () => {
+  vscode.postMessage({ type: 'openInNewWindow' });
+});
+presentButton.addEventListener('click', enterPresentation);
+element<HTMLButtonElement>('presentation-exit').addEventListener('click', exitPresentation);
+window.addEventListener('keydown', handlePresentationKey);
 
 window.addEventListener(
   'message',
@@ -70,9 +93,12 @@ async function showDocumentation(
 ): Promise<void> {
   const generation = ++renderGeneration;
   const renderConfigurationChanged = activeTheme !== data.theme ||
-    activeFontFamily !== data.fontFamily;
+    activeFontFamily !== data.fontFamily || activeDensity !== data.density;
   activeTheme = data.theme;
   activeFontFamily = data.fontFamily;
+  activeDensity = data.density;
+  activeSurface = data.surface;
+  applyDocumentationSurface();
   initializeMermaid(activeTheme, activeFontFamily);
   title.textContent = data.fileName;
   format.textContent = formatLabel(data.kind);
@@ -125,6 +151,7 @@ async function showDocumentation(
   documentationCards.clear();
   for (const [id, card] of nextCards) documentationCards.set(id, card);
   reconcileDocumentationCardOrder(nextCards.values());
+  if (presentationMode) updatePresentation();
 
   for (const { block, card } of cardsToRender) {
     if (generation !== renderGeneration) return;
@@ -185,6 +212,8 @@ function createDiagramCard(
 
   const canvas = document.createElement('div');
   canvas.className = 'documentation-canvas';
+  canvas.classList.toggle('pattern-dots', activeSurface.pattern === 'dots');
+  canvas.classList.toggle('pattern-grid', activeSurface.pattern === 'grid');
   canvas.tabIndex = 0;
   canvas.title = 'Double-click to reveal this Mermaid block in the source document';
   canvas.addEventListener('dblclick', (event) => {
@@ -306,7 +335,14 @@ async function renderDocumentationExport(
 ): Promise<void> {
   const execute = async (): Promise<void> => {
     try {
-      initializeMermaid(request.settings.theme, request.fontFamily);
+      const editorColor = getComputedStyle(document.documentElement)
+        .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
+      const settings = normalizeExportSettings({
+        ...request.settings,
+        density: activeDensity,
+        previewBackgroundColor: diagramSurfaceColor(activeSurface, editorColor) ?? editorColor,
+      });
+      initializeMermaid(settings.theme, request.fontFamily);
       const artifacts: Array<{
         artifact: {
           dataBase64: string;
@@ -330,7 +366,7 @@ async function renderDocumentationExport(
             fileName: block.fileName,
             sourceUri: `${request.sourceUri}#${block.id}`,
           },
-          settings: request.settings,
+          settings,
           svg,
           fontFamily: request.fontFamily,
         });
@@ -377,21 +413,89 @@ async function renderDocumentationExport(
 }
 
 function initializeMermaid(theme: DiagramTheme, fontFamily: DiagramFontFamily): void {
-  const adaptiveTheme = document.body.classList.contains('vscode-dark') ||
+  const colorScheme = document.body.classList.contains('vscode-dark') ||
     document.body.classList.contains('vscode-high-contrast')
-    ? 'dark'
-    : 'default';
+    ? 'dark' as const
+    : 'light' as const;
+  const appearance = resolveDiagramAppearance(
+    theme,
+    colorScheme,
+    activeSurface,
+    activeDensity,
+  );
+  const spacing = diagramSpacing(appearance.density);
   mermaid.initialize({
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline-documentation',
-    flowchart: { htmlLabels: false, useMaxWidth: false },
+    flowchart: { htmlLabels: false, useMaxWidth: false, ...spacing.flowchart },
     fontFamily: resolvedDiagramFontStack(fontFamily),
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
-    sequence: { useMaxWidth: false },
+    sequence: { useMaxWidth: false, ...spacing.sequence },
     startOnLoad: false,
-    theme: theme === 'adaptive' ? adaptiveTheme : theme,
+    theme: appearance.theme,
+    look: appearance.look,
+    handDrawnSeed: appearance.handDrawnSeed,
   });
+}
+
+function applyDocumentationSurface(): void {
+  const editorColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
+  const color = diagramSurfaceColor(activeSurface, editorColor) ?? editorColor;
+  document.documentElement.style.setProperty('--diagram-canvas-background', color);
+  document.documentElement.style.setProperty(
+    '--diagram-pattern-ink',
+    isDarkHexColor(color) ? '#ffffff18' : '#0f172a17',
+  );
+  for (const card of documentationCards.values()) {
+    card.canvas.classList.toggle('pattern-dots', activeSurface.pattern === 'dots');
+    card.canvas.classList.toggle('pattern-grid', activeSurface.pattern === 'grid');
+  }
+}
+
+function enterPresentation(): void {
+  if (!documentationCards.size) return;
+  presentationMode = true;
+  presentationIndex = 0;
+  document.body.classList.add('presentation');
+  presentationControls.hidden = false;
+  updatePresentation();
+}
+
+function exitPresentation(): void {
+  if (!presentationMode) return;
+  presentationMode = false;
+  document.body.classList.remove('presentation');
+  presentationControls.hidden = true;
+  for (const card of documentationCards.values()) card.article.hidden = false;
+}
+
+function updatePresentation(): void {
+  const cards = Array.from(documentationCards.values());
+  if (!cards.length) return exitPresentation();
+  presentationIndex = Math.min(Math.max(presentationIndex, 0), cards.length - 1);
+  cards.forEach((card, index) => { card.article.hidden = index !== presentationIndex; });
+  presentationCounter.textContent = `${presentationIndex + 1} / ${cards.length}`;
+  cards[presentationIndex]?.canvas.focus({ preventScroll: true });
+}
+
+function handlePresentationKey(event: KeyboardEvent): void {
+  if (!presentationMode) return;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    exitPresentation();
+    return;
+  }
+  let next: number | undefined;
+  if (event.key === 'ArrowRight' || event.key === 'ArrowDown' || event.key === ' ' || event.key === 'PageDown') next = presentationIndex + 1;
+  if (event.key === 'ArrowLeft' || event.key === 'ArrowUp' || event.key === 'PageUp') next = presentationIndex - 1;
+  if (event.key === 'Home') next = 0;
+  if (event.key === 'End') next = documentationCards.size - 1;
+  if (next === undefined) return;
+  event.preventDefault();
+  presentationIndex = next;
+  updatePresentation();
 }
 
 function lineLabel(startLine: number, endLine: number): string {

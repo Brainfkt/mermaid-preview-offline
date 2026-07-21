@@ -2,6 +2,7 @@ import { relative } from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { normalizeDiagramDensity, normalizeDiagramSurface } from './appearance';
 import {
   DIAGRAM_TEMPLATES,
   inferDiagramCategory,
@@ -14,6 +15,7 @@ import {
 } from './diagramFont';
 import { imageMimeType, inlineLocalImages } from './localImages';
 import { MERMAID_PREVIEW_VIEW_TYPE } from './mermaidPreviewProvider';
+import { isDiagramTheme } from './previewState';
 import {
   createGalleryWebviewHtml,
   createVisualDiffWebviewHtml,
@@ -77,7 +79,10 @@ export class MermaidProjectFeatures implements vscode.Disposable {
 
   public constructor(private readonly context: vscode.ExtensionContext) {
     this.configurationSubscription = vscode.workspace.onDidChangeConfiguration((event) => {
-      if (!event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily')) return;
+      if (!event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily') &&
+          !event.affectsConfiguration('mermaidPreviewOffline.diagramTheme') &&
+          !event.affectsConfiguration('mermaidPreviewOffline.diagramDensity') &&
+          !event.affectsConfiguration('mermaidPreviewOffline.canvas')) return;
       void this.postGalleryData();
       void this.postVisualComparison();
     });
@@ -210,6 +215,7 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     await this.galleryPanel.webview.postMessage({
       examples: await this.examples(),
       fontFamily: configuredDiagramFontFamily(),
+      ...configuredDiagramAppearance(),
       initialTab: this.galleryTab,
       templates: DIAGRAM_TEMPLATES,
       type: 'galleryData',
@@ -354,6 +360,7 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     await this.visualDiffPanel.webview.postMessage({
       ...this.visualComparison,
       fontFamily: configuredDiagramFontFamily(),
+      ...configuredDiagramAppearance(),
       type: 'visualDiffData',
     });
   }
@@ -364,6 +371,21 @@ function configuredDiagramFontFamily(): DiagramFontFamily {
     .getConfiguration('mermaidPreviewOffline')
     .get<unknown>('diagramFontFamily', 'vscode');
   return normalizeDiagramFontFamily(fontFamily);
+}
+
+function configuredDiagramAppearance() {
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline');
+  const canvas = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  const theme = configuration.get<unknown>('diagramTheme', 'adaptive');
+  return {
+    density: normalizeDiagramDensity(configuration.get('diagramDensity')),
+    surface: normalizeDiagramSurface({
+      customColor: canvas.get('customColor'),
+      pattern: canvas.get('pattern'),
+      preset: canvas.get('background'),
+    }),
+    theme: isDiagramTheme(theme) ? theme : 'adaptive',
+  };
 }
 
 function revisionChoices(repository: GitRepository): RevisionChoice[] {

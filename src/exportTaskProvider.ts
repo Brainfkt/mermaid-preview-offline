@@ -10,7 +10,8 @@ import {
 } from './diagramFont';
 import { isExportFormat, type ExportFormat } from './exportSettings';
 import { isDiagramTheme } from './previewState';
-import type { DiagramTheme } from './protocol';
+import { isDiagramDensity } from './appearance';
+import type { DiagramDensity, DiagramTheme } from './protocol';
 
 export const MERMAID_EXPORT_TASK_TYPE = 'mermaid-export';
 
@@ -18,6 +19,7 @@ interface MermaidExportTaskDefinition extends vscode.TaskDefinition {
   background?: string;
   browser?: string;
   dpi?: number;
+  density?: DiagramDensity;
   font?: DiagramFontFamily;
   format?: ExportFormat;
   includeMetadata?: boolean;
@@ -52,6 +54,7 @@ export class MermaidExportTaskProvider implements vscode.TaskProvider {
       ...(isDiagramTheme(definition.theme) ? { theme: definition.theme } : {}),
       ...(typeof definition.scale === 'number' ? { scale: definition.scale } : {}),
       ...(typeof definition.dpi === 'number' ? { dpi: definition.dpi } : {}),
+      ...(isDiagramDensity(definition.density) ? { density: definition.density } : {}),
       ...(typeof definition.margin === 'number' ? { margin: definition.margin } : {}),
       ...(typeof definition.background === 'string' ? { background: definition.background } : {}),
       ...(typeof definition.nameTemplate === 'string'
@@ -149,6 +152,7 @@ function taskArguments(
   add('--font', definition.font);
   add('--scale', definition.scale);
   add('--dpi', definition.dpi);
+  add('--density', definition.density);
   add('--margin', definition.margin);
   add('--background', definition.background);
   add('--name-template', definition.nameTemplate);

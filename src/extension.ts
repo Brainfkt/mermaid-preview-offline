@@ -18,6 +18,7 @@ import type { MermaidEditorMode } from './protocol';
 
 const OPEN_PREVIEW_COMMAND = 'mermaidPreviewOffline.openPreview';
 const OPEN_PREVIEW_TO_SIDE_COMMAND = 'mermaidPreviewOffline.openPreviewToSide';
+const OPEN_PREVIEW_NEW_WINDOW_COMMAND = 'mermaidPreviewOffline.openPreviewNewWindow';
 const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefaultEditor';
 const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
 const CYCLE_LAYOUT_COMMAND = 'mermaidPreviewOffline.cycleEditorLayout';
@@ -72,6 +73,12 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand(OPEN_PREVIEW_TO_SIDE_COMMAND, async (resource?: vscode.Uri) => {
       await applyEditorMode(layoutController, 'beside', resource);
+    }),
+    vscode.commands.registerCommand(OPEN_PREVIEW_NEW_WINDOW_COMMAND, async (resource?: vscode.Uri) => {
+      const uri = mermaidUri(resource);
+      if (!uri) return;
+      await layoutController.applyMode(uri, 'preview');
+      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
     }),
     vscode.commands.registerCommand(CHOOSE_LAYOUT_COMMAND, async (resource?: vscode.Uri) => {
       const uri = mermaidUri(resource);

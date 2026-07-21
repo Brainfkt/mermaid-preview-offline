@@ -170,6 +170,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
       case '--format': settingsValue.format = takeValue(); break;
       case '--scale': settingsValue.scale = Number(takeValue()); break;
       case '--dpi': settingsValue.dpi = Number(takeValue()); break;
+      case '--density': settingsValue.density = takeValue(); break;
       case '--margin': settingsValue.margin = Number(takeValue()); break;
       case '--theme': settingsValue.theme = takeValue(); break;
       case '--font': {
@@ -468,9 +469,10 @@ Options:
       --format <format>      svg, png, webp, or pdf (default: png)
       --scale <factor>       Scale factor from 0.25 to 8
       --dpi <number>         Resolution from 72 to 600 DPI
+      --density <density>    compact, comfortable, or spacious
       --margin <pixels>      Margin around the diagram
       --background <value>  transparent or a #rrggbb color
-      --theme <theme>        default, dark, forest, neutral, base, adaptive
+      --theme <theme>        adaptive, classic, Neo, Redux, or Sketch theme name
       --font <font>          vscode, noto-sans, or inter (default: vscode)
       --name-template <tpl>  File template using {name}, {format}, {theme}, …
       --profile <json>       Read export settings from a JSON profile

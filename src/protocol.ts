@@ -9,14 +9,42 @@ export const DIAGRAM_THEMES = [
   'forest',
   'neutral',
   'base',
+  'neo',
+  'neo-dark',
+  'redux-color',
+  'redux-dark-color',
+  'sketch',
 ] as const;
 
 export type DiagramTheme = (typeof DIAGRAM_THEMES)[number];
+export const DIAGRAM_DENSITIES = ['compact', 'comfortable', 'spacious'] as const;
+export type DiagramDensity = (typeof DIAGRAM_DENSITIES)[number];
+export const DIAGRAM_SURFACE_PRESETS = [
+  'editor',
+  'white',
+  'paper',
+  'soft-gray',
+  'soft-blue',
+  'soft-rose',
+  'slate',
+  'midnight',
+  'custom',
+] as const;
+export type DiagramSurfacePreset = (typeof DIAGRAM_SURFACE_PRESETS)[number];
+export const DIAGRAM_SURFACE_PATTERNS = ['none', 'dots', 'grid'] as const;
+export type DiagramSurfacePattern = (typeof DIAGRAM_SURFACE_PATTERNS)[number];
+export interface DiagramSurfaceConfiguration {
+  customColor: string;
+  pattern: DiagramSurfacePattern;
+  preset: DiagramSurfacePreset;
+}
 export type RefreshMode = 'automatic' | 'manual';
 export type MermaidEditorMode = 'preview' | 'source' | 'beside' | 'above';
 
 export interface PreviewConfiguration {
+  diagramDensity: DiagramDensity;
   diagramFontFamily: DiagramFontFamily;
+  diagramSurface: DiagramSurfaceConfiguration;
   diagramTheme: DiagramTheme;
   largeFileThresholdBytes: number;
   minimapEnabled: boolean;
@@ -86,7 +114,11 @@ export type WebviewToExtensionMessage =
   | { type: 'cycleEditorMode' }
   | { type: 'setEditorMode'; mode: MermaidEditorMode }
   | { type: 'toggleFullscreen' }
+  | { type: 'openInNewWindow' }
   | { type: 'requestDocument' }
+  | { type: 'revealSourceLine'; line: number }
+  | { type: 'setDiagramDensity'; density: DiagramDensity }
+  | { type: 'setDiagramSurface'; surface: DiagramSurfaceConfiguration }
   | { type: 'setDiagramTheme'; theme: DiagramTheme }
   | {
       type: 'diagnostic';

@@ -1,3 +1,4 @@
+import { DEFAULT_DIAGRAM_SURFACE, resolveDiagramAppearance } from './appearance';
 import type { DiagramTheme } from './protocol';
 
 export type PreviewColorScheme = 'dark' | 'highContrastDark' | 'highContrastLight' | 'light';
@@ -5,9 +6,11 @@ export type PreviewColorScheme = 'dark' | 'highContrastDark' | 'highContrastLigh
 export function resolveDiagramTheme(
   selectedTheme: DiagramTheme,
   colorScheme: PreviewColorScheme,
-): Exclude<DiagramTheme, 'adaptive'> {
-  if (selectedTheme !== 'adaptive') {
-    return selectedTheme;
-  }
-  return colorScheme === 'dark' || colorScheme === 'highContrastDark' ? 'dark' : 'default';
+): ReturnType<typeof resolveDiagramAppearance>['theme'] {
+  return resolveDiagramAppearance(
+    selectedTheme,
+    colorScheme,
+    DEFAULT_DIAGRAM_SURFACE,
+    'comfortable',
+  ).theme;
 }

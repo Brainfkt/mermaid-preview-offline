@@ -1,5 +1,12 @@
 import mermaid from 'mermaid';
 
+import {
+  DEFAULT_DIAGRAM_SURFACE,
+  diagramSpacing,
+  diagramSurfaceColor,
+  isDarkHexColor,
+  resolveDiagramAppearance,
+} from './appearance';
 import type { DiagramFontFamily } from './diagramFont';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
 import {
@@ -15,6 +22,7 @@ import {
   replaceSvgStyleIdReferences,
 } from './svgIdReferences';
 import type { LineDiffSummary } from './visualDiff';
+import type { DiagramDensity, DiagramSurfaceConfiguration, DiagramTheme } from './protocol';
 
 interface VsCodeApi {
   getState(): unknown;
@@ -23,9 +31,12 @@ interface VsCodeApi {
 }
 
 interface GalleryDataMessage {
+  density: DiagramDensity;
   examples: DiagramExample[];
   fontFamily: DiagramFontFamily;
   initialTab: GalleryTab;
+  surface: DiagramSurfaceConfiguration;
+  theme: DiagramTheme;
   templates: DiagramTemplate[];
   type: 'galleryData';
 }
@@ -34,6 +45,9 @@ interface VisualDiffDataMessage {
   after: { label: string; source: string };
   before: { label: string; source: string };
   fontFamily: DiagramFontFamily;
+  density: DiagramDensity;
+  surface: DiagramSurfaceConfiguration;
+  theme: DiagramTheme;
   summary: LineDiffSummary;
   title: string;
   type: 'visualDiffData';
@@ -55,6 +69,9 @@ const vscode = acquireVsCodeApi();
 let renderSequence = 0;
 let renderQueue = Promise.resolve();
 let activeFontFamily: DiagramFontFamily = 'vscode';
+let activeDensity: DiagramDensity = 'comfortable';
+let activeSurface: DiagramSurfaceConfiguration = DEFAULT_DIAGRAM_SURFACE;
+let activeTheme: DiagramTheme = 'adaptive';
 
 initializeMermaid(activeFontFamily);
 
@@ -100,6 +117,10 @@ function initializeGallery(): void {
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
     if (event.data.type !== 'galleryData') return;
     activeFontFamily = event.data.fontFamily;
+    activeDensity = event.data.density;
+    activeSurface = event.data.surface;
+    activeTheme = event.data.theme;
+    applyProjectSurface();
     initializeMermaid(activeFontFamily);
     templates = event.data.templates;
     examples = event.data.examples;
@@ -337,6 +358,10 @@ function initializeVisualDiff(): void {
     if (event.data.type !== 'visualDiffData') return;
     const data = event.data;
     activeFontFamily = data.fontFamily;
+    activeDensity = data.density;
+    activeSurface = data.surface;
+    activeTheme = data.theme;
+    applyProjectSurface();
     initializeMermaid(activeFontFamily);
     const generation = ++diffGeneration;
     title.textContent = data.title;
@@ -465,19 +490,40 @@ function removeTemporaryProjectRenderNodes(): void {
 }
 
 function initializeMermaid(fontFamily: DiagramFontFamily): void {
-  const isDark = document.body.classList.contains('vscode-dark') ||
+  const colorScheme = document.body.classList.contains('vscode-dark') ||
     document.body.classList.contains('vscode-high-contrast');
+  const appearance = resolveDiagramAppearance(
+    activeTheme,
+    colorScheme ? 'dark' : 'light',
+    activeSurface,
+    activeDensity,
+  );
+  const spacing = diagramSpacing(appearance.density);
   mermaid.initialize({
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline-project',
-    flowchart: { htmlLabels: true, useMaxWidth: false },
+    flowchart: { htmlLabels: true, useMaxWidth: false, ...spacing.flowchart },
     fontFamily: resolvedDiagramFontStack(fontFamily),
     gantt: { useMaxWidth: false },
     securityLevel: 'strict',
-    sequence: { useMaxWidth: false },
+    sequence: { useMaxWidth: false, ...spacing.sequence },
     startOnLoad: false,
-    theme: isDark ? 'dark' : 'default',
+    theme: appearance.theme,
+    look: appearance.look,
+    handDrawnSeed: appearance.handDrawnSeed,
   });
+}
+
+function applyProjectSurface(): void {
+  const editorColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
+  const color = diagramSurfaceColor(activeSurface, editorColor) ?? editorColor;
+  document.documentElement.style.setProperty('--diagram-canvas-background', color);
+  document.documentElement.style.setProperty(
+    '--diagram-pattern-ink',
+    isDarkHexColor(color) ? '#ffffff18' : '#0f172a17',
+  );
+  document.body.dataset.canvasPattern = activeSurface.pattern;
 }
 
 function sourceFor(item: GalleryItem): string {

@@ -19,7 +19,20 @@ import { describeMermaidError } from './mermaidError';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
 import { clamp, isDiagramTheme, normalizePreviewState } from './previewState';
+import {
+  DEFAULT_DIAGRAM_SURFACE,
+  diagramSpacing,
+  diagramSurfaceColor,
+  isDarkHexColor,
+  isDiagramDensity,
+  resolveDiagramAppearance,
+  type DiagramAppearance,
+} from './appearance';
 import type {
+  DiagramDensity,
+  DiagramSurfaceConfiguration,
+  DiagramSurfacePattern,
+  DiagramSurfacePreset,
   DiagramTheme,
   ExtensionToWebviewMessage,
   MermaidEditorMode,
@@ -29,7 +42,7 @@ import type {
   WebviewToExtensionMessage,
 } from './protocol';
 import { formatByteLength } from './renderPolicy';
-import { resolveDiagramTheme, type PreviewColorScheme } from './theme';
+import type { PreviewColorScheme } from './theme';
 import { DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION } from './navigationSettings';
 
 interface VsCodeApi {
@@ -41,7 +54,9 @@ interface VsCodeApi {
 declare function acquireVsCodeApi(): VsCodeApi;
 
 const DEFAULT_CONFIGURATION: PreviewConfiguration = {
+  diagramDensity: 'comfortable',
   diagramFontFamily: 'vscode',
+  diagramSurface: DEFAULT_DIAGRAM_SURFACE,
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
   minimapEnabled: true,
@@ -77,8 +92,17 @@ const largeFileLabel = element<HTMLElement>('large-file-label');
 const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
 const exportOpenButton = element<HTMLButtonElement>('export-open');
-const themeSelect = element<HTMLSelectElement>('diagram-theme');
-const themePicker = element<HTMLElement>('theme-picker');
+const themePicker = element<HTMLButtonElement>('theme-picker');
+const appearanceLabel = element<HTMLElement>('appearance-label');
+const appearancePopover = element<HTMLElement>('appearance-popover');
+const themeGallery = element<HTMLElement>('theme-gallery');
+const densityPicker = element<HTMLElement>('density-picker');
+const patternPicker = element<HTMLElement>('pattern-picker');
+const surfacePicker = element<HTMLElement>('surface-picker');
+const surfaceCustomColor = element<HTMLInputElement>('surface-custom-color');
+const searchPanel = element<HTMLElement>('diagram-search');
+const searchInput = element<HTMLInputElement>('diagram-search-input');
+const searchCount = element<HTMLElement>('diagram-search-count');
 const navigationControls = element<HTMLElement>('diagram-navigation-controls');
 const panModeButton = element<HTMLButtonElement>('pan-mode');
 const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
@@ -115,7 +139,7 @@ let naturalWidth = 800;
 let naturalHeight = 600;
 let lastSvg = '';
 let lastSvgFontFamily = DEFAULT_CONFIGURATION.diagramFontFamily;
-let lastSvgTheme: Exclude<DiagramTheme, 'adaptive'> | undefined;
+let lastSvgAppearance = '';
 let latestRequest = 0;
 let latestSource = '';
 let latestSourceUri = '';
@@ -139,9 +163,12 @@ let exportPreviewGeneration = 0;
 let exportJob = Promise.resolve();
 let exportDialogRequested = false;
 let panModeEnabled = false;
+let searchMatches: Element[] = [];
+let searchIndex = -1;
+let diagramPointerStart: { x: number; y: number } | undefined;
 
-themeSelect.value = diagramTheme;
 updateThemePicker();
+applyCanvasAppearance();
 zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
 updateEditorMode();
 
@@ -149,18 +176,18 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
   const message = event.data;
   switch (message.type) {
     case 'configuration': {
-      const previousTheme = resolvedDiagramTheme();
+      const previousAppearance = appearanceSignature(currentAppearance());
       const previousFontFamily = configuration.diagramFontFamily;
       configuration = message.configuration;
       diagramTheme = configuration.diagramTheme;
-      themeSelect.value = diagramTheme;
       updateThemePicker();
+      applyCanvasAppearance();
       updateRefreshControls();
       updateNavigationConfiguration();
       updateMinimap();
       if (
         latestSource &&
-        (previousTheme !== resolvedDiagramTheme() ||
+        (previousAppearance !== appearanceSignature(currentAppearance()) ||
           previousFontFamily !== configuration.diagramFontFamily)
       ) {
         scheduleRender(latestSource, 0);
@@ -256,6 +283,13 @@ bindButton('error-open-source', openSourceOnly);
 bindButton('error-retry', retryRender);
 bindButton('refresh', refreshDocument);
 bindButton('fullscreen', () => vscode.postMessage({ type: 'toggleFullscreen' }));
+bindButton('open-new-window', () => vscode.postMessage({ type: 'openInNewWindow' }));
+bindButton('theme-picker', toggleAppearancePopover);
+bindButton('appearance-close', closeAppearancePopover);
+bindButton('search-open', openDiagramSearch);
+bindButton('diagram-search-close', closeDiagramSearch);
+bindButton('diagram-search-previous', () => selectSearchMatch(-1));
+bindButton('diagram-search-next', () => selectSearchMatch(1));
 bindButton('pan-mode', togglePanMode);
 bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
 bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
@@ -293,19 +327,59 @@ for (const control of Array.from(exportForm.querySelectorAll('input, select'))) 
   control.addEventListener('change', handleExportSettingsChanged);
 }
 
-themeSelect.addEventListener('change', () => {
-  if (!isDiagramTheme(themeSelect.value)) {
-    return;
+themeGallery.addEventListener('click', (event) => {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-theme]');
+  if (button && isDiagramTheme(button.dataset.theme)) setDiagramTheme(button.dataset.theme);
+});
+densityPicker.addEventListener('click', (event) => {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-density]');
+  if (button && isDiagramDensity(button.dataset.density)) setDiagramDensity(button.dataset.density);
+});
+patternPicker.addEventListener('click', (event) => {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-pattern]');
+  const pattern = button?.dataset.pattern;
+  if (pattern === 'none' || pattern === 'dots' || pattern === 'grid') setDiagramPattern(pattern);
+});
+surfacePicker.addEventListener('click', (event) => {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-surface]');
+  if (button?.dataset.surface) setDiagramSurfacePreset(button.dataset.surface as DiagramSurfacePreset);
+});
+surfaceCustomColor.addEventListener('input', () => {
+  setDiagramSurface({
+    ...configuration.diagramSurface,
+    customColor: surfaceCustomColor.value,
+    preset: 'custom',
+  });
+});
+searchInput.addEventListener('input', updateDiagramSearch);
+searchInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    selectSearchMatch(event.shiftKey ? -1 : 1);
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closeDiagramSearch();
   }
-  diagramTheme = themeSelect.value;
-  updateThemePicker();
-  vscode.postMessage({ type: 'setDiagramTheme', theme: diagramTheme });
-  if (latestSource) {
-    scheduleRender(latestSource, 0);
+});
+document.addEventListener('pointerdown', (event) => {
+  if (!appearancePopover.hidden &&
+      !appearancePopover.contains(event.target as Node) &&
+      !themePicker.contains(event.target as Node)) {
+    closeAppearancePopover();
   }
 });
 
 window.addEventListener('keydown', (event) => {
+  if ((event.key === '/' || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f')) &&
+      !exportDialog.open && !isTypingTarget(event.target)) {
+    event.preventDefault();
+    openDiagramSearch();
+    return;
+  }
+  if (event.key === 'Escape' && !appearancePopover.hidden) {
+    closeAppearancePopover();
+    return;
+  }
   if (
     event.key.toLowerCase() === 'p' &&
     !event.metaKey &&
@@ -382,6 +456,7 @@ viewport.addEventListener('scroll', () => {
 installDragToPan();
 installMinimapNavigation();
 installPreviewFocus();
+installSourceNavigation();
 updateNavigationConfiguration();
 
 new ResizeObserver(() => {
@@ -398,9 +473,12 @@ new MutationObserver(() => {
     return;
   }
   lastColorScheme = colorScheme;
+  applyCanvasAppearance();
   if (
     latestSource &&
-    (diagramTheme === 'adaptive' || configuration.diagramFontFamily === 'vscode')
+    (diagramTheme === 'adaptive' || diagramTheme === 'sketch' ||
+      configuration.diagramSurface.preset === 'editor' ||
+      configuration.diagramFontFamily === 'vscode')
   ) {
     scheduleRender(latestSource, 0);
   }
@@ -435,7 +513,7 @@ async function renderLatest(): Promise<void> {
   const request = latestRequest;
   const source = latestSource;
   const fontFamily = configuration.diagramFontFamily;
-  const theme = resolvedDiagramTheme();
+  const appearance = currentAppearance();
   const controller = new AbortController();
   activeRenderController = controller;
   rendering = true;
@@ -460,7 +538,7 @@ async function renderLatest(): Promise<void> {
   try {
     await prepareMermaidExtensions(source, fontFamily);
     throwIfCancelled(controller.signal, request);
-    initializeMermaid(theme, fontFamily);
+    initializeMermaid(appearance, fontFamily);
 
     const { svg } = await mermaid.render(renderId, source);
     throwIfCancelled(controller.signal, request);
@@ -470,13 +548,15 @@ async function renderLatest(): Promise<void> {
     lastSvg = svg;
     clearMinimapThumbnail();
     lastSvgFontFamily = fontFamily;
-    lastSvgTheme = theme;
+    lastSvgAppearance = appearanceSignature(appearance);
     const svgElement = diagram.querySelector('svg');
     if (!svgElement) {
       throw new Error('Mermaid did not produce an SVG element.');
     }
 
     readNaturalSize(svgElement);
+    prepareDiagramInteractivity();
+    updateDiagramSearch();
     showState('diagram');
     copyButton.disabled = false;
     exportOpenButton.disabled = false;
@@ -635,8 +715,17 @@ function showState(state: 'diagram' | 'empty' | 'error' | 'loading'): void {
   }
 }
 
-function resolvedDiagramTheme(): Exclude<DiagramTheme, 'adaptive'> {
-  return resolveDiagramTheme(diagramTheme, vscodeColorScheme());
+function currentAppearance(theme: DiagramTheme = diagramTheme): DiagramAppearance {
+  return resolveDiagramAppearance(
+    theme,
+    vscodeColorScheme(),
+    configuration.diagramSurface,
+    configuration.diagramDensity,
+  );
+}
+
+function appearanceSignature(appearance: DiagramAppearance): string {
+  return `${appearance.theme}:${appearance.look}:${appearance.handDrawnSeed ?? ''}:${appearance.density}`;
 }
 
 function vscodeColorScheme(): PreviewColorScheme {
@@ -807,10 +896,89 @@ function scheduleMinimapViewportUpdate(): void {
 }
 
 function updateThemePicker(): void {
-  const selectedOption = themeSelect.selectedOptions[0];
-  const label = selectedOption?.textContent?.trim() || diagramTheme;
-  themePicker.title = `Diagram theme: ${label}`;
-  themePicker.setAttribute('aria-label', `Diagram theme: ${label}`);
+  const labels: Record<DiagramTheme, string> = {
+    adaptive: 'Adaptive', base: 'Base', dark: 'Dark', default: 'Default', forest: 'Forest',
+    neo: 'Neo', 'neo-dark': 'Neo Dark', neutral: 'Neutral', 'redux-color': 'Vibrant',
+    'redux-dark-color': 'Vibrant Dark', sketch: 'Sketch',
+  };
+  const label = labels[diagramTheme];
+  appearanceLabel.textContent = label;
+  themePicker.title = `Diagram appearance: ${label}`;
+  themePicker.setAttribute('aria-label', `Diagram appearance: ${label}`);
+  for (const button of Array.from(themeGallery.querySelectorAll<HTMLButtonElement>('[data-theme]'))) {
+    button.setAttribute('aria-pressed', String(button.dataset.theme === diagramTheme));
+  }
+}
+
+function toggleAppearancePopover(): void {
+  appearancePopover.hidden = !appearancePopover.hidden;
+  themePicker.setAttribute('aria-expanded', String(!appearancePopover.hidden));
+}
+
+function closeAppearancePopover(): void {
+  appearancePopover.hidden = true;
+  themePicker.setAttribute('aria-expanded', 'false');
+}
+
+function setDiagramTheme(theme: DiagramTheme): void {
+  if (theme === diagramTheme) return;
+  diagramTheme = theme;
+  configuration = { ...configuration, diagramTheme: theme };
+  updateThemePicker();
+  applyCanvasAppearance();
+  vscode.postMessage({ type: 'setDiagramTheme', theme });
+  if (latestSource) scheduleRender(latestSource, 0);
+}
+
+function setDiagramDensity(density: DiagramDensity): void {
+  if (density === configuration.diagramDensity) return;
+  configuration = { ...configuration, diagramDensity: density };
+  applyCanvasAppearance();
+  vscode.postMessage({ type: 'setDiagramDensity', density });
+  if (latestSource) scheduleRender(latestSource, 0);
+}
+
+function setDiagramPattern(pattern: DiagramSurfacePattern): void {
+  setDiagramSurface({ ...configuration.diagramSurface, pattern });
+}
+
+function setDiagramSurfacePreset(preset: DiagramSurfacePreset): void {
+  setDiagramSurface({ ...configuration.diagramSurface, preset });
+}
+
+function setDiagramSurface(surface: DiagramSurfaceConfiguration): void {
+  configuration = { ...configuration, diagramSurface: surface };
+  applyCanvasAppearance();
+  vscode.postMessage({ type: 'setDiagramSurface', surface });
+  if (latestSource && (diagramTheme === 'adaptive' || diagramTheme === 'sketch')) {
+    scheduleRender(latestSource, 0);
+  }
+}
+
+function applyCanvasAppearance(): void {
+  const editorColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
+  const background = diagramSurfaceColor(configuration.diagramSurface, editorColor) ?? editorColor;
+  document.documentElement.style.setProperty('--diagram-canvas-background', background);
+  document.documentElement.style.setProperty(
+    '--diagram-pattern-ink',
+    isDarkHexColor(background) ? '#ffffff18' : '#0f172a17',
+  );
+  viewport.classList.toggle('pattern-dots', configuration.diagramSurface.pattern === 'dots');
+  viewport.classList.toggle('pattern-grid', configuration.diagramSurface.pattern === 'grid');
+  for (const button of Array.from(densityPicker.querySelectorAll<HTMLButtonElement>('[data-density]'))) {
+    button.classList.toggle('is-active', button.dataset.density === configuration.diagramDensity);
+  }
+  for (const button of Array.from(patternPicker.querySelectorAll<HTMLButtonElement>('[data-pattern]'))) {
+    button.classList.toggle('is-active', button.dataset.pattern === configuration.diagramSurface.pattern);
+  }
+  for (const button of Array.from(surfacePicker.querySelectorAll<HTMLButtonElement>('[data-surface]'))) {
+    button.classList.toggle('is-active', button.dataset.surface === configuration.diagramSurface.preset);
+  }
+  surfaceCustomColor.value = configuration.diagramSurface.customColor;
+  surfaceCustomColor.closest('.surface-swatch')?.classList.toggle(
+    'is-active', configuration.diagramSurface.preset === 'custom',
+  );
 }
 
 function openExportDialog(): void {
@@ -854,15 +1022,20 @@ function writeExportForm(settingsValue: ExportSettings): void {
 }
 
 function readExportForm(): ExportSettings {
+  const editorColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
   return normalizeExportSettings({
     background: exportBackground.value,
     backgroundColor: exportBackgroundColor.value,
     dpi: Number(exportDpi.value),
+    density: configuration.diagramDensity,
     fileNameTemplate: exportNameTemplate.value,
     format: exportFormat.value,
     includeMetadata: exportMetadata.checked,
     margin: Number(exportMargin.value),
     optimizeSvg: exportOptimize.checked,
+    previewBackgroundColor:
+      diagramSurfaceColor(configuration.diagramSurface, editorColor) ?? editorColor,
     scale: Number(exportScale.value),
     svgVariant: exportSvgOriginal.checked ? 'original' : 'optimized',
     theme: exportTheme.value,
@@ -1096,10 +1269,10 @@ async function renderSvgForExport(
   theme: DiagramTheme,
   fontFamily: PreviewConfiguration['diagramFontFamily'],
 ): Promise<string> {
-  const resolvedTheme = resolveDiagramTheme(theme, vscodeColorScheme());
+  const appearance = currentAppearance(theme);
   if (
     source === latestSource &&
-    resolvedTheme === lastSvgTheme &&
+    appearanceSignature(appearance) === lastSvgAppearance &&
     fontFamily === lastSvgFontFamily &&
     lastSvg
   ) {
@@ -1108,7 +1281,7 @@ async function renderSvgForExport(
   const renderId = `mermaid-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   try {
     await prepareMermaidExtensions(source, fontFamily);
-    initializeMermaid(resolvedTheme, fontFamily);
+    initializeMermaid(appearance, fontFamily);
     return (await mermaid.render(renderId, source)).svg;
   } finally {
     cleanupFailedRender(renderId);
@@ -1163,18 +1336,22 @@ function queueExportJob(task: () => Promise<void>): void {
 }
 
 function initializeMermaid(
-  theme: Exclude<DiagramTheme, 'adaptive'>,
+  appearance: DiagramAppearance,
   fontFamily: PreviewConfiguration['diagramFontFamily'],
 ): void {
+  const spacing = diagramSpacing(appearance.density);
   mermaid.initialize({
     deterministicIds: true,
     deterministicIDSeed: 'mermaid-preview-offline',
     startOnLoad: false,
     securityLevel: 'strict',
-    theme,
+    theme: appearance.theme,
+    look: appearance.look,
+    handDrawnSeed: appearance.handDrawnSeed,
     fontFamily: resolvedDiagramFontStack(fontFamily),
-    flowchart: { htmlLabels: false, useMaxWidth: false },
-    sequence: { useMaxWidth: false },
+    flowchart: { htmlLabels: false, useMaxWidth: false, ...spacing.flowchart },
+    sequence: { useMaxWidth: false, ...spacing.sequence },
+    gantt: { useMaxWidth: false },
   });
 }
 
@@ -1250,6 +1427,137 @@ function installPreviewFocus(): void {
     },
     { capture: true },
   );
+}
+
+const DIAGRAM_ITEM_SELECTOR =
+  'g.node, g.rough-node, g.cluster, g.mindmap-node, g[class*="timeline-node"], .actor';
+
+function prepareDiagramInteractivity(): void {
+  for (const item of Array.from(diagram.querySelectorAll<SVGElement>(DIAGRAM_ITEM_SELECTOR))) {
+    const target = item.classList.contains('actor') ? item.parentElement : item;
+    target?.setAttribute('tabindex', '0');
+  }
+}
+
+function clickableDiagramGroup(target: Element): Element | undefined {
+  const group = target.closest(
+    'g.node, g.rough-node, g.cluster, g.mindmap-node, g[class*="timeline-node"]',
+  );
+  if (group) return group;
+  const actor = target.closest('.actor');
+  return actor?.parentElement ?? undefined;
+}
+
+function sourceLineFor(group: Element): number | undefined {
+  const lines = latestSource.split('\n');
+  const rawId = group.id.replace(/^mermaid-(?:preview|export)-[^-]+-/, '');
+  const idMatch = rawId.match(/^[A-Za-z][\w-]*-(.+)-\d+$/u);
+  const identifier = idMatch?.[1] ?? (group.classList.contains('cluster') ? rawId : undefined);
+  if (identifier) {
+    const escaped = identifier.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+    const expression = new RegExp(`(^|[^\\w])${escaped}([^\\w]|$)`, 'u');
+    const index = lines.findIndex((line) => expression.test(line));
+    if (index >= 0) return index;
+  }
+  const label = group.querySelector('.nodeLabel, .label, text')?.textContent?.trim();
+  if (!label) return undefined;
+  const index = lines.findIndex((line) => line.includes(label));
+  return index >= 0 ? index : undefined;
+}
+
+function installSourceNavigation(): void {
+  diagram.addEventListener('pointerdown', (event) => {
+    diagramPointerStart = { x: event.clientX, y: event.clientY };
+  });
+  diagram.addEventListener('click', (event) => {
+    if (event.altKey || !(event.target instanceof Element)) return;
+    if (diagramPointerStart &&
+        (Math.abs(event.clientX - diagramPointerStart.x) > 4 ||
+         Math.abs(event.clientY - diagramPointerStart.y) > 4)) return;
+    const group = clickableDiagramGroup(event.target);
+    if (!group) return;
+    const line = sourceLineFor(group);
+    if (line !== undefined) vscode.postMessage({ type: 'revealSourceLine', line });
+  });
+  diagram.addEventListener('keydown', (event) => {
+    if ((event.key !== 'Enter' && event.key !== ' ') || !(event.target instanceof Element)) return;
+    const group = clickableDiagramGroup(event.target);
+    if (!group) return;
+    const line = sourceLineFor(group);
+    if (line !== undefined) {
+      event.preventDefault();
+      vscode.postMessage({ type: 'revealSourceLine', line });
+    }
+  });
+}
+
+function clearSearchHighlights(): void {
+  for (const item of Array.from(diagram.querySelectorAll('.diagram-search-dim, .diagram-search-hit'))) {
+    item.classList.remove('diagram-search-dim', 'diagram-search-hit');
+  }
+}
+
+function updateDiagramSearch(): void {
+  clearSearchHighlights();
+  searchMatches = [];
+  searchIndex = -1;
+  const query = searchInput.value.trim().toLocaleLowerCase();
+  const svg = diagram.querySelector('svg');
+  if (!query || !svg) {
+    searchCount.textContent = '';
+    return;
+  }
+  const seen = new Set<Element>();
+  for (const label of Array.from(svg.querySelectorAll('text, .nodeLabel, .label'))) {
+    if (!(label.textContent ?? '').toLocaleLowerCase().includes(query)) continue;
+    const target = clickableDiagramGroup(label) ?? label;
+    if (seen.has(target)) continue;
+    seen.add(target);
+    searchMatches.push(target);
+  }
+  if (!searchMatches.length) {
+    searchCount.textContent = '0';
+    return;
+  }
+  for (const item of Array.from(svg.querySelectorAll(DIAGRAM_ITEM_SELECTOR))) {
+    const target = item.classList.contains('actor') ? item.parentElement : item;
+    target?.classList.add('diagram-search-dim');
+  }
+  for (const match of searchMatches) match.classList.remove('diagram-search-dim');
+  selectSearchMatch(1);
+}
+
+function selectSearchMatch(delta: number): void {
+  if (!searchMatches.length) return;
+  if (searchIndex >= 0) searchMatches[searchIndex]?.classList.remove('diagram-search-hit');
+  searchIndex = (searchIndex + delta + searchMatches.length) % searchMatches.length;
+  const match = searchMatches[searchIndex];
+  if (!match) return;
+  match.classList.add('diagram-search-hit');
+  searchCount.textContent = `${searchIndex + 1}/${searchMatches.length}`;
+  const matchBounds = match.getBoundingClientRect();
+  const viewportBounds = viewport.getBoundingClientRect();
+  viewport.scrollBy({
+    behavior: 'smooth',
+    left: matchBounds.left + matchBounds.width / 2 - viewportBounds.left - viewportBounds.width / 2,
+    top: matchBounds.top + matchBounds.height / 2 - viewportBounds.top - viewportBounds.height / 2,
+  });
+}
+
+function openDiagramSearch(): void {
+  searchPanel.hidden = false;
+  searchInput.focus();
+  searchInput.select();
+  updateDiagramSearch();
+}
+
+function closeDiagramSearch(): void {
+  searchPanel.hidden = true;
+  clearSearchHighlights();
+  searchMatches = [];
+  searchIndex = -1;
+  searchCount.textContent = '';
+  focusPreviewSurface();
 }
 
 function throwIfCancelled(signal: AbortSignal, request: number): void {
