@@ -209,7 +209,6 @@ export class DocumentationDiagramController {
         event.clientY,
       );
     }, { signal });
-    this.canvas.addEventListener('scroll', () => undefined, { passive: true, signal });
     this.canvas.addEventListener('keydown', (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === '0') {
         event.preventDefault();
@@ -234,7 +233,7 @@ export class DocumentationDiagramController {
   private createResizeHandle(): HTMLElement {
     const handle = document.createElement('div');
     handle.className = 'documentation-resize-handle';
-    handle.role = 'separator';
+    handle.setAttribute('role', 'separator');
     handle.tabIndex = 0;
     handle.setAttribute('aria-label', 'Resize diagram vertically');
     handle.setAttribute('aria-orientation', 'horizontal');

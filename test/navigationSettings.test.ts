@@ -25,6 +25,6 @@ void test('accepts safe documentation height values and rejects CSS injection', 
   assert.equal(normalizeDocumentationMaxHeight('24rem'), '24rem');
   assert.equal(normalizeDocumentationMaxHeight('12px; color: red'), '');
   assert.equal(normalizeDocumentationMaxHeight('calc(100vh - 20px)'), '');
-  assert.equal(normalizeDocumentationMaxHeight('10px'), '100px');
+  assert.equal(normalizeDocumentationMaxHeight('10px'), '160px');
   assert.equal(normalizeDocumentationMaxHeight('999999px'), '10000px');
 });

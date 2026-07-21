@@ -613,8 +613,10 @@ function showState(state: 'diagram' | 'empty' | 'error' | 'loading'): void {
   errorState.hidden = state !== 'error';
   loadingState.hidden = state !== 'loading';
   if (state === 'diagram') {
+    updatePanAffordance(false);
     window.requestAnimationFrame(updateMinimap);
   } else {
+    updatePanAffordance(false);
     minimap.hidden = true;
   }
 }

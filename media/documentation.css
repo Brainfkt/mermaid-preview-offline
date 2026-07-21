@@ -139,7 +139,7 @@ button:focus-visible,
   position: relative;
   display: block;
   height: clamp(280px, 46vh, 480px);
-  min-height: 250px;
+  min-height: 160px;
   overflow: auto;
   background:
     linear-gradient(color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface) 92%, transparent)),
@@ -265,6 +265,6 @@ button:focus-visible,
   .documentation-header { align-items: flex-start; padding: 11px 12px; }
   .documentation-header p { display: none; }
   .documentation-list { gap: 11px; padding: 12px; }
-  .documentation-canvas { min-height: 210px; padding: 14px; }
+  .documentation-canvas { height: clamp(240px, 44vh, 400px); min-height: 160px; }
   .documentation-card__header div { display: grid; gap: 2px; }
 }

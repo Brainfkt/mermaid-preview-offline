@@ -56,6 +56,8 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies['@mermaid-js/mermaid-zenuml'], '0.2.3');
   assert.match(manifest.dependencies['@iconify-json/logos'] ?? '', /^1\./u);
   assert.match(manifest.dependencies['@iconify-json/material-icon-theme'] ?? '', /^1\./u);
+  assert.equal(manifest.dependencies['@iconify-json/mdi'], '1.2.3');
+  assert.equal(manifest.dependencies['@mermaid-js/layout-tidy-tree'], '0.2.2');
   assert.equal(manifest.dependencies.katex, undefined);
 });
 
@@ -221,6 +223,23 @@ void test('refresh, large-file, diagram-theme, and diagram-font settings are con
   assert.equal(properties['mermaidPreviewOffline.largeFileThresholdKb']?.default, 512);
   assert.equal(properties['mermaidPreviewOffline.minimap.enabled']?.default, true);
   assert.equal(properties['mermaidPreviewOffline.minimap.enabled']?.scope, 'resource');
+  assert.deepEqual(properties['mermaidPreviewOffline.navigation.mouse']?.enum, [
+    'always',
+    'alt',
+    'never',
+  ]);
+  assert.equal(properties['mermaidPreviewOffline.navigation.mouse']?.default, 'always');
+  assert.deepEqual(properties['mermaidPreviewOffline.navigation.controls']?.enum, [
+    'never',
+    'onHoverOrFocus',
+    'always',
+  ]);
+  assert.equal(properties['mermaidPreviewOffline.navigation.controls']?.default, 'always');
+  assert.deepEqual(properties['mermaidPreviewOffline.documentation.languages']?.default, [
+    'mermaid',
+  ]);
+  assert.equal(properties['mermaidPreviewOffline.documentation.resizable']?.default, true);
+  assert.equal(properties['mermaidPreviewOffline.documentation.maxHeight']?.default, '');
   assert.deepEqual(properties['mermaidPreviewOffline.diagramTheme']?.enum, [
     'adaptive',
     'default',

@@ -37,6 +37,7 @@ void test('the compact toolbar exposes controls in the requested order', () => {
   assert.match(html, /class="toolbar glass-surface"/u);
   const controlOrder = [
     'id="editor-layout"',
+    'id="pan-mode"',
     'id="zoom-out"',
     'id="fit"',
     'id="zoom-in"',
@@ -93,6 +94,8 @@ void test('navigation controls use native editor layouts and expose v0.4 reading
   assert.doesNotMatch(html, /id="show-toolbar"/u);
   assert.match(html, /id="minimap"/u);
   assert.match(html, /id="minimap-window"/u);
+  assert.match(html, /id="diagram-navigation-controls"/u);
+  assert.match(html, /id="pan-mode"[^>]+aria-pressed="false"/u);
   assert.match(html, /id="file-size"/u);
   assert.match(html, /id="diagram-size"/u);
 });
