@@ -62,10 +62,13 @@ const options = {
 };
 
 const galleryData = {
+  density: 'comfortable',
   examples,
   fontFamily: 'vscode',
   initialTab: 'templates',
+  surface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
   templates: DIAGRAM_TEMPLATES,
+  theme: 'adaptive',
   type: 'galleryData',
 };
 const galleryStub = stubFor(galleryData, `
@@ -125,8 +128,11 @@ const diffData = {
   after: { label: 'Working tree', source: afterSource },
   before: { label: 'HEAD', source: beforeSource },
   fontFamily: 'vscode',
+  density: 'comfortable',
+  surface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
   summary: summarizeLineDiff(beforeSource, afterSource),
   title: 'Visual diff · approval-flow.mmd',
+  theme: 'adaptive',
   type: 'visualDiffData',
 };
 const diffStub = stubFor(diffData, `

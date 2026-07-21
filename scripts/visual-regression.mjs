@@ -144,7 +144,9 @@ const runner = `<script nonce="${nonce}">
       window.postMessage({
         type: 'configuration',
         configuration: {
+          diagramDensity: 'comfortable',
           diagramFontFamily: 'noto-sans',
+          diagramSurface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
           diagramTheme: 'adaptive',
           largeFileThresholdBytes: 524288,
           minimapEnabled: true,
@@ -253,10 +255,9 @@ const runner = `<script nonce="${nonce}">
       throw new Error('The toolbar must remain visible.');
     }
 
-    const themeSelect = document.querySelector('#diagram-theme');
+    const themeSelect = document.querySelector('[data-theme="forest"]');
     const svgBeforeTheme = document.querySelector('#diagram svg');
-    themeSelect.value = 'forest';
-    themeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    themeSelect.click();
     await waitFor(
       () => postedMessages.some((message) =>
         message.type === 'setDiagramTheme' && message.theme === 'forest'),
@@ -266,6 +267,17 @@ const runner = `<script nonce="${nonce}">
       () => document.querySelector('#diagram svg') !== svgBeforeTheme,
       'theme rerender',
     );
+    for (const theme of [
+      'default', 'dark', 'forest', 'neutral', 'base', 'neo', 'neo-dark',
+      'redux-color', 'redux-dark-color', 'sketch', 'adaptive',
+    ]) {
+      const previousSvg = document.querySelector('#diagram svg');
+      document.querySelector('[data-theme="' + theme + '"]').click();
+      await waitFor(
+        () => document.querySelector('#diagram svg') !== previousSvg,
+        theme + ' appearance render',
+      );
+    }
 
     const accentedSource =
       'flowchart LR\\n  A["Échéance · coût · façade · cœur"] --> B["naïve · déjà · Ç"]';
@@ -286,6 +298,32 @@ const runner = `<script nonce="${nonce}">
     if (!document.querySelector('#diagram svg')?.textContent.includes('Échéance · coût · façade · cœur')) {
       throw new Error('The renderer did not preserve the accented diagram labels.');
     }
+    document.querySelector('#search-open').click();
+    const searchInput = document.querySelector('#diagram-search-input');
+    searchInput.value = 'Échéance';
+    searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+    await waitFor(
+      () => document.querySelectorAll('.diagram-search-hit').length === 1,
+      'diagram search highlight',
+    );
+    document.querySelector('#diagram-search-close').click();
+    const sourceNode = document.querySelector('#diagram g.node');
+    sourceNode.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 1, clientY: 1 }));
+    sourceNode.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 1, clientY: 1 }));
+    await waitFor(
+      () => postedMessages.some((message) => message.type === 'revealSourceLine' && message.line === 1),
+      'click to source',
+    );
+    document.querySelector('[data-surface="midnight"]').click();
+    await waitFor(
+      () => postedMessages.some((message) => message.type === 'setDiagramSurface' && message.surface.preset === 'midnight'),
+      'canvas surface selection',
+    );
+    document.querySelector('[data-density="compact"]').click();
+    await waitFor(
+      () => postedMessages.some((message) => message.type === 'setDiagramDensity' && message.density === 'compact'),
+      'diagram density selection',
+    );
     for (const [fontFamily, cssFamily] of [
       ['inter', 'Mermaid Offline Inter'],
       ['noto-sans', 'Mermaid Offline Noto Sans'],
@@ -295,7 +333,9 @@ const runner = `<script nonce="${nonce}">
       window.postMessage({
         type: 'configuration',
         configuration: {
+          diagramDensity: 'comfortable',
           diagramFontFamily: fontFamily,
+          diagramSurface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
           diagramTheme: 'forest',
           largeFileThresholdBytes: 524288,
           minimapEnabled: true,
@@ -405,6 +445,8 @@ const runner = `<script nonce="${nonce}">
       settings: {
         background: 'transparent',
         backgroundColor: '#ffffff',
+        previewBackgroundColor: '#ffffff',
+        density: 'comfortable',
         dpi: 144,
         fileNameTemplate: '{name}-{theme}@{scale}x.{format}',
         format: 'png',
