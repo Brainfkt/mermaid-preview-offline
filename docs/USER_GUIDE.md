@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.1.2 — User guide
+# Mermaid Preview Offline 1.2.0 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,7 +7,7 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.1.2 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.0 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
@@ -127,6 +127,11 @@ its budget.
 | Pan | Drag according to `navigation.mouse`, or toggle **Pan** for explicit pan mode |
 | Navigate an overflowing diagram | Click or drag inside the minimap |
 | Maximize the active editor group | Toolbar **Full screen** |
+| Find a rendered label | `/` or `Ctrl/Cmd+F`, then Enter/Shift+Enter |
+| Reveal source | Click a rendered node, cluster, actor, mindmap, or timeline item |
+| Move preview to another window | Toolbar **Open in new window** |
+
+![Finding matching labels in a rendered Mermaid board while unrelated nodes are dimmed](../media/screenshots/search.png)
 
 Zoom is constrained to a practical 15–400% range. Set
 `mermaidPreviewOffline.navigation.mouse` to `always`, `alt`, or `never`, and
@@ -139,19 +144,24 @@ the visible area; click or drag to move that area across a large diagram.
 
 ### Diagram themes and VS Code color themes
 
-The preview theme selector offers **Adaptive**, **Default**, **Dark**,
-**Forest**, **Neutral**, and **Base**. Adaptive follows the current VS Code
-light, dark, or high-contrast color scheme. The extension UI itself uses VS Code
-theme variables and supports light, dark, high-contrast light, and high-contrast
-dark themes.
+The visual appearance gallery offers **Adaptive**, **Default**, **Dark**,
+**Forest**, **Neutral**, **Base**, **Neo**, **Neo Dark**, **Vibrant**,
+**Vibrant Dark**, and **Sketch**. Sketch uses a deterministic hand-drawn seed,
+so repeated renders stay stable. Adaptive and Sketch derive their light or dark
+palette from the selected canvas background, falling back to VS Code when the
+canvas follows the editor.
+
+Choose Compact, Comfortable, or Spacious density. Canvas presets include the
+VS Code editor, white, paper, soft gray, soft blue, soft rose, slate, midnight,
+and any custom six-digit color. Dots, grid, and pattern-free modes are available
+independently. These workspace settings are shared by file previews,
+documentation blocks, Diagram Studio, visual diffs, exports, tasks, and CLI
+rendering where applicable.
 
 The preview theme and export theme are independent. This lets you edit in a dark
 workspace while exporting, for example, a neutral diagram on white.
 
-<p align="center">
-  <img src="../media/screenshots/theme-forest.png" alt="A Mermaid mindmap with the Forest theme selected" width="49%">
-  <img src="../media/screenshots/theme-neutral.png" alt="The same Mermaid mindmap with the Neutral theme selected" width="49%">
-</p>
+![The complete appearance gallery with classic, Neo, Vibrant, and Sketch themes, density controls, patterns, and canvas backgrounds](../media/screenshots/appearance.png)
 
 ### Diagram typography
 
@@ -299,14 +309,16 @@ pixel/page dimensions before you save.
 The toolbar's **Copy SVG** copies the current original rendered SVG. The export
 dialog can separately copy original SVG, optimized SVG, or PNG.
 
+![Copying the current original SVG directly from the Mermaid preview toolbar](../media/screenshots/copy-svg.png)
+
 ### Export controls
 
-- **Theme:** Adaptive, Default, Dark, Forest, Neutral, or Base.
+- **Theme:** all classic, Neo, Vibrant, and Sketch appearances.
 - **Scale:** 0.25–8.
 - **DPI:** 72–600 for raster and PDF output.
 - **Margin:** 0–512 CSS pixels.
-- **Background:** Transparent or a six-digit hexadecimal color. PDF is always
-  opaque.
+- **Background:** Transparent, a six-digit hexadecimal color, or the current
+  preview canvas. PDF is always opaque.
 - **Name template:** up to 160 characters, using `{name}`, `{format}`, `{theme}`,
   `{scale}`, `{dpi}`, `{date}`, `{time}`, and `{ext}`.
 - **Optimize SVG:** simplify the prepared vector output before saving or
@@ -356,9 +368,10 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--format <format>` | `svg`, `png`, `webp`, or `pdf`. |
 | `--scale <factor>` | Scale from 0.25 to 8. |
 | `--dpi <number>` | Resolution from 72 to 600 DPI. |
+| `--density <density>` | `compact`, `comfortable`, or `spacious`. |
 | `--margin <pixels>` | Space around the diagram. |
 | `--background <value>` | `transparent` or `#rrggbb`. |
-| `--theme <theme>` | `adaptive`, `default`, `dark`, `forest`, `neutral`, or `base`. |
+| `--theme <theme>` | Any classic, Neo, Redux/Vibrant, or Sketch theme identifier. |
 | `--font <font>` | `vscode`, `noto-sans`, or `inter`; `vscode` uses the system UI stack outside VS Code. |
 | `--name-template <template>` | Output naming tokens used by the export dialog. |
 | `--profile <json>` | Load export settings from a JSON profile. |
@@ -541,6 +554,9 @@ canvas, to reveal and select the matching source block. Each card has independen
 pointer-centered zoom, trackpad pinch, pan mode, and restored viewport state.
 When resizing is enabled, drag the handle below a card or focus it and use the
 arrow keys; `documentation.maxHeight` can cap its height.
+Select **Present** to show one diagram per full-window slide; use the arrow,
+Page Up/Page Down, Home/End, or Space keys and press Escape to return. **Pop
+out** moves the documentation preview to a separate VS Code window.
 
 ![Markdown source beside a live document preview containing multiple Mermaid diagrams](../media/screenshots/preview-markdown.png)
 
@@ -561,6 +577,7 @@ overwritten.
 |---|---|
 | **Mermaid Preview: Open Offline Preview** | Open a Mermaid file in the custom preview. |
 | **Mermaid Preview: Open Preview to the Side** | Open a companion preview in another editor group. |
+| **Mermaid Preview: Open Preview in New Window** | Move the preview to a separate VS Code window. |
 | **Mermaid Preview: Choose Editor Layout** | Choose one of the four layouts. |
 | **Mermaid Preview: Preview Only** | Switch to Preview only. |
 | **Mermaid Preview: Source Only** | Switch to Source only. |
@@ -600,13 +617,17 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Enables vertical resizing for documentation diagram cards. |
 | `mermaidPreviewOffline.documentation.maxHeight` | empty | Optional validated maximum such as `720px` or `80vh`. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Workspace/window preview theme. |
+| `mermaidPreviewOffline.diagramDensity` | `comfortable` | Shared `compact`, `comfortable`, or `spacious` spacing. |
+| `mermaidPreviewOffline.canvas.background` | `editor` | Editor, preset, or custom canvas background independent from the VS Code theme. |
+| `mermaidPreviewOffline.canvas.customColor` | `#ffffff` | Six-digit color used by the custom canvas preset. |
+| `mermaidPreviewOffline.canvas.pattern` | `dots` | `none`, `dots`, or `grid`. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Window-level diagram typography: `vscode`, `noto-sans`, or `inter`. Noto Sans and Inter are bundled for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Resource-level default: SVG, PNG, WebP, or PDF. |
 | `mermaidPreviewOffline.export.theme` | `default` | Resource-level export theme independent of the preview. |
 | `mermaidPreviewOffline.export.scale` | `1` | Resource-level scale, 0.25–8. |
 | `mermaidPreviewOffline.export.dpi` | `144` | Resource-level raster/PDF DPI, 72–600. |
 | `mermaidPreviewOffline.export.margin` | `24` | Resource-level CSS-pixel margin, 0–512. |
-| `mermaidPreviewOffline.export.background` | `transparent` | Resource-level `transparent` or `color`. |
+| `mermaidPreviewOffline.export.background` | `transparent` | Resource-level `transparent`, `color`, or `preview`. |
 | `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Resource-level six-digit color used by `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Resource-level naming tokens. |
 | `mermaidPreviewOffline.export.optimizeSvg` | `true` | Resource-level SVG optimization default. |
@@ -619,6 +640,9 @@ Example workspace settings:
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
   "mermaidPreviewOffline.diagramTheme": "adaptive",
+  "mermaidPreviewOffline.diagramDensity": "comfortable",
+  "mermaidPreviewOffline.canvas.background": "paper",
+  "mermaidPreviewOffline.canvas.pattern": "dots",
   "mermaidPreviewOffline.diagramFontFamily": "noto-sans",
   "mermaidPreviewOffline.export.format": "svg",
   "mermaidPreviewOffline.export.theme": "neutral",

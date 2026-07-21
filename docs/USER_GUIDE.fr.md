@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.1.2 — Guide utilisateur
+# Mermaid Preview Offline 1.2.0 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,7 +8,7 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.1.2. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.0. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
@@ -140,6 +140,11 @@ son budget.
 | Déplacer la vue | Faites glisser selon `navigation.mouse`, ou activez **Pan** pour le mode explicite |
 | Parcourir un diagramme qui dépasse | Cliquez ou faites glisser dans la minimap |
 | Agrandir le groupe d’éditeurs actif | **Full screen** dans la barre d’outils |
+| Rechercher un libellé rendu | `/` ou `Ctrl/Cmd+F`, puis Entrée/Maj+Entrée |
+| Afficher la source | Cliquez sur un nœud, cluster, acteur, élément mindmap ou timeline |
+| Déplacer l’aperçu dans une autre fenêtre | **Open in new window** dans la barre d’outils |
+
+![Recherche de libellés correspondants dans un tableau Mermaid, avec atténuation des autres nœuds](../media/screenshots/search.png)
 
 Le zoom est limité à une plage pratique de 15 à 400 %. Réglez
 `mermaidPreviewOffline.navigation.mouse` sur `always`, `alt` ou `never`, et
@@ -153,20 +158,23 @@ déplacer cette zone dans un grand diagramme.
 
 ### Thèmes de diagramme et thèmes de couleurs VS Code
 
-Le sélecteur de thème de l’aperçu propose **Adaptive**, **Default**, **Dark**,
-**Forest**, **Neutral** et **Base**. Adaptive suit le thème clair, sombre ou à
-contraste élevé actuellement utilisé par VS Code. L’interface de l’extension
-utilise les variables de thème VS Code et prend en charge les thèmes clair,
-sombre, clair à contraste élevé et sombre à contraste élevé.
+La galerie visuelle propose **Adaptive**, **Default**, **Dark**, **Forest**,
+**Neutral**, **Base**, **Neo**, **Neo Dark**, **Vibrant**, **Vibrant Dark** et
+**Sketch**. Sketch utilise une graine manuscrite déterministe. Adaptive et
+Sketch choisissent une palette claire ou sombre d’après le fond du canevas,
+puis d’après VS Code lorsque le canevas suit l’éditeur.
+
+Choisissez une densité Compact, Comfortable ou Spacious, puis un fond VS Code,
+blanc, papier, gris doux, bleu doux, rose doux, ardoise, minuit ou une couleur
+personnalisée. Les motifs sans trame, points et grille sont indépendants. Ces
+réglages d’espace de travail sont partagés par les aperçus, la documentation,
+Diagram Studio, les diffs visuels et les exports.
 
 Le thème de l’aperçu et celui de l’export sont indépendants. Vous pouvez ainsi
 travailler dans un espace sombre tout en exportant, par exemple, un diagramme
 neutre sur fond blanc.
 
-<p align="center">
-  <img src="../media/screenshots/theme-forest.png" alt="Une mindmap Mermaid avec le thème Forest sélectionné" width="49%">
-  <img src="../media/screenshots/theme-neutral.png" alt="La même mindmap Mermaid avec le thème Neutral sélectionné" width="49%">
-</p>
+![La galerie d’apparence complète avec les thèmes classiques, Neo, Vibrant et Sketch, les densités, les motifs et les fonds de canevas](../media/screenshots/appearance.png)
 
 ### Typographie des diagrammes
 
@@ -324,14 +332,16 @@ Le bouton **Copy SVG** de la barre d’outils copie le SVG original actuellement
 rendu. La boîte de dialogue d’export peut copier séparément le SVG original, le
 SVG optimisé ou le PNG.
 
+![Copie directe du SVG original depuis la barre d’outils de l’aperçu Mermaid](../media/screenshots/copy-svg.png)
+
 ### Réglages d’export
 
-- **Theme:** Adaptive, Default, Dark, Forest, Neutral ou Base.
+- **Theme:** tous les thèmes classiques, Neo, Vibrant et Sketch.
 - **Scale:** de 0.25 à 8.
 - **DPI:** de 72 à 600 pour les sorties matricielles et PDF.
 - **Margin:** de 0 à 512 pixels CSS.
-- **Background:** Transparent ou une couleur hexadécimale à six chiffres. Le PDF
-  est toujours opaque.
+- **Background:** Transparent, une couleur hexadécimale à six chiffres ou le
+  canevas actuel de l’aperçu. Le PDF est toujours opaque.
 - **Name template:** jusqu’à 160 caractères, avec `{name}`, `{format}`, `{theme}`,
   `{scale}`, `{dpi}`, `{date}`, `{time}` et `{ext}`.
 - **Optimize SVG:** simplifie la sortie vectorielle préparée avant son
@@ -383,9 +393,10 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--format <format>` | `svg`, `png`, `webp` ou `pdf`. |
 | `--scale <factor>` | Échelle de 0.25 à 8. |
 | `--dpi <number>` | Résolution de 72 à 600 DPI. |
+| `--density <density>` | `compact`, `comfortable` ou `spacious`. |
 | `--margin <pixels>` | Espace autour du diagramme. |
 | `--background <value>` | `transparent` ou `#rrggbb`. |
-| `--theme <theme>` | `adaptive`, `default`, `dark`, `forest`, `neutral` ou `base`. |
+| `--theme <theme>` | Identifiant d’un thème classique, Neo, Redux/Vibrant ou Sketch. |
 | `--font <font>` | `vscode`, `noto-sans` ou `inter` ; `vscode` utilise la pile d’interface système en dehors de VS Code. |
 | `--name-template <template>` | Jetons de nommage de sortie utilisés par la boîte de dialogue d’export. |
 | `--profile <json>` | Charge les réglages d’export depuis un profil JSON. |
@@ -575,6 +586,10 @@ son zoom centré sur le pointeur, son pincement trackpad, son mode pan et son é
 restauré. Si le redimensionnement est actif, faites glisser la poignée inférieure
 ou utilisez les flèches lorsqu’elle a le focus ; `documentation.maxHeight` peut
 limiter sa hauteur.
+Sélectionnez **Present** pour afficher un diagramme par diapositive plein écran ;
+utilisez les flèches, Page précédente/suivante, Début/Fin ou Espace, puis Échap
+pour revenir. **Pop out** déplace l’aperçu documentaire dans une fenêtre VS Code
+distincte.
 
 ![La source Markdown à côté de l’aperçu en direct de plusieurs diagrammes Mermaid intégrés](../media/screenshots/preview-markdown.png)
 
@@ -595,6 +610,7 @@ configurés. Le document source n’est pas écrasé.
 |---|---|
 | **Mermaid Preview: Open Offline Preview** | Ouvre un fichier Mermaid dans l’aperçu personnalisé. |
 | **Mermaid Preview: Open Preview to the Side** | Ouvre un aperçu compagnon dans un autre groupe d’éditeurs. |
+| **Mermaid Preview: Open Preview in New Window** | Déplace l’aperçu dans une fenêtre VS Code distincte. |
 | **Mermaid Preview: Choose Editor Layout** | Permet de choisir l’une des quatre dispositions. |
 | **Mermaid Preview: Preview Only** | Passe en mode Preview only. |
 | **Mermaid Preview: Source Only** | Passe en mode Source only. |
@@ -635,13 +651,17 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Active le redimensionnement vertical des cartes documentaires. |
 | `mermaidPreviewOffline.documentation.maxHeight` | vide | Maximum validé facultatif, par exemple `720px` ou `80vh`. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Thème d’aperçu de l’espace de travail ou de la fenêtre. |
+| `mermaidPreviewOffline.diagramDensity` | `comfortable` | Espacement partagé `compact`, `comfortable` ou `spacious`. |
+| `mermaidPreviewOffline.canvas.background` | `editor` | Fond éditeur, prédéfini ou personnalisé, indépendant du thème VS Code. |
+| `mermaidPreviewOffline.canvas.customColor` | `#ffffff` | Couleur à six chiffres du fond personnalisé. |
+| `mermaidPreviewOffline.canvas.pattern` | `dots` | `none`, `dots` ou `grid`. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Typographie des diagrammes à l’échelle de la fenêtre : `vscode`, `noto-sans` ou `inter`. Noto Sans et Inter sont intégrées pour les sorties portables. |
 | `mermaidPreviewOffline.export.format` | `png` | Valeur par défaut de la ressource : SVG, PNG, WebP ou PDF. |
 | `mermaidPreviewOffline.export.theme` | `default` | Thème d’export par ressource, indépendant de l’aperçu. |
 | `mermaidPreviewOffline.export.scale` | `1` | Échelle par ressource, de 0.25 à 8. |
 | `mermaidPreviewOffline.export.dpi` | `144` | DPI matriciel/PDF par ressource, de 72 à 600. |
 | `mermaidPreviewOffline.export.margin` | `24` | Marge en pixels CSS par ressource, de 0 à 512. |
-| `mermaidPreviewOffline.export.background` | `transparent` | Valeur par ressource : `transparent` ou `color`. |
+| `mermaidPreviewOffline.export.background` | `transparent` | Valeur par ressource : `transparent`, `color` ou `preview`. |
 | `mermaidPreviewOffline.export.backgroundColor` | `#ffffff` | Couleur à six chiffres par ressource utilisée par `color`. |
 | `mermaidPreviewOffline.export.fileNameTemplate` | `{name}-{theme}@{scale}x.{format}` | Jetons de nommage par ressource. |
 | `mermaidPreviewOffline.export.optimizeSvg` | `true` | Valeur d’optimisation SVG par ressource. |
@@ -654,6 +674,9 @@ Exemple de réglages d’espace de travail :
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
   "mermaidPreviewOffline.diagramTheme": "adaptive",
+  "mermaidPreviewOffline.diagramDensity": "comfortable",
+  "mermaidPreviewOffline.canvas.background": "paper",
+  "mermaidPreviewOffline.canvas.pattern": "dots",
   "mermaidPreviewOffline.diagramFontFamily": "noto-sans",
   "mermaidPreviewOffline.export.format": "svg",
   "mermaidPreviewOffline.export.theme": "neutral",
