@@ -26,6 +26,7 @@
     "src/renderPolicy.ts",
     "src/reviewPrompt.ts",
     "src/theme.ts",
+    "src/validationPolicy.ts",
     "src/projectWebviewHtml.ts",
     "src/visualDiff.ts",
     "src/webviewHtml.ts",
