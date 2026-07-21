@@ -8,6 +8,7 @@ flowchart LR
   subgraph authoring [Authoring]
     vscode@{ icon: "logos:visual-studio-code", form: "square", label: "VS Code", pos: "b", h: 88 }
     source@{ icon: "material-icon-theme:markdown", form: "rounded", label: "Mermaid source", pos: "b", h: 88 }
+    author@{ icon: "mdi:account-edit", form: "circle", label: "Diagram author", pos: "b", h: 88 }
   end
 
   subgraph runtime [Offline runtime]
@@ -26,7 +27,8 @@ flowchart LR
     package@{ icon: "material-icon-theme:nodejs", form: "rounded", label: "VSIX package", pos: "b", h: 88 }
   end
 
-  vscode -->|"Edit"| source --> typescript --> node --> renderer
+  author -->|"Edit"| source
+  vscode --> source --> typescript --> node --> renderer
   typescript --> tests --> ci
   renderer --> tests
   ci --> manifest --> package

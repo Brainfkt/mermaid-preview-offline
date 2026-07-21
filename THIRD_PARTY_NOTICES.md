@@ -49,6 +49,17 @@ The `@iconify-json/material-icon-theme` collection is bundled under the MIT
 License. Its source and license information are available from the
 [Material Icon Theme repository](https://github.com/material-extensions/vscode-material-icon-theme).
 
+## Material Design Icons
+
+The `@iconify-json/mdi` collection is bundled under the Apache License 2.0. Its
+source, authorship, and license information are available from the
+[Material Design Icons set page](https://icon-sets.iconify.design/mdi/).
+
+## Mermaid tidy-tree layout
+
+`@mermaid-js/layout-tidy-tree` is bundled under the MIT License. Its source is
+available from the [Mermaid repository](https://github.com/mermaid-js/mermaid/tree/develop/packages/mermaid-layout-tidy-tree).
+
 ## KaTeX
 
 KaTeX remains bundled through Mermaid for mathematical labels. It is not used

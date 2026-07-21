@@ -50,6 +50,7 @@ const expectedExamples = [
   ['41-zenuml.mmd', 'zenuml'],
   ['42-icon-packs.mmd', 'flowchart'],
   ['43-local-image.mmd', 'flowchart'],
+  ['44-mindmap-tidy-tree.mmd', 'mindmap'],
 ] as const;
 
 void test('the English gallery covers every supported Mermaid example', () => {
@@ -60,7 +61,7 @@ void test('the English gallery covers every supported Mermaid example', () => {
   const catalogue = readFileSync(resolve(examplesDirectory, 'README.md'), 'utf8');
 
   assert.deepEqual(actualFiles, expectedFiles);
-  assert.equal(actualFiles.length, 43);
+  assert.equal(actualFiles.length, 44);
 
   for (const [fileName, keyword] of expectedExamples) {
     const source = readFileSync(resolve(examplesDirectory, fileName), 'utf8');

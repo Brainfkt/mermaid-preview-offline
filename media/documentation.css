@@ -99,6 +99,7 @@ button:focus-visible,
 }
 
 .documentation-card {
+  position: relative;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -135,19 +136,106 @@ button:focus-visible,
 .source-button:hover { background: var(--vscode-list-hoverBackground); }
 
 .documentation-canvas {
-  display: grid;
+  position: relative;
+  display: block;
+  height: clamp(280px, 46vh, 480px);
   min-height: 250px;
   overflow: auto;
-  place-items: center;
-  padding: 24px;
   background:
     linear-gradient(color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--surface) 92%, transparent)),
     repeating-linear-gradient(0deg, transparent 0 19px, color-mix(in srgb, var(--border) 28%, transparent) 20px),
     repeating-linear-gradient(90deg, transparent 0 19px, color-mix(in srgb, var(--border) 28%, transparent) 20px);
 }
 
-.documentation-diagram { display: grid; max-width: 100%; place-items: center; }
-.documentation-diagram svg { display: block; max-width: 100%; height: auto; }
+.documentation-canvas--pan-ready { cursor: grab; }
+.documentation-canvas--dragging { cursor: grabbing; user-select: none; }
+
+.documentation-diagram {
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  place-items: center;
+  padding: 46px 36px 36px;
+}
+.documentation-diagram svg { display: block; max-width: none; height: auto; }
+
+.documentation-navigation-controls {
+  z-index: 3;
+  position: absolute;
+  top: 52px;
+  right: 10px;
+  display: flex;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 6px 18px var(--shadow);
+  backdrop-filter: blur(14px);
+  transition: opacity 120ms ease, visibility 120ms ease;
+}
+
+.documentation-navigation-controls--conditional {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.documentation-card:hover .documentation-navigation-controls--conditional,
+.documentation-card:focus-within .documentation-navigation-controls--conditional {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.documentation-navigation-controls button {
+  min-width: 27px;
+  height: 27px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  padding: 2px 6px;
+  color: var(--vscode-editor-foreground);
+  background: transparent;
+  cursor: pointer;
+}
+
+.documentation-navigation-controls button:hover {
+  border-color: var(--border);
+  background: var(--vscode-list-hoverBackground);
+}
+
+.documentation-navigation-controls button[aria-pressed='true'] {
+  color: var(--accent-foreground);
+  background: var(--accent);
+}
+
+.documentation-resize-handle {
+  z-index: 4;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 9px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.documentation-resize-handle::after {
+  position: absolute;
+  right: 46%;
+  bottom: 2px;
+  left: 46%;
+  height: 2px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--muted) 52%, transparent);
+  content: '';
+}
+
+.documentation-resize-handle:focus-visible::after,
+.documentation-resize-handle--dragging::after {
+  background: var(--vscode-focusBorder);
+}
 .documentation-error {
   max-width: 760px;
   margin: 0;

@@ -56,6 +56,7 @@ extensions, and intentional offline limitations.
 | 41 | ZenUML | [`41-zenuml.mmd`](41-zenuml.mmd) | `zenuml` | Typed participants, nested calls, parallel work, branching and recovery |
 | 42 | Offline icon packs | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon: "logos:react"` | Bundled product and file-type icons with no network dependency |
 | 43 | Embedded local image | [`43-local-image.mmd`](43-local-image.mmd) | `img: "..."` | A workspace-relative asset safely embedded in the rendered SVG |
+| 44 | Tidy-tree mindmap | [`44-mindmap-tidy-tree.mmd`](44-mindmap-tidy-tree.mmd) | `layout: tidy-tree` | A balanced bidirectional mindmap rendered by the bundled tidy-tree layout |
 
 ## Coverage notes
 
@@ -64,7 +65,7 @@ extensions, and intentional offline limitations.
   are not duplicated.
 - `info` is an engine diagnostic rather than a business chart, but it is
   included because Mermaid exposes a dedicated detector for it.
-- ZenUML and the `logos` and `material-icon-theme` Iconify packs are bundled in
+- ZenUML, the tidy-tree layout, and the `logos`, `mdi`, and `material-icon-theme` Iconify packs are bundled in
   the extension and work without a network connection.
 - Workspace-relative images are read locally and converted to `data:` URLs in
   the SVG. Paths outside the workspace are rejected.

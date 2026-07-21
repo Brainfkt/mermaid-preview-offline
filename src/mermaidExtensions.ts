@@ -1,13 +1,16 @@
 import mermaid from 'mermaid';
+import tidyTreeLayouts from '@mermaid-js/layout-tidy-tree';
 
 import type { DiagramFontFamily } from './diagramFont';
 import { installDiagramFont } from './diagramFontAssets';
 
 let iconPacksRegistered = false;
+let layoutLoadersRegistered = false;
 let zenUmlRegistration: Promise<void> | undefined;
 
 /** Register offline icon packs without loading their multi-megabyte payloads up front. */
 export function registerOfflineIconPacks(): void {
+  registerOfflineLayoutLoaders();
   if (iconPacksRegistered) {
     return;
   }
@@ -21,7 +24,17 @@ export function registerOfflineIconPacks(): void {
       loader: async () => (await import('@iconify-json/material-icon-theme')).icons,
       name: 'material-icon-theme',
     },
+    {
+      loader: async () => (await import('@iconify-json/mdi')).icons,
+      name: 'mdi',
+    },
   ]);
+}
+
+export function registerOfflineLayoutLoaders(): void {
+  if (layoutLoadersRegistered) return;
+  layoutLoadersRegistered = true;
+  mermaid.registerLayoutLoaders(tidyTreeLayouts);
 }
 
 /** Load external renderers only when their syntax is actually used. */

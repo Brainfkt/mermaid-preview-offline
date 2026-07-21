@@ -62,6 +62,8 @@ Legend:
 | Official ZenUML plug-in | ✅ | `@mermaid-js/mermaid-zenuml` is bundled and loaded on demand | [`41-zenuml.mmd`](41-zenuml.mmd) |
 | Iconify `logos` pack | ✅ | 2,091 icons are included in the bundle | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
 | Iconify `material-icon-theme` pack | ✅ | 1,174 icons and TreeView associations are included | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
+| Iconify `mdi` pack | ✅ | Material Design Icons are included and loaded only when referenced | [`42-icon-packs.mmd`](42-icon-packs.mmd) |
+| Tidy-tree mindmap layout | ✅ | `@mermaid-js/layout-tidy-tree` is bundled and registered locally | [`44-mindmap-tidy-tree.mmd`](44-mindmap-tidy-tree.mmd) |
 | Relative local images | ✅ | The workspace file is read locally and embedded as a `data:` URL | [`43-local-image.mmd`](43-local-image.mmd) |
 | Pre-embedded images | ✅ | Existing `data:` URLs are left unchanged | Standard Mermaid syntax |
 
@@ -72,11 +74,11 @@ Legend:
 | `http://` or `https://` resources | ❌ | Network access stays blocked for privacy and reproducibility |
 | Absolute paths or paths outside the workspace | ❌ | Rejected to prevent arbitrary local file access |
 | Unidentified third-party plug-ins | ❌ | Every additional module must be named, reviewed, and bundled explicitly |
-| Other Iconify packs | ❌ | Bundling thousands of packs would add excessive weight; `logos` and `material-icon-theme` cover the documented use cases |
+| Other Iconify packs | ❌ | Bundling thousands of packs would add excessive weight; `logos`, `mdi`, and `material-icon-theme` cover the documented use cases |
 
 ## Validation notes
 
-- All 43 supported examples are parsed and rendered to SVG with the same bundle
+- All 44 supported examples are parsed and rendered to SVG with the same bundle
   used by the extension.
 - The 🧪 symbol does not mean rendering is incomplete; it means Mermaid still
   considers that grammar experimental.

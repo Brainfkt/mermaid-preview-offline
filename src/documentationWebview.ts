@@ -1,5 +1,9 @@
 import mermaid from 'mermaid';
 
+import {
+  DocumentationDiagramController,
+  type DocumentationDiagramState,
+} from './documentationDiagramController';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
 import type { DiagramFontFamily } from './diagramFont';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
@@ -30,6 +34,8 @@ let renderQueue = Promise.resolve();
 let activeTheme: DiagramTheme = 'adaptive';
 let activeFontFamily: DiagramFontFamily = 'vscode';
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
+const diagramControllers = new Map<string, DocumentationDiagramController>();
+const diagramStates = new Map<string, DocumentationDiagramState>();
 
 initializeMermaid(activeTheme, activeFontFamily);
 
@@ -58,6 +64,7 @@ async function showDocumentation(
   summary.textContent = data.mode === 'cursor'
     ? `Diagram under the cursor · ${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} in this document`
     : `${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} rendered locally`;
+  saveAndDisposeDiagramControllers();
   list.replaceChildren();
   empty.hidden = data.blocks.length > 0;
   list.hidden = data.blocks.length === 0;
@@ -66,7 +73,7 @@ async function showDocumentation(
     if (generation !== renderGeneration) return;
     const card = createDiagramCard(block);
     list.append(card.article);
-    await queuedRender(
+    const rendered = await queuedRender(
       card.diagram,
       card.error,
       block.source,
@@ -74,11 +81,31 @@ async function showDocumentation(
       generation,
     );
     if (generation !== renderGeneration) return;
+    if (rendered) {
+      const controller = new DocumentationDiagramController(
+        card.article,
+        card.canvas,
+        card.diagram,
+        {
+          maxHeight: data.maxHeight,
+          navigation: data.navigation,
+          resizable: data.resizable,
+          source: block.source,
+        },
+        diagramStates.get(block.id),
+      );
+      diagramControllers.set(block.id, controller);
+    }
+  }
+  const activeIds = new Set(data.blocks.map((block) => block.id));
+  for (const id of diagramStates.keys()) {
+    if (!activeIds.has(id)) diagramStates.delete(id);
   }
 }
 
 function createDiagramCard(block: DocumentationPreviewBlock): {
   article: HTMLElement;
+  canvas: HTMLElement;
   diagram: HTMLElement;
   error: HTMLElement;
 } {
@@ -108,7 +135,8 @@ function createDiagramCard(block: DocumentationPreviewBlock): {
   canvas.className = 'documentation-canvas';
   canvas.tabIndex = 0;
   canvas.title = 'Double-click to reveal this Mermaid block in the source document';
-  canvas.addEventListener('dblclick', () => {
+  canvas.addEventListener('dblclick', (event) => {
+    if (event.altKey) return;
     vscode.postMessage({ blockId: block.id, type: 'revealSource' });
   });
   const diagram = document.createElement('div');
@@ -118,7 +146,7 @@ function createDiagramCard(block: DocumentationPreviewBlock): {
   error.hidden = true;
   canvas.append(diagram, error);
   article.append(header, canvas);
-  return { article, diagram, error };
+  return { article, canvas, diagram, error };
 }
 
 async function queuedRender(
@@ -127,29 +155,40 @@ async function queuedRender(
   source: string,
   fontFamily: DiagramFontFamily,
   generation: number,
-): Promise<void> {
-  const task = async (): Promise<void> => {
-    if (generation !== renderGeneration) return;
+): Promise<boolean> {
+  const task = async (): Promise<boolean> => {
+    if (generation !== renderGeneration) return false;
     try {
       await prepareMermaidExtensions(source, fontFamily);
       const { svg } = await mermaid.render(`mermaid-document-${++renderSequence}`, source);
-      if (generation !== renderGeneration) return;
+      if (generation !== renderGeneration) return false;
       target.innerHTML = svg;
       target.hidden = false;
       errorTarget.hidden = true;
+      return true;
     } catch (error: unknown) {
-      if (generation !== renderGeneration) return;
+      if (generation !== renderGeneration) return false;
       target.replaceChildren();
       target.hidden = true;
       errorTarget.textContent = errorMessageOf(error);
       errorTarget.hidden = false;
       removeTemporaryRenderNodes();
+      return false;
     }
   };
   const queued = renderQueue.then(task, task);
   renderQueue = queued.then(() => undefined, () => undefined);
-  await queued;
+  return queued;
 }
+
+function saveAndDisposeDiagramControllers(): void {
+  for (const [id, controller] of diagramControllers) {
+    diagramStates.set(id, controller.dispose());
+  }
+  diagramControllers.clear();
+}
+
+window.addEventListener('pagehide', saveAndDisposeDiagramControllers);
 
 async function renderDocumentationExport(
   request: Extract<
