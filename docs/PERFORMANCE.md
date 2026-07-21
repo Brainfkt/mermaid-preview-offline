@@ -1,23 +1,28 @@
-# Revue des performances — version 1.1
+# Revue des performances — version 1.1.2
 
 Cette revue couvre les chemins d’exécution de l’aperçu VS Code, du Diagram
 Studio, des aperçus de documentation, des différences visuelles, des exports et
 de la CLI. Elle exclut volontairement la revue cyber, conformément au périmètre
-de la version 1.1.
+de la version 1.1.2.
 
 ## Résultat
 
-| Indicateur | v0.7 | v1.1.0 | Évolution |
+| Indicateur | Référence | v1.1.2 | Évolution |
 |---|---:|---:|---:|
-| JavaScript des quatre moteurs web embarqués | ~59,6 Mio | 17,41 Mio | −71 % |
-| VSIX final | 20 913 638 octets | 5 853 737 octets | −72 % |
-| Budget de build automatisé | aucun | 20 Mio maximum | régression bloquante |
-| Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées | 18–38 ms | travail linéaire |
-| Diff de 20 000 à 50 000 lignes | risque quadratique | 41–74 ms | travail borné |
+| JavaScript des quatre moteurs web embarqués | ~59,6 Mio en v0.7 | 17,41 Mio | −71 % |
+| VSIX final | 20 913 638 octets en v0.7 | 5 855 345 octets | −72 % |
+| Budget de build automatisé | aucun en v0.7 | 20 Mio maximum | régression bloquante |
+| Mise à jour d’un aperçu documentaire de 50 blocs | 283 ms avant optimisation | 33 ms | −88 % |
+| Écritures tardives dans des cartes de galerie détachées | 19 avant optimisation | 0 | supprimées |
+| Blob de minimap lorsque celle-ci reste masquée | ~263 Kio avant optimisation | 0 | allocation évitée |
+| Validation statique d’une source de 10 Mio | 127 ms avant optimisation | ~52 ms | −59 % |
+| Remplacement de 2 000 blocs dans un document de plus de 4 Mio | algorithme à recopies répétées en v0.7 | 18–38 ms | travail linéaire |
+| Diff de 20 000 à 50 000 lignes | risque quadratique en v0.7 | 41–74 ms | travail borné |
 
 Les valeurs temporelles sont des mesures locales de microbenchmarks et peuvent
 varier selon la machine. Les tailles sont celles des artefacts produits lors de
-la préparation de la version 1.1.
+la préparation des versions 1.1.0 et 1.1.2. Les quatre mesures propres à la
+1.1.2 comparent, sur la même machine, le chemin antérieur et le chemin optimisé.
 
 ## Correctifs appliqués
 
@@ -48,11 +53,27 @@ la préparation de la version 1.1.
   rendu Mermaid, qui fournit déjà les erreurs de syntaxe.
 - Un aperçu Mermaid masqué ne relit plus le document, les images et le moteur à
   chaque frappe. Il reprend au premier affichage avec la version la plus récente.
-- L’aperçu documentaire suit la même règle et annule les générations obsolètes.
+- L’aperçu documentaire réconcilie désormais les cartes par identifiant. Une
+  modification ne reconstruit et ne rend que les blocs ajoutés ou modifiés ;
+  les SVG, contrôleurs de navigation et positions des blocs inchangés sont
+  conservés. Une modification isolée dans un document de 50 blocs passe ainsi
+  de 283 ms à 33 ms dans le microbenchmark local.
+- Le Diagram Studio et la galerie d’exemples attribuent une génération à chaque
+  série de rendus. Les travaux obsolètes vérifient leur génération et la
+  présence de leur cible dans le DOM avant toute écriture : le scénario de test
+  passe de 19 écritures dans des cartes détachées à aucune.
 - Le diff visuel rend une fois la version avant et une fois la version après,
   puis réutilise ces SVG pour l’overlay.
-- La minimap emploie une URL Blob, met à jour son viewport au prochain frame et
-  est désactivée au-delà de 5 Mio de SVG.
+- La minimap ne crée son image et son URL Blob qu’après avoir établi qu’elle est
+  activée et que le diagramme déborde réellement. Lorsqu’elle reste masquée,
+  l’allocation d’environ 263 Kio du scénario de référence disparaît. Son
+  viewport est toujours mis à jour au prochain frame et elle reste désactivée
+  au-delà de 5 Mio de SVG.
+- La validation statique lit le texte du document une seule fois et réutilise la
+  déclaration Mermaid déjà détectée pour rechercher les blocs non fermés. Son
+  délai est porté au minimum à 350 ms à partir de 1 Mio de caractères et à
+  600 ms à partir de 5 Mio, afin d’absorber les rafales de saisie. Le passage
+  statique sur la source de référence de 10 Mio passe de 127 ms à environ 52 ms.
 - L’activation automatique sur tout fichier Markdown, MDX ou AsciiDoc a été
   supprimée ; les commandes documentaires activent toujours l’extension à la
   demande.
@@ -73,7 +94,7 @@ la préparation de la version 1.1.
 
 ## Garde-fous mesurables
 
-| Ressource | Limite v1.0 |
+| Ressource | Limite en v1.1.2 |
 |---|---:|
 | Source Mermaid rendue | 10 Mio UTF-8 |
 | Images locales uniques par diagramme | 64 |
@@ -117,11 +138,11 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 121/121 réussis.
+- Tests unitaires et d’intégration : 130/130 réussis.
 - Régression visuelle : 132/132 rendus réussis, plus Diagram Studio et le diff visuel.
 - Build de production : réussi, 17,41 Mio sur le budget de 20 Mio.
 - Package VSIX : réussi, 188 fichiers, 5,58 Mio compressés
-  (5 853 737 octets). Les captures du dépôt en sont bien exclues.
+  (5 855 345 octets). Les captures du dépôt en sont bien exclues.
 - Cohérence du lockfile en mode npm hors ligne : réussie.
 
 Les tests nécessitant Chromium ont été exécutés localement avec les connexions

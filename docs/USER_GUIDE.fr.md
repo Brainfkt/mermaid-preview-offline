@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.1 — Guide utilisateur
+# Mermaid Preview Offline 1.1.2 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,7 +8,7 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.1. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.1.2. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).

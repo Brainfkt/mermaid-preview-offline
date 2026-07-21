@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.2
+
+- updated documentation previews incrementally so unchanged Mermaid cards,
+  rendered SVGs, navigation controllers, and viewport state are preserved while
+  only added or modified blocks are rendered again;
+- cancelled obsolete Diagram Studio and example-gallery render jobs before they
+  can write into detached or superseded DOM targets;
+- deferred minimap Blob thumbnails until a rendered diagram actually overflows
+  the visible viewport and the minimap is enabled;
+- reduced validation work by reusing the document source and detected Mermaid
+  declaration, with adaptive debounce delays for documents of 1 MiB and above;
+- added regression coverage for all four performance paths and updated the
+  release validation to 130 passing unit and integration tests.
+
 ## 1.1.1
 
 - fixed false `missing-end` diagnostics when mindmaps, Ishikawa diagrams, and

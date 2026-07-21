@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.1 — User guide
+# Mermaid Preview Offline 1.1.2 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,7 +7,7 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.1 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.1.2 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
