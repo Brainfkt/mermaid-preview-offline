@@ -25,6 +25,7 @@ interface ExtensionManifest {
       selector: Array<{ filenamePattern: string }>;
       viewType: string;
     }>;
+    keybindings: Array<{ command: string; key: string; mac: string; when: string }>;
     snippets: Array<{ language: string; path: string }>;
     taskDefinitions: Array<{
       properties: Record<string, unknown>;
@@ -107,6 +108,31 @@ void test('preview commands expose all four native editor layouts', () => {
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
+});
+
+void test('the Mermaid source editor exposes a safe shortcut for cycling preview layouts', () => {
+  assert.deepEqual(manifest.contributes.keybindings, [
+    {
+      command: 'mermaidPreviewOffline.cycleEditorLayout',
+      key: 'alt+p',
+      mac: 'alt+p',
+      when: 'editorLangId == mermaid && editorTextFocus',
+    },
+  ]);
+  assert.ok(
+    manifest.activationEvents.includes('onCommand:mermaidPreviewOffline.cycleEditorLayout'),
+  );
+  assert.ok(
+    manifest.contributes.commands.some(
+      ({ command }) => command === 'mermaidPreviewOffline.cycleEditorLayout',
+    ),
+  );
+  const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
+  assert.match(webview, /event\.key\.toLowerCase\(\) === 'p'/u);
+  assert.match(webview, /postMessage\(\{ type: 'cycleEditorMode' \}\)/u);
+  assert.match(webview, /function installPreviewFocus\(\)/u);
+  assert.match(webview, /viewport\.focus\(\{ preventScroll: true \}\)/u);
+  assert.match(webview, /requestAnimationFrame\(focusPreviewSurface\)/u);
 });
 
 void test('v0.6 project workflows expose Diagram Studio and visual Git diff commands', () => {

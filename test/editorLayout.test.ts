@@ -6,10 +6,18 @@ import {
   BESIDE_ORIENTATION,
   editorLayoutFor,
   editorLayoutMatches,
+  nextPreviewMode,
   readSourceRatio,
   shouldApplyEditorLayout,
   shouldCloseRemainingSplitTab,
 } from '../src/editorLayout';
+
+void test('preview layouts cycle while source-only rejoins the preview cycle', () => {
+  assert.equal(nextPreviewMode('preview'), 'beside');
+  assert.equal(nextPreviewMode('beside'), 'above');
+  assert.equal(nextPreviewMode('above'), 'preview');
+  assert.equal(nextPreviewMode('source'), 'preview');
+});
 
 void test('preview and source-only layouts collapse to one native editor group', () => {
   assert.deepEqual(editorLayoutFor('preview', 0.65), { groups: [{}] });

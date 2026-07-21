@@ -80,5 +80,21 @@ void test('common declaration typos and missing block terminators are detected',
   assert.equal(nearestDiagramDeclaration('sequnceDiagram'), 'sequenceDiagram');
   assert.equal(nearestDiagramDeclaration('unrelated'), undefined);
   assert.equal(unclosedBlockCount('sequenceDiagram\nalt Success\nA->>B: ok\n'), 1);
+  assert.equal(unclosedBlockCount('sequenceDiagram\npar Work\nA->>B: one\n'), 1);
   assert.equal(unclosedBlockCount('flowchart LR\nsubgraph A\nend\n'), 0);
+});
+
+void test('block keywords in other diagram families do not require Mermaid end statements', () => {
+  assert.equal(
+    unclosedBlockCount('---\ntitle: Launch\n---\nmindmap\n  root((Launch))\n    Critical defects closed\n'),
+    0,
+  );
+  assert.equal(
+    unclosedBlockCount('ishikawa-beta\n  Releases\n    People\n      Critical knowledge held by one engineer\n'),
+    0,
+  );
+  assert.equal(
+    unclosedBlockCount('zenuml\n  Checkout.run() {\n    par {\n      Payment.authorize()\n    }\n  }\n'),
+    0,
+  );
 });
