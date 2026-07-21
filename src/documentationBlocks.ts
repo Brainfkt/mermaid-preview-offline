@@ -1,5 +1,7 @@
 export type DocumentationKind = 'asciidoc' | 'markdown' | 'mdx';
 
+export const DEFAULT_MERMAID_DOCUMENTATION_LANGUAGES = ['mermaid'] as const;
+
 export interface MermaidDocumentationBlock {
   endLine: number;
   endOffset: number;
@@ -50,11 +52,24 @@ export function documentationKind(
 export function extractMermaidBlocks(
   text: string,
   kind: DocumentationKind,
+  languageIds: readonly string[] = DEFAULT_MERMAID_DOCUMENTATION_LANGUAGES,
 ): MermaidDocumentationBlock[] {
   const lines = sourceLines(text);
   return kind === 'asciidoc'
     ? extractAsciiDocBlocks(text, lines)
-    : extractMarkdownBlocks(text, lines);
+    : extractMarkdownBlocks(text, lines, normalizeMermaidLanguageIds(languageIds));
+}
+
+export function normalizeMermaidLanguageIds(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [...DEFAULT_MERMAID_DOCUMENTATION_LANGUAGES];
+  }
+  const normalized = value
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0 && entry.length <= 64 && /^[\w+.-]+$/u.test(entry));
+  const unique = [...new Set(normalized)].slice(0, 32);
+  return unique.length > 0 ? unique : [...DEFAULT_MERMAID_DOCUMENTATION_LANGUAGES];
 }
 
 export function mermaidBlockAtLine(
@@ -131,6 +146,7 @@ export function documentationImageReference(
 function extractMarkdownBlocks(
   text: string,
   lines: readonly SourceLine[],
+  languageIds: readonly string[],
 ): MermaidDocumentationBlock[] {
   const blocks: MermaidDocumentationBlock[] = [];
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
@@ -138,41 +154,80 @@ function extractMarkdownBlocks(
     if (!line) continue;
     const opening = /^ {0,3}(`{3,}|~{3,})(.*)$/u.exec(line.text);
     const marker = opening?.[1];
-    if (!marker) continue;
+    if (marker) {
+      let closingIndex = lineIndex + 1;
+      while (closingIndex < lines.length) {
+        const candidate = lines[closingIndex];
+        if (candidate && isClosingFence(candidate.text, marker)) break;
+        closingIndex += 1;
+      }
+      const hasClosingFence = closingIndex < lines.length;
+      const sourceStartLine = lineIndex + 1;
+      const sourceStartOffset = lines[sourceStartLine]?.start ?? line.end;
+      const sourceEndOffset = hasClosingFence
+        ? (lines[closingIndex]?.start ?? text.length)
+        : text.length;
+      const endLine = hasClosingFence ? closingIndex : Math.max(lineIndex, lines.length - 1);
+      const endOffset = hasClosingFence
+        ? (lines[closingIndex]?.contentEnd ?? text.length)
+        : text.length;
+      if (isMermaidFenceInfo(opening?.[2] ?? '', languageIds)) {
+        blocks.push(createBlock({
+          endLine,
+          endOffset,
+          indent: /^\s*/u.exec(line.text)?.[0] ?? '',
+          index: blocks.length,
+          source: text.slice(sourceStartOffset, sourceEndOffset),
+          sourceEndLine: Math.max(sourceStartLine, endLine - 1),
+          sourceEndOffset,
+          sourceStartLine,
+          sourceStartOffset,
+          startLine: lineIndex,
+          startOffset: line.start,
+        }));
+      }
+      // Fenced code is literal. Skip every complete or unterminated fence,
+      // including non-Mermaid examples that contain Mermaid syntax as text.
+      lineIndex = endLine;
+      continue;
+    }
 
+    const containerOpening = /^ {0,3}(:{3,})[ \t]+([^\s]+)(?:[ \t].*)?$/u.exec(line.text);
+    const containerMarker = containerOpening?.[1];
+    if (!containerMarker || !isConfiguredLanguage(containerOpening?.[2] ?? '', languageIds)) {
+      continue;
+    }
     let closingIndex = lineIndex + 1;
     while (closingIndex < lines.length) {
       const candidate = lines[closingIndex];
-      if (candidate && isClosingFence(candidate.text, marker)) break;
+      if (candidate && isClosingContainer(candidate.text, containerMarker)) break;
       closingIndex += 1;
     }
-    const hasClosingFence = closingIndex < lines.length;
+    const hasClosingContainer = closingIndex < lines.length;
     const sourceStartLine = lineIndex + 1;
     const sourceStartOffset = lines[sourceStartLine]?.start ?? line.end;
-    const sourceEndOffset = hasClosingFence
+    const sourceEndOffset = hasClosingContainer
       ? (lines[closingIndex]?.start ?? text.length)
       : text.length;
-    const endLine = hasClosingFence ? closingIndex : Math.max(lineIndex, lines.length - 1);
-    const endOffset = hasClosingFence
+    const endLine = hasClosingContainer
+      ? closingIndex
+      : Math.max(lineIndex, lines.length - 1);
+    const endOffset = hasClosingContainer
       ? (lines[closingIndex]?.contentEnd ?? text.length)
       : text.length;
-    if (isMermaidFenceInfo(opening?.[2] ?? '')) {
-      blocks.push(createBlock({
-        endLine,
-        endOffset,
-        indent: /^\s*/u.exec(line.text)?.[0] ?? '',
-        index: blocks.length,
-        source: text.slice(sourceStartOffset, sourceEndOffset),
-        sourceEndLine: Math.max(sourceStartLine, endLine - 1),
-        sourceEndOffset,
-        sourceStartLine,
-        sourceStartOffset,
-        startLine: lineIndex,
-        startOffset: line.start,
-      }));
-    }
-    // Fenced code is literal. Skip every complete or unterminated fence,
-    // including non-Mermaid examples that contain a Mermaid fence as text.
+    blocks.push(createBlock({
+      endLine,
+      endOffset,
+      indent: /^\s*/u.exec(line.text)?.[0] ?? '',
+      index: blocks.length,
+      source: text.slice(sourceStartOffset, sourceEndOffset),
+      sourceEndLine: Math.max(sourceStartLine, endLine - 1),
+      sourceEndOffset,
+      sourceStartLine,
+      sourceStartOffset,
+      startLine: lineIndex,
+      startOffset: line.start,
+    }));
     lineIndex = endLine;
   }
   return blocks;
@@ -249,15 +304,18 @@ function createBlock(
   };
 }
 
-function isMermaidFenceInfo(value: string): boolean {
+function isMermaidFenceInfo(value: string, languageIds: readonly string[]): boolean {
   const info = value.trim();
   if (!info) return false;
   if (info.startsWith('{')) {
     const closing = info.indexOf('}');
     const attributes = info.slice(1, closing >= 0 ? closing : undefined);
-    return /(?:^|[\s,])\.?mermaid(?:$|[\s,])/iu.test(attributes);
+    return attributes
+      .split(/[\s,]+/u)
+      .map((attribute) => attribute.replace(/^\./u, ''))
+      .some((attribute) => isConfiguredLanguage(attribute, languageIds));
   }
-  return /^mermaid(?:\s|$)/iu.test(info);
+  return isConfiguredLanguage(info.split(/\s/u, 1)[0] ?? '', languageIds);
 }
 
 function isClosingFence(value: string, marker: string): boolean {
@@ -268,6 +326,16 @@ function isClosingFence(value: string, marker: string): boolean {
     candidate.length >= marker.length &&
     [...candidate].every((entry) => entry === character)
   );
+}
+
+function isClosingContainer(value: string, marker: string): boolean {
+  const candidate = value.replace(/^ {0,3}/u, '').trimEnd();
+  return candidate.length >= marker.length && /^:+$/u.test(candidate);
+}
+
+function isConfiguredLanguage(value: string, languageIds: readonly string[]): boolean {
+  const candidate = value.trim().toLowerCase();
+  return languageIds.includes(candidate);
 }
 
 function isMermaidAsciiDocAttributes(value: string): boolean {

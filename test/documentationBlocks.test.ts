@@ -6,6 +6,7 @@ import {
   documentationKind,
   extractMermaidBlocks,
   mermaidBlockAtLine,
+  normalizeMermaidLanguageIds,
   replaceMermaidBlocks,
 } from '../src/documentationBlocks';
 
@@ -65,6 +66,83 @@ void test('MDX supports Mermaid fences and unterminated blocks', () => {
   assert.equal(blocks[0]?.source, 'graph TD\r\n  A-->B');
   assert.equal(blocks[0]?.endOffset, source.length);
   assert.equal(documentationKind('plaintext', '/docs/page.mdx'), 'mdx');
+});
+
+void test('extracts Azure DevOps-style Mermaid containers with exact source ranges', () => {
+  const source = [
+    '# Architecture',
+    '',
+    '  :::: mermaid optional-metadata',
+    'flowchart LR',
+    '  Browser --> API',
+    '::::',
+    '',
+    'After',
+  ].join('\n');
+  const blocks = extractMermaidBlocks(source, 'markdown');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0]?.source, 'flowchart LR\n  Browser --> API\n');
+  assert.equal(blocks[0]?.startLine, 2);
+  assert.equal(blocks[0]?.endLine, 5);
+  assert.equal(blocks[0]?.indent, '  ');
+  assert.equal(source.slice(blocks[0]?.startOffset, blocks[0]?.endOffset), [
+    '  :::: mermaid optional-metadata',
+    'flowchart LR',
+    '  Browser --> API',
+    '::::',
+  ].join('\n'));
+});
+
+void test('supports unterminated Mermaid containers and ignores containers in literal fences', () => {
+  const source = [
+    '````markdown',
+    '::: mermaid',
+    'flowchart LR',
+    '  Example --> Only',
+    ':::',
+    '````',
+    '',
+    '::: mermaid',
+    'flowchart LR',
+    '  Real --> Diagram',
+  ].join('\n');
+  const blocks = extractMermaidBlocks(source, 'markdown');
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0]?.source, 'flowchart LR\n  Real --> Diagram');
+  assert.equal(blocks[0]?.endOffset, source.length);
+});
+
+void test('uses normalized configurable language identifiers for fences and containers', () => {
+  const source = [
+    '```mermaid-example',
+    'flowchart LR',
+    '  A --> B',
+    '```',
+    '',
+    '::: diagram',
+    'flowchart LR',
+    '  C --> D',
+    ':::',
+    '',
+    '```mermaid',
+    'flowchart LR',
+    '  Ignored --> Default',
+    '```',
+  ].join('\n');
+  const languages = normalizeMermaidLanguageIds([
+    ' Mermaid-Example ',
+    'DIAGRAM',
+    'diagram',
+    '',
+    'invalid language',
+  ]);
+  assert.deepEqual(languages, ['mermaid-example', 'diagram']);
+  const blocks = extractMermaidBlocks(source, 'markdown', languages);
+  assert.equal(blocks.length, 2);
+  assert.match(blocks[0]?.source ?? '', /A --> B/u);
+  assert.match(blocks[1]?.source ?? '', /C --> D/u);
+  assert.deepEqual(normalizeMermaidLanguageIds([]), ['mermaid']);
+  assert.deepEqual(normalizeMermaidLanguageIds('mermaid'), ['mermaid']);
 });
 
 void test('extracts Mermaid listing and source blocks from AsciiDoc', () => {
