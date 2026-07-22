@@ -279,6 +279,7 @@ bindButton('editor-layout', () => {
   vscode.postMessage({ type: 'chooseEditorMode' });
 });
 bindButton('empty-open-source', openSourceOnly);
+bindButton('empty-open-gallery', () => vscode.postMessage({ type: 'openDiagramGallery' }));
 bindButton('error-open-source', openSourceOnly);
 bindButton('error-retry', retryRender);
 bindButton('refresh', refreshDocument);
@@ -964,8 +965,10 @@ function applyCanvasAppearance(): void {
     '--diagram-pattern-ink',
     isDarkHexColor(background) ? '#ffffff18' : '#0f172a17',
   );
-  viewport.classList.toggle('pattern-dots', configuration.diagramSurface.pattern === 'dots');
-  viewport.classList.toggle('pattern-grid', configuration.diagramSurface.pattern === 'grid');
+  for (const surface of [viewport, minimap]) {
+    surface.classList.toggle('pattern-dots', configuration.diagramSurface.pattern === 'dots');
+    surface.classList.toggle('pattern-grid', configuration.diagramSurface.pattern === 'grid');
+  }
   for (const button of Array.from(densityPicker.querySelectorAll<HTMLButtonElement>('[data-density]'))) {
     button.classList.toggle('is-active', button.dataset.density === configuration.diagramDensity);
   }

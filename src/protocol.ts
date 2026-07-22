@@ -115,6 +115,7 @@ export type WebviewToExtensionMessage =
   | { type: 'setEditorMode'; mode: MermaidEditorMode }
   | { type: 'toggleFullscreen' }
   | { type: 'openInNewWindow' }
+  | { type: 'openDiagramGallery' }
   | { type: 'requestDocument' }
   | { type: 'revealSourceLine'; line: number }
   | { type: 'setDiagramDensity'; density: DiagramDensity }

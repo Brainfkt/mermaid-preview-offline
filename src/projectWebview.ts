@@ -35,6 +35,7 @@ interface GalleryDataMessage {
   examples: DiagramExample[];
   fontFamily: DiagramFontFamily;
   initialTab: GalleryTab;
+  suggestedFileName?: string;
   surface: DiagramSurfaceConfiguration;
   theme: DiagramTheme;
   templates: DiagramTemplate[];
@@ -108,6 +109,7 @@ function initializeGallery(): void {
   let activeTab: GalleryTab = 'templates';
   let activeCategory = 'All';
   let selected: GalleryItem | undefined;
+  let suggestedFileName: string | undefined;
   let previewTimer: number | undefined;
   let previewGeneration = 0;
   let catalogGeneration = 0;
@@ -125,6 +127,7 @@ function initializeGallery(): void {
     templates = event.data.templates;
     examples = event.data.examples;
     activeTab = event.data.initialTab;
+    suggestedFileName = event.data.suggestedFileName;
     setTab(activeTab);
   });
 
@@ -263,10 +266,10 @@ function initializeGallery(): void {
       const values = defaultTemplateValues(item.value);
       for (const field of item.value.fields) fields.append(createField(field, values));
       source.value = renderDiagramTemplate(item.value, values);
-      fileName.value = item.value.fileName;
+      fileName.value = suggestedFileName ?? item.value.fileName;
     } else {
       source.value = item.value.source;
-      fileName.value = item.value.fileName.replace(/^\d+[-_]?/u, '');
+      fileName.value = suggestedFileName ?? item.value.fileName.replace(/^\d+[-_]?/u, '');
     }
     schedulePreview(source.value, 0);
     if (revealInspector && window.matchMedia('(max-width: 820px)').matches) {

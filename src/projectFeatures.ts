@@ -73,6 +73,7 @@ export class MermaidProjectFeatures implements vscode.Disposable {
   private readonly configurationSubscription: vscode.Disposable;
   private galleryPanel: vscode.WebviewPanel | undefined;
   private galleryTab: GalleryInitialTab = 'templates';
+  private galleryTargetUri: vscode.Uri | undefined;
   private visualDiffPanel: vscode.WebviewPanel | undefined;
   private visualComparison: VisualComparison | undefined;
   private examplesPromise: Promise<DiagramExample[]> | undefined;
@@ -94,8 +95,12 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     this.visualDiffPanel?.dispose();
   }
 
-  public async showGallery(initialTab: GalleryInitialTab = 'templates'): Promise<void> {
+  public async showGallery(
+    initialTab: GalleryInitialTab = 'templates',
+    targetUri?: vscode.Uri,
+  ): Promise<void> {
     this.galleryTab = initialTab;
+    this.galleryTargetUri = targetUri;
     if (this.galleryPanel) {
       this.galleryPanel.title = initialTab === 'templates' ? 'Diagram Studio' : 'Mermaid Examples';
       this.galleryPanel.reveal(vscode.ViewColumn.Active, true);
@@ -217,6 +222,7 @@ export class MermaidProjectFeatures implements vscode.Disposable {
       fontFamily: configuredDiagramFontFamily(),
       ...configuredDiagramAppearance(),
       initialTab: this.galleryTab,
+      suggestedFileName: this.galleryTargetUri ? fileNameOf(this.galleryTargetUri) : undefined,
       templates: DIAGRAM_TEMPLATES,
       type: 'galleryData',
     });
@@ -265,7 +271,10 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     }
     const fileName = sanitizeMermaidFileName(requestedFileName);
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri;
-    const defaultUri = workspaceRoot ? vscode.Uri.joinPath(workspaceRoot, fileName) : undefined;
+    const defaultDirectory = this.galleryTargetUri
+      ? vscode.Uri.joinPath(this.galleryTargetUri, '..')
+      : workspaceRoot;
+    const defaultUri = defaultDirectory ? vscode.Uri.joinPath(defaultDirectory, fileName) : undefined;
     const target = await vscode.window.showSaveDialog({
       defaultUri,
       filters: { Mermaid: ['mmd', 'mermaid'] },

@@ -24,6 +24,7 @@ const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
 const CYCLE_LAYOUT_COMMAND = 'mermaidPreviewOffline.cycleEditorLayout';
 const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
 const NEW_DIAGRAM_COMMAND = 'mermaidPreviewOffline.newDiagram';
+const OPEN_GALLERY_FOR_FILE_COMMAND = 'mermaidPreviewOffline.openGalleryForFile';
 const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
 const GENERATE_FROM_TEMPLATE_COMMAND = 'mermaidPreviewOffline.generateFromTemplate';
 const COMPARE_GIT_VERSIONS_COMMAND = 'mermaidPreviewOffline.compareGitVersions';
@@ -103,6 +104,14 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(NEW_DIAGRAM_COMMAND, async () => {
       await projectFeatures.showGallery('templates');
     }),
+    vscode.commands.registerCommand(
+      OPEN_GALLERY_FOR_FILE_COMMAND,
+      async (resource?: vscode.Uri) => {
+        if (resource && isMermaidDocument(resource)) {
+          await projectFeatures.showGallery('templates', resource);
+        }
+      },
+    ),
     vscode.commands.registerCommand(BROWSE_EXAMPLES_COMMAND, async () => {
       await projectFeatures.showGallery('examples');
     }),

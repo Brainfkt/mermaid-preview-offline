@@ -141,10 +141,12 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     </div>
     <section id="viewport" class="viewport" tabindex="0" aria-label="Mermaid diagram preview">
       <section id="empty-state" class="state-card glass-surface">
-        <div class="state-card__mark" aria-hidden="true">M</div>
         <h1>Empty diagram</h1>
-        <p>Open the source and start with <code>flowchart LR</code>.</p>
-        <button class="button button--accent" id="empty-open-source" type="button">Open source</button>
+        <p>This Mermaid diagram is empty.</p>
+        <div class="state-card__actions">
+          <button class="button button--accent" id="empty-open-source" type="button">Open source</button>
+          <button class="button" id="empty-open-gallery" type="button">Browse templates &amp; examples</button>
+        </div>
       </section>
 
       <section id="loading-state" class="state-card state-card--compact glass-surface" hidden aria-live="polite">

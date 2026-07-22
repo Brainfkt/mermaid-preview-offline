@@ -44,8 +44,10 @@ import { loadWorkspaceImage } from './workspaceImages';
 export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 
 const VIEW_STATE_KEY_PREFIX = 'mermaidPreviewOffline.viewState.';
+const WORKSPACE_APPEARANCE_KEY = 'mermaidPreviewOffline.workspaceAppearance';
 const EXPORT_PROFILES_KEY = 'mermaidPreviewOffline.exportProfiles';
 const REVIEW_PROMPT_KEY = 'mermaidPreviewOffline.reviewPrompt';
+const OPEN_GALLERY_FOR_FILE_COMMAND = 'mermaidPreviewOffline.openGalleryForFile';
 const MARKETPLACE_REVIEW_URI = vscode.Uri.parse(
   'https://marketplace.visualstudio.com/items?itemName=brainfkt.mermaid-preview-offline#review-details',
 );
@@ -69,18 +71,33 @@ interface BatchSession {
   webview: vscode.Webview;
 }
 
+type SharedPreviewAppearance = Pick<
+  PreviewConfiguration,
+  'diagramDensity' | 'diagramSurface' | 'diagramTheme'
+>;
+
 export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   private readonly panels = new Map<string, vscode.WebviewPanel>();
   private readonly readyPanels = new Set<string>();
   private readonly pendingExportDialogs = new Set<string>();
   private readonly batchSessions = new Map<string, BatchSession>();
+  private appearanceUpdateQueue = Promise.resolve();
   private reviewPromptQueue = Promise.resolve();
+  private sharedAppearance: SharedPreviewAppearance;
 
   public constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly diagnostics: MermaidDiagnosticStore,
     private readonly layoutController: MermaidEditorLayoutController,
-  ) {}
+  ) {
+    this.sharedAppearance = normalizeSharedAppearance(
+      context.workspaceState.get(WORKSPACE_APPEARANCE_KEY),
+      readConfiguredAppearance(),
+    );
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration((event) => {
+      this.captureConfiguredAppearance(event);
+    }));
+  }
 
   public async showExportDialog(documentUri: vscode.Uri): Promise<void> {
     const key = documentUri.toString();
@@ -136,7 +153,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       title: `Preview — ${fileNameOf(document.uri)}`,
     });
 
-    const configuration = (): PreviewConfiguration => readConfiguration(document.uri);
+    const configuration = (): PreviewConfiguration =>
+      readConfiguration(document.uri, this.sharedAppearance);
 
     const postConfiguration = async (): Promise<void> => {
       await webview.postMessage({ type: 'configuration', configuration: configuration() });
@@ -339,6 +357,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           webviewPanel.reveal(webviewPanel.viewColumn, false);
           await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
           break;
+        case 'openDiagramGallery':
+          await vscode.commands.executeCommand(OPEN_GALLERY_FOR_FILE_COMMAND, document.uri);
+          break;
         case 'requestDocument':
           queueDocument(0);
           break;
@@ -346,13 +367,22 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           await this.revealSourceLine(document, webviewPanel, message.line);
           break;
         case 'setDiagramDensity':
-          await updateDiagramDensity(message.density);
+          await this.updateAndBroadcastAppearance(
+            { ...this.sharedAppearance, diagramDensity: message.density },
+            () => updateDiagramDensity(message.density),
+          );
           break;
         case 'setDiagramSurface':
-          await updateDiagramSurface(message.surface);
+          await this.updateAndBroadcastAppearance(
+            { ...this.sharedAppearance, diagramSurface: message.surface },
+            () => updateDiagramSurface(message.surface),
+          );
           break;
         case 'setDiagramTheme':
-          await updateDiagramTheme(message.theme);
+          await this.updateAndBroadcastAppearance(
+            { ...this.sharedAppearance, diagramTheme: message.theme },
+            () => updateDiagramTheme(message.theme),
+          );
           break;
         case 'diagnostic':
           if (message.version === document.version) {
@@ -486,6 +516,73 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         });
       }),
     );
+  }
+
+  private async broadcastPreviewConfiguration(): Promise<void> {
+    await Promise.all(
+      [...this.panels.entries()].map(async ([key, panel]) => {
+        if (!this.readyPanels.has(key)) {
+          return;
+        }
+        await panel.webview.postMessage({
+          type: 'configuration',
+          configuration: readConfiguration(vscode.Uri.parse(key), this.sharedAppearance),
+        });
+      }),
+    );
+  }
+
+  private async updateAndBroadcastAppearance(
+    appearance: SharedPreviewAppearance,
+    update: () => Promise<void>,
+  ): Promise<void> {
+    const apply = async (): Promise<void> => {
+      this.sharedAppearance = normalizeSharedAppearance(appearance, this.sharedAppearance);
+      await this.context.workspaceState.update(WORKSPACE_APPEARANCE_KEY, this.sharedAppearance);
+      try {
+        await update();
+      } catch {
+        // Workspace state remains authoritative when VS Code settings cannot be written.
+      }
+      await this.broadcastPreviewConfiguration();
+    };
+    const queued = this.appearanceUpdateQueue.then(apply, apply);
+    this.appearanceUpdateQueue = queued.then(() => undefined, () => undefined);
+    await queued;
+  }
+
+  private captureConfiguredAppearance(event: vscode.ConfigurationChangeEvent): void {
+    const configured = readConfiguredAppearance();
+    let next = this.sharedAppearance;
+    if (event.affectsConfiguration('mermaidPreviewOffline.diagramTheme')) {
+      next = { ...next, diagramTheme: configured.diagramTheme };
+    }
+    if (event.affectsConfiguration('mermaidPreviewOffline.diagramDensity')) {
+      next = { ...next, diagramDensity: configured.diagramDensity };
+    }
+    const surface = { ...next.diagramSurface };
+    let surfaceChanged = false;
+    if (event.affectsConfiguration('mermaidPreviewOffline.canvas.background')) {
+      surface.preset = configured.diagramSurface.preset;
+      surfaceChanged = true;
+    }
+    if (event.affectsConfiguration('mermaidPreviewOffline.canvas.customColor')) {
+      surface.customColor = configured.diagramSurface.customColor;
+      surfaceChanged = true;
+    }
+    if (event.affectsConfiguration('mermaidPreviewOffline.canvas.pattern')) {
+      surface.pattern = configured.diagramSurface.pattern;
+      surfaceChanged = true;
+    }
+    if (surfaceChanged) {
+      next = { ...next, diagramSurface: surface };
+    }
+    if (sameSharedAppearance(next, this.sharedAppearance)) {
+      return;
+    }
+    this.sharedAppearance = next;
+    void this.context.workspaceState.update(WORKSPACE_APPEARANCE_KEY, next);
+    void this.broadcastPreviewConfiguration();
   }
 
   private async saveExport(
@@ -757,15 +854,13 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
 }
 
-function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
+function readConfiguration(
+  resource: vscode.Uri,
+  appearance = readConfiguredAppearance(),
+): PreviewConfiguration {
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline', resource);
   const windowConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline');
   const configuredFontFamily = windowConfiguration.get<unknown>('diagramFontFamily', 'vscode');
-  const configuredTheme = windowConfiguration.get<unknown>('diagramTheme', 'adaptive');
-  const diagramDensity = normalizeDiagramDensity(
-    windowConfiguration.get<unknown>('diagramDensity', 'comfortable'),
-  );
-  const canvasConfiguration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
   const refreshMode = configuration.get<unknown>('refreshMode', 'automatic');
   const refreshDelay = configuration.get<number>('refreshDelay', 140);
   const largeFileThresholdKb = configuration.get<number>('largeFileThresholdKb', 512);
@@ -774,14 +869,10 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
   const controlsVisibility = configuration.get<unknown>('navigation.controls', 'always');
 
   return {
-    diagramDensity,
+    diagramDensity: appearance.diagramDensity,
     diagramFontFamily: normalizeDiagramFontFamily(configuredFontFamily),
-    diagramSurface: normalizeDiagramSurface({
-      customColor: canvasConfiguration.get<unknown>('customColor', '#ffffff'),
-      pattern: canvasConfiguration.get<unknown>('pattern', 'dots'),
-      preset: canvasConfiguration.get<unknown>('background', 'editor'),
-    }),
-    diagramTheme: isDiagramTheme(configuredTheme) ? configuredTheme : 'adaptive',
+    diagramSurface: appearance.diagramSurface,
+    diagramTheme: appearance.diagramTheme,
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
     minimapEnabled,
     navigation: {
@@ -791,6 +882,53 @@ function readConfiguration(resource: vscode.Uri): PreviewConfiguration {
     refreshDelay: clampInteger(refreshDelay, 0, 2_000),
     refreshMode: refreshMode === 'manual' ? 'manual' : 'automatic',
   };
+}
+
+function readConfiguredAppearance(): SharedPreviewAppearance {
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline');
+  const canvas = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  const theme = configuration.get<unknown>('diagramTheme', 'adaptive');
+  return {
+    diagramDensity: normalizeDiagramDensity(configuration.get('diagramDensity')),
+    diagramSurface: normalizeDiagramSurface({
+      customColor: canvas.get('customColor'),
+      pattern: canvas.get('pattern'),
+      preset: canvas.get('background'),
+    }),
+    diagramTheme: isDiagramTheme(theme) ? theme : 'adaptive',
+  };
+}
+
+function normalizeSharedAppearance(
+  value: unknown,
+  fallback: SharedPreviewAppearance,
+): SharedPreviewAppearance {
+  if (!value || typeof value !== 'object') {
+    return fallback;
+  }
+  const candidate = value as Partial<Record<keyof SharedPreviewAppearance, unknown>>;
+  return {
+    diagramDensity: isDiagramDensity(candidate.diagramDensity)
+      ? candidate.diagramDensity
+      : fallback.diagramDensity,
+    diagramSurface: isDiagramSurfaceConfiguration(candidate.diagramSurface)
+      ? candidate.diagramSurface
+      : fallback.diagramSurface,
+    diagramTheme: isDiagramTheme(candidate.diagramTheme)
+      ? candidate.diagramTheme
+      : fallback.diagramTheme,
+  };
+}
+
+function sameSharedAppearance(
+  left: SharedPreviewAppearance,
+  right: SharedPreviewAppearance,
+): boolean {
+  return left.diagramDensity === right.diagramDensity &&
+    left.diagramTheme === right.diagramTheme &&
+    left.diagramSurface.preset === right.diagramSurface.preset &&
+    left.diagramSurface.customColor === right.diagramSurface.customColor &&
+    left.diagramSurface.pattern === right.diagramSurface.pattern;
 }
 
 export function readExportConfiguration(resource: vscode.Uri): ExportSettings {
@@ -855,11 +993,9 @@ async function updateDiagramSurface(
 ): Promise<void> {
   const target = workspaceConfigurationTarget();
   const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
-  await Promise.all([
-    configuration.update('background', surface.preset, target),
-    configuration.update('customColor', surface.customColor, target),
-    configuration.update('pattern', surface.pattern, target),
-  ]);
+  await configuration.update('background', surface.preset, target);
+  await configuration.update('customColor', surface.customColor, target);
+  await configuration.update('pattern', surface.pattern, target);
 }
 
 async function updateWindowConfiguration(key: string, value: unknown): Promise<void> {
@@ -945,7 +1081,8 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     candidate.type === 'chooseEditorMode' ||
     candidate.type === 'cycleEditorMode' ||
     candidate.type === 'toggleFullscreen' ||
-    candidate.type === 'openInNewWindow'
+    candidate.type === 'openInNewWindow' ||
+    candidate.type === 'openDiagramGallery'
   ) {
     return true;
   }
