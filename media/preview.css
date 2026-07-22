@@ -146,17 +146,6 @@ select:focus-visible {
   font-weight: 400;
 }
 
-.button--pan {
-  color: var(--preview-muted);
-  font-size: 16px;
-}
-
-.button--pan[aria-pressed='true'] {
-  border-color: color-mix(in srgb, var(--preview-accent) 55%, transparent);
-  color: var(--preview-accent-fg);
-  background: color-mix(in srgb, var(--preview-accent) 72%, transparent);
-}
-
 .button--zoom {
   min-width: 38px;
   color: var(--preview-muted);

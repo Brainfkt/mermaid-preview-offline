@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -537,7 +537,7 @@
           "enumDescriptions": [
             "Drag to pan without holding a modifier key.",
             "Drag to pan only while holding Alt or Option.",
-            "Disable direct drag-to-pan; the explicit pan mode remains available."
+            "Disable direct drag-to-pan."
           ],
           "default": "always",
           "scope": "window",
@@ -557,7 +557,7 @@
           ],
           "default": "always",
           "scope": "window",
-          "description": "Controls the visibility of pan and zoom controls."
+          "description": "Controls the visibility of diagram zoom controls."
         },
         "mermaidPreviewOffline.documentation.languages": {
           "type": "array",

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.2
+
+- fixed **Open Preview in New Window** by copying the live preview into the VS
+  Code auxiliary window, so the diagram stays rendered in the original window
+  and appears in the new window at the same time;
+- fixed documentation **Pop out** by moving its active editor group into the VS
+  Code auxiliary window, preventing the detached webview from rendering as a
+  black screen;
+- removed the preview toolbar's **Full screen** control and its webview
+  protocol action;
+- removed explicit **Pan mode** controls and state from file and documentation
+  previews while preserving configured direct and Alt/Option-assisted panning.
+
 ## 1.2.1
 
 - synchronized theme, density, canvas background, custom color, and pattern

@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.1 — Guide utilisateur
+# Mermaid Preview Offline 1.2.2 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,7 +8,7 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.1. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.2. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
@@ -137,12 +137,11 @@ son budget.
 | Ajuster le diagramme entier | **Fit** dans la barre d’outils, ou `Ctrl/Cmd + 0` |
 | Faire un zoom avant ou arrière | `+` / `-` dans la barre d’outils ou au clavier ; `Ctrl/Cmd` ou `Alt/Option` + molette pour un zoom centré sur le pointeur et le pincement trackpad |
 | Zoomer depuis le canevas | `Alt/Option` + clic pour zoomer ; ajoutez `Shift` pour dézoomer |
-| Déplacer la vue | Faites glisser selon `navigation.mouse`, ou activez **Pan** pour le mode explicite |
+| Déplacer la vue | Faites glisser selon `navigation.mouse` |
 | Parcourir un diagramme qui dépasse | Cliquez ou faites glisser dans la minimap |
-| Agrandir le groupe d’éditeurs actif | **Full screen** dans la barre d’outils |
 | Rechercher un libellé rendu | `/` ou `Ctrl/Cmd+F`, puis Entrée/Maj+Entrée |
 | Afficher la source | Cliquez sur un nœud, cluster, acteur, élément mindmap ou timeline |
-| Déplacer l’aperçu dans une autre fenêtre | **Open in new window** dans la barre d’outils |
+| Copier l’aperçu dans une autre fenêtre | **Open in new window** dans la barre d’outils ; l’original reste visible |
 
 ![Recherche de libellés correspondants dans un tableau Mermaid, avec atténuation des autres nœuds](../media/screenshots/search.png)
 
@@ -589,8 +588,8 @@ le cibler. Exécutez **Preview All Blocks in Document** pour ouvrir une vue en
 direct du document. Elle se met à jour après les modifications de la source.
 Sélectionnez **Go to source**, ou double-cliquez sur le canevas d’un diagramme,
 pour afficher et sélectionner le bloc source correspondant. Chaque carte possède
-son zoom centré sur le pointeur, son pincement trackpad, son mode pan et son état
-restauré. Si le redimensionnement est actif, faites glisser la poignée inférieure
+son zoom centré sur le pointeur, son pincement trackpad et son état restauré. Si
+le redimensionnement est actif, faites glisser la poignée inférieure
 ou utilisez les flèches lorsqu’elle a le focus ; `documentation.maxHeight` peut
 limiter sa hauteur.
 Sélectionnez **Present** pour afficher un diagramme par diapositive plein écran ;
@@ -652,7 +651,7 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Délai par ressource en millisecondes, de 0 à 2000. Les fichiers volumineux utilisent au moins 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Seuil par ressource, de 64 à 10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Disponibilité de la minimap par ressource. |
-| `mermaidPreviewOffline.navigation.mouse` | `always` | Politique de déplacement direct : `always`, `alt` ou `never` ; le mode pan explicite reste disponible. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Politique de déplacement direct : `always`, `alt` ou `never` ; `never` désactive le déplacement direct. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Contrôles de navigation : `always`, `onHoverOrFocus` ou `never`. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Identifiants Markdown/MDX exacts reconnus comme Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Active le redimensionnement vertical des cartes documentaires. |

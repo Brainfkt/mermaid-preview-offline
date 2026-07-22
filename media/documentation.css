@@ -211,11 +211,6 @@ button:focus-visible,
   background: var(--vscode-list-hoverBackground);
 }
 
-.documentation-navigation-controls button[aria-pressed='true'] {
-  color: var(--accent-foreground);
-  background: var(--accent);
-}
-
 .documentation-resize-handle {
   z-index: 4;
   position: absolute;

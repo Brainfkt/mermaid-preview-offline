@@ -83,7 +83,8 @@ drag-to-pan navigation, and a draggable minimap that appears only when the
 diagram exceeds the viewport. The active editor group can be maximized without
 losing the selected layout. Press `/` or `Ctrl/Cmd+F` to find labels inside the
 rendered diagram, click a rendered node to reveal its source line, or use the
-pop-out button to move the preview into a separate VS Code window.
+pop-out button to copy the live preview into a separate VS Code window while
+keeping the original visible.
 
 ![Search inside a rendered Mermaid diagram with matching nodes highlighted and the rest dimmed](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/search.png)
 
@@ -172,7 +173,6 @@ the clipboard without opening the export dialog.
 - Per-file native split proportions with full completion and formatting support.
 - Beside and Above follow the active Mermaid source without duplicate previews.
 - Fit-to-window, incremental zoom, drag-to-pan, and an optional minimap.
-- Editor-group full screen for focused reading.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
 - Eleven workspace-wide classic and modern appearances in a visual gallery.
 - Independent canvas colors, custom backgrounds, dots/grid patterns, and three
@@ -252,14 +252,14 @@ and current limitations.
 | **Editor layout** | Choose Preview, Source, Beside, or Above |
 | Explorer context menu | Open the selected Mermaid file in any of the four layouts |
 | Drag the native group separator | Resize source and preview; the ratio is stored per file |
-| **Full screen** | Maximize or restore the active VS Code editor group |
+| **Open in new window** | Copy the live preview into a separate VS Code window while keeping the original visible |
 | Minimap | Click or drag to navigate an overflowing diagram |
 | `R` | Refresh the diagram |
 | `Ctrl/Cmd + 0` | Fit the diagram to the viewport |
 | `+` / `-` | Zoom in or out |
 | `Ctrl/Cmd` or `Alt/Option` + mouse wheel | Pointer-centered zoom and trackpad pinch |
 | `Alt/Option` + click; add `Shift` | Zoom in; zoom out with `Shift` |
-| Drag or **Pan** | Pan according to the configured mouse policy, or toggle explicit pan mode |
+| Drag | Pan according to the configured mouse policy |
 | **Copy SVG** | Copy the current original rendered SVG to the clipboard |
 | **Export** | Preview and save PNG, WebP, PDF, optimized SVG, or original SVG |
 | Export dialog | Copy PNG/original SVG/optimized SVG, save profiles, or export a folder |
@@ -272,7 +272,7 @@ and current limitations.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Set the automatic refresh delay in milliseconds. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Show the minimap when the diagram exceeds the viewport. |
-| `mermaidPreviewOffline.navigation.mouse` | `always` | Pan directly with `always`, require Alt/Option with `alt`, or use only explicit pan mode with `never`. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Pan directly with `always`, require Alt/Option with `alt`, or disable direct panning with `never`. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Show controls `always`, `onHoverOrFocus`, or `never`. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Recognize additional exact Markdown/MDX block language identifiers. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Allow vertical resizing of documentation diagram cards. |
@@ -399,7 +399,7 @@ mindmap
 
 Add exact language identifiers such as `mermaid-example` through
 `mermaidPreviewOffline.documentation.languages`. Every diagram card has its own
-zoom, pan mode, and restored viewport; drag its lower handle to resize it.
+zoom and restored viewport; drag its lower handle to resize it.
 
 AsciiDoc supports both diagram and source block forms:
 

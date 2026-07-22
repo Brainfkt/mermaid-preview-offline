@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.1 — User guide
+# Mermaid Preview Offline 1.2.2 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,7 +7,7 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.1 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.2 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
@@ -124,12 +124,11 @@ its budget.
 | Fit the full diagram | Toolbar **Fit**, or `Ctrl/Cmd + 0` |
 | Zoom in or out | Toolbar or keyboard `+` / `-`; `Ctrl/Cmd` or `Alt/Option` + wheel for pointer-centered zoom and trackpad pinch |
 | Zoom from the canvas | `Alt/Option` + click to zoom in; add `Shift` to zoom out |
-| Pan | Drag according to `navigation.mouse`, or toggle **Pan** for explicit pan mode |
+| Pan | Drag according to `navigation.mouse` |
 | Navigate an overflowing diagram | Click or drag inside the minimap |
-| Maximize the active editor group | Toolbar **Full screen** |
 | Find a rendered label | `/` or `Ctrl/Cmd+F`, then Enter/Shift+Enter |
 | Reveal source | Click a rendered node, cluster, actor, mindmap, or timeline item |
-| Move preview to another window | Toolbar **Open in new window** |
+| Copy preview to another window | Toolbar **Open in new window**; the original stays visible |
 
 ![Finding matching labels in a rendered Mermaid board while unrelated nodes are dimmed](../media/screenshots/search.png)
 
@@ -558,7 +557,7 @@ Place the cursor inside a block and run **Preview Block Under Cursor** to focus
 that block. Run **Preview All Blocks in Document** to open a live document view.
 It updates after source edits. Select **Go to source**, or double-click a diagram
 canvas, to reveal and select the matching source block. Each card has independent
-pointer-centered zoom, trackpad pinch, pan mode, and restored viewport state.
+pointer-centered zoom, trackpad pinch, and restored viewport state.
 When resizing is enabled, drag the handle below a card or focus it and use the
 arrow keys; `documentation.maxHeight` can cap its height.
 Select **Present** to show one diagram per full-window slide; use the arrow,
@@ -584,7 +583,7 @@ overwritten.
 |---|---|
 | **Mermaid Preview: Open Offline Preview** | Open a Mermaid file in the custom preview. |
 | **Mermaid Preview: Open Preview to the Side** | Open a companion preview in another editor group. |
-| **Mermaid Preview: Open Preview in New Window** | Move the preview to a separate VS Code window. |
+| **Mermaid Preview: Open Preview in New Window** | Copy the preview to a separate VS Code window while keeping the original visible. |
 | **Mermaid Preview: Choose Editor Layout** | Choose one of the four layouts. |
 | **Mermaid Preview: Preview Only** | Switch to Preview only. |
 | **Mermaid Preview: Source Only** | Switch to Source only. |
@@ -618,7 +617,7 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.refreshDelay` | `140` | Resource-level debounce in milliseconds, 0–2000. Large files use at least 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Resource-level threshold, 64–10240 KB. |
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Resource-level minimap availability. |
-| `mermaidPreviewOffline.navigation.mouse` | `always` | Direct panning policy: `always`, `alt`, or `never`; explicit pan mode remains available. |
+| `mermaidPreviewOffline.navigation.mouse` | `always` | Direct panning policy: `always`, `alt`, or `never`; `never` disables direct panning. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Navigation controls: `always`, `onHoverOrFocus`, or `never`. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Exact Markdown/MDX identifiers recognized as Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Enables vertical resizing for documentation diagram cards. |
