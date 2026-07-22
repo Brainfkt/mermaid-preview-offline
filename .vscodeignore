@@ -12,6 +12,7 @@ scripts/**
 src/**
 test/**
 media/screenshots/**
+examples/assets/*.mmd
 eslint.config.mjs
 esbuild.mjs
 tsconfig*.json

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.1
+
+- synchronized theme, density, canvas background, custom color, and pattern
+  changes across every open Mermaid preview in the workspace, with a persistent
+  workspace state that survives closing and reopening diagrams;
+- serialized rapid appearance updates so the last selected value remains the
+  shared value when moving between diagrams;
+- made the minimap use the active canvas background and pattern, including the
+  matching contrast color for its viewport frame;
+- simplified the empty-diagram state and added a direct Diagram Studio action
+  that defaults creation to the empty file's existing name and directory.
+
 ## 1.2.0
 
 - added a visual appearance gallery with the six classic choices plus Neo,
