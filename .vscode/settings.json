@@ -1,3 +1,7 @@
 {
-    "mermaidPreviewOffline.diagramTheme": "adaptive"
+    "mermaidPreviewOffline.diagramTheme": "default",
+    "mermaidPreviewOffline.diagramDensity": "compact",
+    "mermaidPreviewOffline.canvas.background": "soft-gray",
+    "mermaidPreviewOffline.canvas.customColor": "#ffffff",
+    "mermaidPreviewOffline.canvas.pattern": "none"
 }
