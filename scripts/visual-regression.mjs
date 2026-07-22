@@ -245,9 +245,12 @@ const runner = `<script nonce="${nonce}">
       );
     }
 
-    document.querySelector('#fullscreen').click();
-    if (postedMessages.at(-1)?.type !== 'toggleFullscreen') {
-      throw new Error('The full-screen control did not request editor-group maximization.');
+    if (document.querySelector('#fullscreen') || document.querySelector('#pan-mode')) {
+      throw new Error('Removed full-screen or pan-mode controls are still visible.');
+    }
+    document.querySelector('#open-new-window').click();
+    if (postedMessages.at(-1)?.type !== 'openInNewWindow') {
+      throw new Error('The new-window control did not request a detached preview.');
     }
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 't' }));
