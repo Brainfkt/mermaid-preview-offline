@@ -73,6 +73,7 @@ void test('preview commands expose all four native editor layouts', () => {
   for (const command of [
     'mermaidPreviewOffline.openPreview',
     'mermaidPreviewOffline.openPreviewToSide',
+    'mermaidPreviewOffline.openPreviewNewWindow',
     'mermaidPreviewOffline.chooseEditorLayout',
     ...layoutCommands,
     'mermaidPreviewOffline.configureDefaultEditor',
@@ -108,6 +109,23 @@ void test('preview commands expose all four native editor layouts', () => {
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
+});
+
+void test('new-window file previews are copied so both windows stay rendered', () => {
+  const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
+  const provider = readFileSync(
+    resolve(__dirname, '../../src/mermaidPreviewProvider.ts'),
+    'utf8',
+  );
+  const controller = readFileSync(
+    resolve(__dirname, '../../src/editorLayoutController.ts'),
+    'utf8',
+  );
+  assert.match(extension, /copyPreviewToNewWindow/u);
+  assert.match(provider, /copyPreviewToNewWindow/u);
+  assert.match(controller, /workbench\.action\.copyEditorToNewWindow/u);
+  assert.doesNotMatch(extension, /workbench\.action\.moveEditorGroupToNewWindow/u);
+  assert.doesNotMatch(provider, /workbench\.action\.moveEditorGroupToNewWindow/u);
 });
 
 void test('the Mermaid source editor exposes a safe shortcut for cycling preview layouts', () => {
@@ -316,7 +334,7 @@ void test('split preview follows the active source without duplicate custom edit
     resolve(__dirname, '../../src/editorLayoutController.ts'),
     'utf8',
   );
-  assert.match(extension, /supportsMultipleEditorsPerDocument:\s*false/u);
+  assert.match(extension, /supportsMultipleEditorsPerDocument:\s*true/u);
   assert.match(extension, /onDidChangeActiveTextEditor/u);
   assert.match(extension, /onDidChangeTabs/u);
   assert.match(extension, /syncPreviewForSource/u);

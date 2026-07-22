@@ -37,7 +37,6 @@ void test('the compact toolbar exposes controls in the requested order', () => {
   assert.match(html, /class="toolbar glass-surface"/u);
   const controlOrder = [
     'id="editor-layout"',
-    'id="pan-mode"',
     'id="zoom-out"',
     'id="fit"',
     'id="zoom-in"',
@@ -85,17 +84,18 @@ void test('layout, refresh, and theme controls stay compact and the footer is un
   assert.doesNotMatch(html, /Rendering locally/u);
 });
 
-void test('navigation controls use native editor layouts and expose v0.4 reading tools', () => {
+void test('navigation controls use native editor layouts and expose focused reading tools', () => {
   assert.match(html, /id="editor-layout"/u);
   assert.doesNotMatch(html, /id="source-editor"/u);
   assert.doesNotMatch(html, /<textarea/u);
-  assert.match(html, /id="fullscreen"/u);
+  assert.doesNotMatch(html, /id="fullscreen"/u);
+  assert.doesNotMatch(html, /id="pan-mode"/u);
+  assert.match(html, /id="open-new-window"/u);
   assert.doesNotMatch(html, /id="hide-toolbar"/u);
   assert.doesNotMatch(html, /id="show-toolbar"/u);
   assert.match(html, /id="minimap"/u);
   assert.match(html, /id="minimap-window"/u);
   assert.match(html, /id="diagram-navigation-controls"/u);
-  assert.match(html, /id="pan-mode"[^>]+aria-pressed="false"/u);
   assert.match(html, /id="file-size"/u);
   assert.match(html, /id="diagram-size"/u);
 });

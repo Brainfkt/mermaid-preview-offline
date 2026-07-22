@@ -16,7 +16,7 @@ void test('appearance changes are serialized and broadcast to every ready previe
   assert.match(provider, /diagramTheme: message\.theme/u);
   assert.match(provider, /this\.appearanceUpdateQueue\.then\(apply, apply\)/u);
   assert.match(provider, /\[\.\.\.this\.panels\.entries\(\)\]/u);
-  assert.match(provider, /this\.readyPanels\.has\(key\)/u);
+  assert.match(provider, /this\.readyPanels\.has\(panel\)/u);
   assert.match(
     provider,
     /configuration: readConfiguration\(vscode\.Uri\.parse\(key\), this\.sharedAppearance\)/u,
