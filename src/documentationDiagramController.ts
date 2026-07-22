@@ -3,7 +3,6 @@ import type { DiagramNavigationConfiguration } from './navigationSettings';
 export interface DocumentationDiagramState {
   autoFit: boolean;
   customHeight?: number;
-  panMode: boolean;
   scrollLeft: number;
   scrollTop: number;
   source: string;
@@ -24,14 +23,12 @@ const MIN_HEIGHT = 160;
 export class DocumentationDiagramController {
   private readonly abortController = new AbortController();
   private readonly controls: HTMLElement;
-  private readonly panButton: HTMLButtonElement;
   private readonly resizeHandle?: HTMLElement;
   private readonly resizeObserver: ResizeObserver;
   private autoFit = true;
   private customHeight: number | undefined;
   private naturalHeight = 1;
   private naturalWidth = 1;
-  private panMode = false;
   private zoom = 1;
 
   public constructor(
@@ -43,10 +40,8 @@ export class DocumentationDiagramController {
   ) {
     this.autoFit = state?.autoFit ?? true;
     this.customHeight = state?.source === options.source ? state.customHeight : undefined;
-    this.panMode = state?.source === options.source ? state.panMode : false;
     this.zoom = state?.source === options.source ? clamp(state.zoom, MIN_ZOOM, MAX_ZOOM) : 1;
     this.controls = this.createControls();
-    this.panButton = this.controls.querySelector<HTMLButtonElement>('[data-action="pan"]')!;
     this.article.append(this.controls);
     this.configureControlsVisibility();
     this.configureMaximumHeight();
@@ -78,7 +73,6 @@ export class DocumentationDiagramController {
     return {
       autoFit: this.autoFit,
       customHeight: this.customHeight,
-      panMode: this.panMode,
       scrollLeft: this.canvas.scrollLeft,
       scrollTop: this.canvas.scrollTop,
       source: this.options.source,
@@ -112,17 +106,11 @@ export class DocumentationDiagramController {
     controls.className = 'documentation-navigation-controls';
     controls.setAttribute('aria-label', 'Diagram navigation controls');
     controls.innerHTML = [
-      '<button type="button" data-action="pan" title="Toggle pan mode" aria-label="Toggle pan mode" aria-pressed="false">↔</button>',
       '<button type="button" data-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>',
       '<button type="button" data-action="fit" title="Fit diagram">Fit</button>',
       '<button type="button" data-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>',
     ].join('');
     const signal = this.abortController.signal;
-    controls.querySelector('[data-action="pan"]')?.addEventListener(
-      'click',
-      () => this.togglePanMode(),
-      { signal },
-    );
     controls.querySelector('[data-action="zoom-out"]')?.addEventListener(
       'click',
       () => this.setZoom(this.zoom - 0.15),
@@ -342,21 +330,12 @@ export class DocumentationDiagramController {
     svg.style.height = `${Math.round(this.naturalHeight * this.zoom)}px`;
   }
 
-  private togglePanMode(): void {
-    this.panMode = !this.panMode;
-    this.panButton.setAttribute('aria-pressed', String(this.panMode));
-    this.panButton.title = this.panMode ? 'Disable pan mode' : 'Enable pan mode';
-    this.updatePanAffordance(false);
-  }
-
   private canPan(altKey: boolean): boolean {
-    return this.panMode ||
-      this.options.navigation.mouseNavigation === 'always' ||
+    return this.options.navigation.mouseNavigation === 'always' ||
       (this.options.navigation.mouseNavigation === 'alt' && altKey);
   }
 
   private updatePanAffordance(altKey: boolean): void {
-    this.panButton.setAttribute('aria-pressed', String(this.panMode));
     this.canvas.classList.toggle('documentation-canvas--pan-ready', this.canPan(altKey));
   }
 }

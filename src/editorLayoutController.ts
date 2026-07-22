@@ -61,6 +61,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   private layoutTransitioning = false;
   private pendingMode: MermaidEditorMode | undefined;
   private requestedSourceKey: string | undefined;
+  private readonly copiedPreviewUris = new Set<string>();
 
   public readonly onDidChangeMode = this.modeEmitter.event;
 
@@ -90,10 +91,34 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     return new vscode.Disposable(() => {
       const current = this.panels.get(key);
       current?.delete(panel);
+      if ((current?.size ?? 0) <= 1) {
+        this.copiedPreviewUris.delete(key);
+      }
       if (current?.size === 0) {
         this.panels.delete(key);
       }
     });
+  }
+
+  public async copyPreviewToNewWindow(
+    uri: vscode.Uri,
+    preferredPanel?: vscode.WebviewPanel,
+  ): Promise<void> {
+    const panel = this.registeredPanel(uri, preferredPanel);
+    if (!panel) {
+      return;
+    }
+    panel.reveal(panel.viewColumn, false);
+    const key = uri.toString();
+    this.copiedPreviewUris.add(key);
+    try {
+      await vscode.commands.executeCommand('workbench.action.copyEditorToNewWindow');
+    } catch (error: unknown) {
+      if ((this.panels.get(key)?.size ?? 0) <= 1) {
+        this.copiedPreviewUris.delete(key);
+      }
+      throw error;
+    }
   }
 
   public async chooseMode(uri: vscode.Uri, preferredPanel?: vscode.WebviewPanel): Promise<void> {
@@ -144,7 +169,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       if (await this.isAlreadyArranged(uri, mode, panel)) {
         if (isSplitMode(mode)) {
           await this.reconcileSplitTabs(uri, panel);
-        } else {
+        } else if (!this.copiedPreviewUris.has(uri.toString())) {
           this.disposeOtherPanels(uri, panel);
         }
         return;
@@ -303,7 +328,9 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     const panel = this.registeredPanel(uri, preferredPanel);
     if (panel) {
       panel.reveal(vscode.ViewColumn.One, false);
-      this.disposeOtherPanels(uri, panel);
+      if (!this.copiedPreviewUris.has(uri.toString())) {
+        this.disposeOtherPanels(uri, panel);
+      }
       await this.closeSourceTabs(uri);
       return;
     }

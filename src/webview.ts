@@ -104,7 +104,6 @@ const searchPanel = element<HTMLElement>('diagram-search');
 const searchInput = element<HTMLInputElement>('diagram-search-input');
 const searchCount = element<HTMLElement>('diagram-search-count');
 const navigationControls = element<HTMLElement>('diagram-navigation-controls');
-const panModeButton = element<HTMLButtonElement>('pan-mode');
 const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
 const editorLayoutLabel = element<HTMLElement>('editor-layout-label');
 const exportDialog = element<HTMLDialogElement>('export-dialog');
@@ -162,7 +161,6 @@ let exportPreviewTimer: number | undefined;
 let exportPreviewGeneration = 0;
 let exportJob = Promise.resolve();
 let exportDialogRequested = false;
-let panModeEnabled = false;
 let searchMatches: Element[] = [];
 let searchIndex = -1;
 let diagramPointerStart: { x: number; y: number } | undefined;
@@ -283,7 +281,6 @@ bindButton('empty-open-gallery', () => vscode.postMessage({ type: 'openDiagramGa
 bindButton('error-open-source', openSourceOnly);
 bindButton('error-retry', retryRender);
 bindButton('refresh', refreshDocument);
-bindButton('fullscreen', () => vscode.postMessage({ type: 'toggleFullscreen' }));
 bindButton('open-new-window', () => vscode.postMessage({ type: 'openInNewWindow' }));
 bindButton('theme-picker', toggleAppearancePopover);
 bindButton('appearance-close', closeAppearancePopover);
@@ -291,7 +288,6 @@ bindButton('search-open', openDiagramSearch);
 bindButton('diagram-search-close', closeDiagramSearch);
 bindButton('diagram-search-previous', () => selectSearchMatch(-1));
 bindButton('diagram-search-next', () => selectSearchMatch(1));
-bindButton('pan-mode', togglePanMode);
 bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
 bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
 bindButton('fit', fitDiagram);
@@ -1627,16 +1623,8 @@ function installDragToPan(): void {
   });
 }
 
-function togglePanMode(): void {
-  panModeEnabled = !panModeEnabled;
-  panModeButton.setAttribute('aria-pressed', String(panModeEnabled));
-  panModeButton.title = panModeEnabled ? 'Disable pan mode' : 'Enable pan mode';
-  updatePanAffordance(false);
-}
-
 function canPanWithPointer(altKey: boolean): boolean {
-  return panModeEnabled ||
-    configuration.navigation.mouseNavigation === 'always' ||
+  return configuration.navigation.mouseNavigation === 'always' ||
     (configuration.navigation.mouseNavigation === 'alt' && altKey);
 }
 

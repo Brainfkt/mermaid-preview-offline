@@ -43,7 +43,6 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       </button>
       <span class="divider" aria-hidden="true"></span>
       <div class="toolbar__group toolbar__navigation" id="diagram-navigation-controls">
-        <button class="button button--icon button--pan" id="pan-mode" type="button" title="Toggle pan mode" aria-label="Toggle pan mode" aria-pressed="false">↔</button>
         <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
         <button class="button button--zoom" id="fit" type="button" title="Fit diagram (0)">Fit</button>
         <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
@@ -67,9 +66,6 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       </button>
       <span class="metadata-chip" id="large-file-label" hidden></span>
       <span class="divider" aria-hidden="true"></span>
-      <button class="button button--icon" id="fullscreen" type="button" title="Toggle full screen" aria-label="Toggle full screen">
-        ${icon('fullscreen')}
-      </button>
       <button class="button button--icon" id="open-new-window" type="button" title="Open preview in a new window" aria-label="Open preview in a new window">
         ${icon('newWindow')}
       </button>
@@ -314,10 +310,9 @@ function surfaceSwatch(value: string, color: string, label: string): string {
   return `<button class="surface-swatch surface-swatch--${value}" type="button" data-surface="${value}" title="${label}"${style}><i></i><span>${label}</span></button>`;
 }
 
-function icon(name: 'export' | 'fullscreen' | 'layout' | 'newWindow' | 'palette' | 'refresh' | 'search'): string {
+function icon(name: 'export' | 'layout' | 'newWindow' | 'palette' | 'refresh' | 'search'): string {
   const paths: Record<typeof name, string> = {
     export: '<path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 19h14"/>',
-    fullscreen: '<path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/>',
     layout: '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 10h17M11 10v10"/>',
     palette:
       '<path d="M12 3a9 9 0 0 0 0 18h1.5a1.5 1.5 0 0 0 0-3H12a2 2 0 0 1 0-4h2.5A6.5 6.5 0 0 0 21 7.5C21 5 17 3 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="6.5" r="1"/><circle cx="17.2" cy="9" r="1"/>',

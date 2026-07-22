@@ -56,7 +56,7 @@ export function activate(context: vscode.ExtensionContext): void {
     projectFeatures,
     documentationFeatures,
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {
-      supportsMultipleEditorsPerDocument: false,
+      supportsMultipleEditorsPerDocument: true,
       webviewOptions: { retainContextWhenHidden: true },
     }),
     vscode.tasks.registerTaskProvider(MERMAID_EXPORT_TASK_TYPE, exportTaskProvider),
@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const uri = mermaidUri(resource);
       if (!uri) return;
       await layoutController.applyMode(uri, 'preview');
-      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      await layoutController.copyPreviewToNewWindow(uri);
     }),
     vscode.commands.registerCommand(CHOOSE_LAYOUT_COMMAND, async (resource?: vscode.Uri) => {
       const uri = mermaidUri(resource);

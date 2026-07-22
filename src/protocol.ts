@@ -113,7 +113,6 @@ export type WebviewToExtensionMessage =
   | { type: 'chooseEditorMode' }
   | { type: 'cycleEditorMode' }
   | { type: 'setEditorMode'; mode: MermaidEditorMode }
-  | { type: 'toggleFullscreen' }
   | { type: 'openInNewWindow' }
   | { type: 'openDiagramGallery' }
   | { type: 'requestDocument' }

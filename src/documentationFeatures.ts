@@ -291,8 +291,8 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       return;
     }
     if (message.type === 'openInNewWindow') {
-      this.panel?.reveal(vscode.ViewColumn.Active, true);
-      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      this.panel?.reveal(vscode.ViewColumn.Active, false);
+      await vscode.commands.executeCommand('workbench.action.moveEditorGroupToNewWindow');
       return;
     }
     const pending = this.pendingExports.get(message.requestId);

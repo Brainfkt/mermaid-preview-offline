@@ -77,8 +77,8 @@ type SharedPreviewAppearance = Pick<
 >;
 
 export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
-  private readonly panels = new Map<string, vscode.WebviewPanel>();
-  private readonly readyPanels = new Set<string>();
+  private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
+  private readonly readyPanels = new Set<vscode.WebviewPanel>();
   private readonly pendingExportDialogs = new Set<string>();
   private readonly batchSessions = new Map<string, BatchSession>();
   private appearanceUpdateQueue = Promise.resolve();
@@ -101,8 +101,10 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
   public async showExportDialog(documentUri: vscode.Uri): Promise<void> {
     const key = documentUri.toString();
-    const panel = this.panels.get(key);
-    if (panel && this.readyPanels.has(key)) {
+    const panel = [...(this.panels.get(key) ?? [])].find((candidate) =>
+      this.readyPanels.has(candidate),
+    );
+    if (panel) {
       panel.reveal(panel.viewColumn, true);
       await panel.webview.postMessage({ type: 'showExportDialog' });
       return;
@@ -136,7 +138,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     let reviewSessionRecorded = false;
     const panelRegistration = this.layoutController.registerPanel(document.uri, webviewPanel);
     const panelKey = document.uri.toString();
-    this.panels.set(panelKey, webviewPanel);
+    const documentPanels = this.panels.get(panelKey) ?? new Set<vscode.WebviewPanel>();
+    documentPanels.add(webviewPanel);
+    this.panels.set(panelKey, documentPanels);
 
     webview.options = {
       enableScripts: true,
@@ -319,7 +323,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
       switch (message.type) {
         case 'ready': {
-          this.readyPanels.add(panelKey);
+          this.readyPanels.add(webviewPanel);
           await postConfiguration();
           if (!message.hasPersistedState) {
             const fallback = this.context.workspaceState.get<PersistedPreviewState>(stateKey);
@@ -350,12 +354,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'setEditorMode':
           await this.layoutController.applyMode(document.uri, message.mode, webviewPanel);
           break;
-        case 'toggleFullscreen':
-          await vscode.commands.executeCommand('workbench.action.toggleMaximizeEditorGroup');
-          break;
         case 'openInNewWindow':
-          webviewPanel.reveal(webviewPanel.viewColumn, false);
-          await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+          await this.layoutController.copyPreviewToNewWindow(document.uri, webviewPanel);
           break;
         case 'openDiagramGallery':
           await vscode.commands.executeCommand(OPEN_GALLERY_FOR_FILE_COMMAND, document.uri);
@@ -432,9 +432,13 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
     webviewPanel.onDidDispose(() => {
       disposed = true;
-      this.panels.delete(panelKey);
-      this.readyPanels.delete(panelKey);
-      this.pendingExportDialogs.delete(panelKey);
+      const remainingPanels = this.panels.get(panelKey);
+      remainingPanels?.delete(webviewPanel);
+      if (remainingPanels?.size === 0) {
+        this.panels.delete(panelKey);
+        this.pendingExportDialogs.delete(panelKey);
+      }
+      this.readyPanels.delete(webviewPanel);
       void this.layoutController.saveCurrentRatio(document.uri, true);
       if (documentTimer) clearTimeout(documentTimer);
       if (stateTimer) clearTimeout(stateTimer);
@@ -505,30 +509,34 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   private async broadcastExportConfiguration(): Promise<void> {
     const profiles = this.exportProfiles();
     await Promise.all(
-      [...this.panels.entries()].map(async ([key, panel]) => {
-        if (!this.readyPanels.has(key)) {
-          return;
-        }
-        await panel.webview.postMessage({
-          type: 'exportConfiguration',
-          profiles,
-          settings: readExportConfiguration(vscode.Uri.parse(key)),
-        });
-      }),
+      [...this.panels.entries()].flatMap(([key, panels]) =>
+        [...panels].map(async (panel) => {
+          if (!this.readyPanels.has(panel)) {
+            return;
+          }
+          await panel.webview.postMessage({
+            type: 'exportConfiguration',
+            profiles,
+            settings: readExportConfiguration(vscode.Uri.parse(key)),
+          });
+        }),
+      ),
     );
   }
 
   private async broadcastPreviewConfiguration(): Promise<void> {
     await Promise.all(
-      [...this.panels.entries()].map(async ([key, panel]) => {
-        if (!this.readyPanels.has(key)) {
-          return;
-        }
-        await panel.webview.postMessage({
-          type: 'configuration',
-          configuration: readConfiguration(vscode.Uri.parse(key), this.sharedAppearance),
-        });
-      }),
+      [...this.panels.entries()].flatMap(([key, panels]) =>
+        [...panels].map(async (panel) => {
+          if (!this.readyPanels.has(panel)) {
+            return;
+          }
+          await panel.webview.postMessage({
+            type: 'configuration',
+            configuration: readConfiguration(vscode.Uri.parse(key), this.sharedAppearance),
+          });
+        }),
+      ),
     );
   }
 
@@ -1080,7 +1088,6 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     candidate.type === 'requestDocument' ||
     candidate.type === 'chooseEditorMode' ||
     candidate.type === 'cycleEditorMode' ||
-    candidate.type === 'toggleFullscreen' ||
     candidate.type === 'openInNewWindow' ||
     candidate.type === 'openDiagramGallery'
   ) {
