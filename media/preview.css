@@ -366,7 +366,8 @@ select:focus-visible {
   background-color: var(--diagram-canvas-background);
 }
 
-.viewport.pattern-dots {
+.viewport.pattern-dots,
+.minimap.pattern-dots {
   background-image: radial-gradient(
     circle,
     var(--diagram-pattern-ink) 0.7px,
@@ -375,7 +376,8 @@ select:focus-visible {
   background-size: 18px 18px;
 }
 
-.viewport.pattern-grid {
+.viewport.pattern-grid,
+.minimap.pattern-grid {
   background-image:
     linear-gradient(to right, var(--diagram-pattern-ink) 1px, transparent 1px),
     linear-gradient(to bottom, var(--diagram-pattern-ink) 1px, transparent 1px);
@@ -431,7 +433,7 @@ select:focus-visible {
   height: min(126px, calc(100% - 98px));
   overflow: hidden;
   border-radius: 9px;
-  background: var(--preview-glass-strong);
+  background-color: var(--diagram-canvas-background);
   cursor: crosshair;
   touch-action: none;
 }
@@ -468,7 +470,7 @@ select:focus-visible {
   border: 1px solid var(--vscode-focusBorder);
   border-radius: 3px;
   background: color-mix(in srgb, var(--vscode-focusBorder) 16%, transparent);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-editor-background) 62%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--diagram-canvas-background) 62%, transparent);
   pointer-events: none;
 }
 
@@ -519,18 +521,11 @@ select:focus-visible {
   );
 }
 
-.state-card__mark {
-  display: grid;
-  width: 52px;
-  height: 52px;
-  margin: auto;
-  place-items: center;
-  border-radius: 15px;
-  color: var(--preview-accent-fg);
-  background: linear-gradient(145deg, var(--preview-accent), var(--vscode-symbolIcon-keywordForeground));
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--preview-accent) 28%, transparent);
-  font-size: 24px;
-  font-weight: 800;
+.state-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
 .state-card--compact {
