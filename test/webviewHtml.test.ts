@@ -99,3 +99,15 @@ void test('navigation controls use native editor layouts and expose v0.4 reading
   assert.match(html, /id="file-size"/u);
   assert.match(html, /id="diagram-size"/u);
 });
+
+void test('the empty diagram state is concise and links to source or Diagram Studio', () => {
+  const start = html.indexOf('id="empty-state"');
+  const end = html.indexOf('</section>', start);
+  const emptyState = html.slice(start, end);
+  assert.match(emptyState, /This Mermaid diagram is empty\./u);
+  assert.match(emptyState, /id="empty-open-source"/u);
+  assert.match(emptyState, /id="empty-open-gallery"/u);
+  assert.match(emptyState, /Browse templates &amp; examples/u);
+  assert.doesNotMatch(emptyState, /state-card__mark/u);
+  assert.doesNotMatch(emptyState, />M</u);
+});
