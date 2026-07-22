@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.0 — User guide
+# Mermaid Preview Offline 1.2.1 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,7 +7,7 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.0 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.1 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
@@ -138,7 +138,8 @@ Zoom is constrained to a practical 15–400% range. Set
 `mermaidPreviewOffline.navigation.controls` to `always`, `onHoverOrFocus`, or
 `never`. The minimap appears only when
 it is enabled and the diagram exceeds the viewport. Its rectangle represents
-the visible area; click or drag to move that area across a large diagram.
+the visible area; click or drag to move that area across a large diagram. Its
+background and optional dots or grid stay synchronized with the active canvas.
 
 ![A zoomed Mermaid mindmap with its draggable minimap visible](../media/screenshots/minimap.png)
 
@@ -156,7 +157,9 @@ VS Code editor, white, paper, soft gray, soft blue, soft rose, slate, midnight,
 and any custom six-digit color. Dots, grid, and pattern-free modes are available
 independently. These workspace settings are shared by file previews,
 documentation blocks, Diagram Studio, visual diffs, exports, tasks, and CLI
-rendering where applicable.
+rendering where applicable. Selections made in a file preview are retained in
+workspace state, so switching, closing, or reopening a diagram does not restore
+the appearance defaults.
 
 The preview theme and export theme are independent. This lets you edit in a dark
 workspace while exporting, for example, a neutral diagram on white.
@@ -440,6 +443,10 @@ that provide a compatible browser.
 Run **Mermaid Preview: New Diagram from Template…** to open Diagram Studio. It
 provides a live source and preview, editable template fields, optional direct
 source editing, and a save step inside the workspace.
+
+An empty file preview also links directly to Diagram Studio. In that flow, the
+creation dialog defaults to the empty file's current name and directory, while
+still allowing the destination to be reviewed before replacement.
 
 The eight bundled templates are:
 

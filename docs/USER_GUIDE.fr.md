@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.0 — Guide utilisateur
+# Mermaid Preview Offline 1.2.1 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,7 +8,7 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.0. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.1. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
@@ -152,7 +152,8 @@ Le zoom est limité à une plage pratique de 15 à 400 %. Réglez
 `never`. La minimap apparaît
 uniquement lorsqu’elle est activée et que le diagramme dépasse la zone visible.
 Son rectangle représente la zone affichée ; cliquez ou faites-le glisser pour
-déplacer cette zone dans un grand diagramme.
+déplacer cette zone dans un grand diagramme. Son fond et ses éventuels points
+ou sa grille restent synchronisés avec le canevas actif.
 
 ![Une mindmap Mermaid agrandie avec sa minimap déplaçable](../media/screenshots/minimap.png)
 
@@ -168,7 +169,9 @@ Choisissez une densité Compact, Comfortable ou Spacious, puis un fond VS Code,
 blanc, papier, gris doux, bleu doux, rose doux, ardoise, minuit ou une couleur
 personnalisée. Les motifs sans trame, points et grille sont indépendants. Ces
 réglages d’espace de travail sont partagés par les aperçus, la documentation,
-Diagram Studio, les diffs visuels et les exports.
+Diagram Studio, les diffs visuels et les exports. Les choix effectués dans un
+aperçu de fichier sont conservés dans l’état de l’espace de travail : changer,
+fermer ou rouvrir un diagramme ne rétablit plus les valeurs par défaut.
 
 Le thème de l’aperçu et celui de l’export sont indépendants. Vous pouvez ainsi
 travailler dans un espace sombre tout en exportant, par exemple, un diagramme
@@ -467,6 +470,10 @@ Exécutez **Mermaid Preview: New Diagram from Template…** pour ouvrir Diagram
 Studio. Il propose une source et un aperçu en direct, des champs de modèle
 modifiables, la modification directe facultative de la source et une étape
 d’enregistrement dans l’espace de travail.
+
+L’aperçu d’un fichier vide donne aussi un accès direct à Diagram Studio. Dans
+ce parcours, la boîte de création reprend par défaut le nom et le dossier du
+fichier vide tout en permettant de vérifier la destination avant remplacement.
 
 Les huit modèles intégrés sont :
 
