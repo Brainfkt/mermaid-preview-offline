@@ -331,8 +331,10 @@ en pixels ou de la page avant l’enregistrement.
 | **Original SVG** | SVG rendu par Mermaid, copié ou enregistré sans modification ; les réglages de décoration de sortie sont désactivés. |
 
 Le bouton **Copy SVG** de la barre d’outils copie le SVG original actuellement
-rendu. La boîte de dialogue d’export peut copier séparément le SVG original, le
-SVG optimisé ou le PNG.
+rendu. **Save SVG** ouvre une boîte de dialogue native pour enregistrer
+directement ce même SVG original. Ces deux actions n’ouvrent pas l’export
+professionnel, qui peut copier séparément le SVG original, le SVG optimisé ou le
+PNG.
 
 ![Copie directe du SVG original depuis la barre d’outils de l’aperçu Mermaid](../media/screenshots/copy-svg.png)
 
@@ -373,6 +375,11 @@ Sélectionnez **Export folder…** pour choisir un dossier source et une
 destination. L’extension recherche récursivement les fichiers `.mmd` et
 `.mermaid`, conserve leur arborescence relative, applique les réglages d’export
 actifs et signale chaque échec sans écraser les fichiers sources.
+
+Vous pouvez aussi faire un clic droit sur un dossier dans l’Explorateur puis
+sélectionner **Mermaid Preview: Export Folder…**. Le dossier sélectionné devient
+immédiatement la source : seule la destination reste à choisir. L’action utilise
+le même export récursif par lot et les réglages d’export configurés.
 
 ## CLI hors ligne
 
@@ -628,9 +635,9 @@ configurés. Le document source n’est pas écrasé.
 | **Mermaid: Generate Missing Identifiers** | Éditeur Mermaid et menu contextuel de l’éditeur. |
 | **Mermaid: Rename Identifier** | Éditeur Mermaid et menu contextuel de l’éditeur. |
 | **Mermaid Preview: Export Diagram…** | Barre d’outils de l’aperçu, titre de l’éditeur, Explorateur ou palette de commandes. |
-| **Mermaid Preview: New Diagram from Template…** | Ouvre Diagram Studio sur l’onglet des modèles. |
+| **Mermaid Preview: Export Folder…** | Menu contextuel d’un dossier dans l’Explorateur ou palette de commandes. |
+| **Mermaid Preview: New Diagram from Template…** | Ouvre Diagram Studio pour les modèles et la génération personnalisée. |
 | **Mermaid Preview: Browse Example Gallery…** | Ouvre Diagram Studio sur l’onglet de la galerie. |
-| **Mermaid Preview: Generate Custom Diagram…** | Ouvre Diagram Studio avec les générateurs. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Génère une source Mermaid ER à partir d’un schéma SQL local. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Génère une source de graphe Mermaid à partir d’un manifeste de paquet local. |
 | **Mermaid Preview: Compare Git Versions Visually…** | Contextes Explorateur/titre Mermaid et palette de commandes. |

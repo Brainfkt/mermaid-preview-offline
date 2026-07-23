@@ -308,8 +308,10 @@ pixel/page dimensions before you save.
 | **Optimized SVG** | Portable vector output with optional optimization, metadata, margin, and background. |
 | **Original SVG** | Mermaid's rendered SVG copied or saved unchanged; output decoration controls are disabled. |
 
-The toolbar's **Copy SVG** copies the current original rendered SVG. The export
-dialog can separately copy original SVG, optimized SVG, or PNG.
+The toolbar's **Copy SVG** copies the current original rendered SVG.
+**Save SVG** opens a native save dialog for that same original SVG. Neither
+action opens the professional export dialog, which can separately copy original
+SVG, optimized SVG, or PNG.
 
 ![Copying the current original SVG directly from the Mermaid preview toolbar](../media/screenshots/copy-svg.png)
 
@@ -348,6 +350,11 @@ Select **Export folder…** to choose a source folder and destination. The
 extension recursively discovers `.mmd` and `.mermaid` files, preserves their
 relative directory structure, applies the active export settings, and reports
 individual failures without overwriting the source files.
+
+You can also right-click a folder in the Explorer and select **Mermaid Preview:
+Export Folder…**. The selected folder is used as the source immediately, so
+only the destination needs to be chosen. The same recursive batch exporter and
+configured export defaults are used.
 
 ## Offline CLI
 
@@ -595,9 +602,9 @@ overwritten.
 | **Mermaid: Generate Missing Identifiers** | Mermaid editor and editor context menu. |
 | **Mermaid: Rename Identifier** | Mermaid editor and editor context menu. |
 | **Mermaid Preview: Export Diagram…** | Preview toolbar, editor title, Explorer, or Command Palette. |
-| **Mermaid Preview: New Diagram from Template…** | Open Diagram Studio with its template tab. |
+| **Mermaid Preview: Export Folder…** | Explorer folder context menu or Command Palette. |
+| **Mermaid Preview: New Diagram from Template…** | Open Diagram Studio for templates and custom generation. |
 | **Mermaid Preview: Browse Example Gallery…** | Open Diagram Studio with its gallery tab. |
-| **Mermaid Preview: Generate Custom Diagram…** | Open the generator-capable Diagram Studio. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Generate Mermaid ER source from a local SQL schema. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate Mermaid graph source from a local package manifest. |
 | **Mermaid Preview: Compare Git Versions Visually…** | Mermaid Explorer/title context and Command Palette. |
