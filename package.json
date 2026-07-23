@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -87,6 +87,7 @@
     "onCommand:mermaidPreviewOffline.generateMissingIds",
     "onCommand:mermaidPreviewOffline.renameIdentifier",
     "onCommand:mermaidPreviewOffline.export",
+    "onCommand:mermaidPreviewOffline.exportFolder",
     "onCommand:mermaidPreviewOffline.newDiagram",
     "onCommand:mermaidPreviewOffline.browseExamples",
     "onCommand:mermaidPreviewOffline.generateFromTemplate",
@@ -220,6 +221,11 @@
         "icon": "$(export)"
       },
       {
+        "command": "mermaidPreviewOffline.exportFolder",
+        "title": "Mermaid Preview: Export Folder…",
+        "icon": "$(folder-opened)"
+      },
+      {
         "command": "mermaidPreviewOffline.newDiagram",
         "title": "Mermaid Preview: New Diagram from Template…",
         "icon": "$(new-file)"
@@ -228,11 +234,6 @@
         "command": "mermaidPreviewOffline.browseExamples",
         "title": "Mermaid Preview: Browse Example Gallery…",
         "icon": "$(library)"
-      },
-      {
-        "command": "mermaidPreviewOffline.generateFromTemplate",
-        "title": "Mermaid Preview: Generate Custom Diagram…",
-        "icon": "$(wand)"
       },
       {
         "command": "mermaidPreviewOffline.generateErdFromSql",
@@ -308,6 +309,11 @@
         {
           "command": "mermaidPreviewOffline.export",
           "when": "resourceExtname == .mmd || resourceExtname == .mermaid",
+          "group": "mermaidPreviewOffline@21"
+        },
+        {
+          "command": "mermaidPreviewOffline.exportFolder",
+          "when": "explorerResourceIsFolder",
           "group": "mermaidPreviewOffline@21"
         },
         {

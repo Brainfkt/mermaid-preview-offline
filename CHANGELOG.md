@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.3
+
+- fixed **Open Preview in New Window** so the preview opens in the auxiliary
+  window instead of leaving it empty and returning focus to the original
+  VS Code window;
+- added **Export Folder…** to Explorer folder context menus, with the selected
+  folder passed directly to the existing recursive batch exporter;
+- merged **Generate Custom Diagram…** into **New Diagram from Template…**, while
+  retaining the former command identifier as a backward-compatible alias;
+- added a direct **Save SVG** preview action alongside **Copy SVG**;
+- fixed **Copy PNG** so clipboard access starts during the click gesture while
+  PNG rendering finishes asynchronously.
+
 ## 1.2.2
 
 - fixed **Open Preview in New Window** by copying the live preview into the VS

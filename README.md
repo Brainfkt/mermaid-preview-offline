@@ -152,7 +152,8 @@ Reusable profiles keep documentation and release exports consistent across
 workspaces.
 
 The toolbar's **Copy SVG** action places the current original vector diagram on
-the clipboard without opening the export dialog.
+the clipboard. **Save SVG** opens a native save dialog for that same original
+SVG. Neither action opens the professional export dialog.
 
 ![Copying the current Mermaid SVG from the preview while a search result remains highlighted](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/copy-svg.png)
 
@@ -261,8 +262,10 @@ and current limitations.
 | `Alt/Option` + click; add `Shift` | Zoom in; zoom out with `Shift` |
 | Drag | Pan according to the configured mouse policy |
 | **Copy SVG** | Copy the current original rendered SVG to the clipboard |
+| **Save SVG** | Save the current original rendered SVG directly |
 | **Export** | Preview and save PNG, WebP, PDF, optimized SVG, or original SVG |
 | Export dialog | Copy PNG/original SVG/optimized SVG, save profiles, or export a folder |
+| Explorer folder context menu | Export every Mermaid file in the selected folder recursively |
 
 ## Settings
 
@@ -328,9 +331,9 @@ the same oversized operation.
 | **Mermaid: Generate Missing Identifiers** | Add stable identifiers to anonymous flowchart nodes. |
 | **Mermaid: Rename Identifier** | Rename the identifier under the cursor throughout the file. |
 | **Mermaid Preview: Export Diagram…** | Open the export preview and settings. |
-| **Mermaid Preview: New Diagram from Template…** | Create a file from one of eight editable templates. |
+| **Mermaid Preview: Export Folder…** | Recursively export a selected folder from the Explorer or Command Palette. |
+| **Mermaid Preview: New Diagram from Template…** | Open Diagram Studio for templates and custom generation. |
 | **Mermaid Preview: Browse Example Gallery…** | Search and inspect the 44 bundled examples. |
-| **Mermaid Preview: Generate Custom Diagram…** | Open the Diagram Studio generator view. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Generate an ER diagram from a local SQL schema. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate a dependency graph from a local package manifest. |
 | **Mermaid Preview: Compare Git Versions Visually…** | Select two local Git revisions and compare their rendered diagrams. |
