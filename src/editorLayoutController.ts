@@ -164,12 +164,19 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     uri: vscode.Uri,
     panel: vscode.WebviewPanel,
   ): Promise<void> {
+    const key = uri.toString();
     await this.enqueue(async () => {
+      // Auxiliary editor windows are not represented reliably by ViewColumn.
+      // Reapplying the main-window layout here would reveal the copied panel in
+      // the original window before its webview can receive the document.
+      if (this.copiedPreviewUris.has(key)) {
+        return;
+      }
       const mode = this.getMode();
       if (await this.isAlreadyArranged(uri, mode, panel)) {
         if (isSplitMode(mode)) {
           await this.reconcileSplitTabs(uri, panel);
-        } else if (!this.copiedPreviewUris.has(uri.toString())) {
+        } else {
           this.disposeOtherPanels(uri, panel);
         }
         return;

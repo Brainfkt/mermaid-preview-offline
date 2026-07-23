@@ -44,6 +44,7 @@ import type {
 import { formatByteLength } from './renderPolicy';
 import type { PreviewColorScheme } from './theme';
 import { DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION } from './navigationSettings';
+import { writePngToClipboard } from './pngClipboard';
 
 interface VsCodeApi {
   getState(): unknown;
@@ -91,6 +92,7 @@ const zoomStatus = element<HTMLElement>('zoom-status');
 const largeFileLabel = element<HTMLElement>('large-file-label');
 const refreshButton = element<HTMLButtonElement>('refresh');
 const copyButton = element<HTMLButtonElement>('copy-svg');
+const saveSvgButton = element<HTMLButtonElement>('save-svg');
 const exportOpenButton = element<HTMLButtonElement>('export-open');
 const themePicker = element<HTMLButtonElement>('theme-picker');
 const appearanceLabel = element<HTMLElement>('appearance-label');
@@ -208,6 +210,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
         lastSvg = '';
         diagramSize.textContent = '—';
         copyButton.disabled = true;
+        saveSvgButton.disabled = true;
         exportOpenButton.disabled = true;
         displayError(new Error(message.renderBlockedReason), '');
         renderStatus.textContent = 'Render paused';
@@ -294,6 +297,11 @@ bindButton('fit', fitDiagram);
 bindButton('copy-svg', () => {
   if (lastSvg) {
     vscode.postMessage({ type: 'copySvg', svg: lastSvg });
+  }
+});
+bindButton('save-svg', () => {
+  if (lastSvg) {
+    vscode.postMessage({ type: 'saveSvg', svg: lastSvg });
   }
 });
 bindButton('export-open', openExportDialog);
@@ -519,6 +527,7 @@ async function renderLatest(): Promise<void> {
     lastSvg = '';
     diagramSize.textContent = '—';
     copyButton.disabled = true;
+    saveSvgButton.disabled = true;
     exportOpenButton.disabled = true;
     showState('empty');
     renderStatus.textContent = 'Empty file';
@@ -556,6 +565,7 @@ async function renderLatest(): Promise<void> {
     updateDiagramSearch();
     showState('diagram');
     copyButton.disabled = false;
+    saveSvgButton.disabled = false;
     exportOpenButton.disabled = false;
     if (exportDialogRequested) {
       exportDialogRequested = false;
@@ -582,6 +592,7 @@ async function renderLatest(): Promise<void> {
       lastSvg = '';
       diagramSize.textContent = '—';
       copyButton.disabled = true;
+      saveSvgButton.disabled = true;
       exportOpenButton.disabled = true;
       displayError(error, source);
       renderStatus.textContent = 'Syntax error';
@@ -1218,27 +1229,52 @@ function copyOptimizedSvg(): void {
 }
 
 function copyPng(): void {
-  queueExportJob(async () => {
-    setExportBusy(true);
-    try {
-      const artifact = await createArtifact(
-        latestSource,
-        latestSourceUri,
-        fileName.textContent || 'diagram.mmd',
-        normalizeExportSettings({ ...readExportForm(), format: 'png' }),
-      );
-      if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
-        throw new Error('Image clipboard access is unavailable in this VS Code version.');
-      }
-      const blob = new Blob([Uint8Array.from(artifact.bytes).buffer], { type: 'image/png' });
-      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-      renderStatus.textContent = 'PNG copied to the clipboard';
-    } catch (error: unknown) {
-      showExportError(error);
-    } finally {
-      setExportBusy(false);
-    }
-  });
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    showExportError(new Error('Image clipboard access is unavailable in this VS Code version.'));
+    return;
+  }
+
+  setExportBusy(true);
+  try {
+    // Clipboard access must start during the click's user activation. Chromium
+    // accepts a promised Blob, so PNG rendering can finish asynchronously.
+    const clipboardWrite = writePngToClipboard(
+      (items) => navigator.clipboard.write(items),
+      (data) => new ClipboardItem(data),
+      () => new Promise<Blob>((resolvePromise, rejectPromise) => {
+        queueExportJob(async () => {
+          try {
+            const artifact = await createArtifact(
+              latestSource,
+              latestSourceUri,
+              fileName.textContent || 'diagram.mmd',
+              normalizeExportSettings({ ...readExportForm(), format: 'png' }),
+            );
+            resolvePromise(
+              new Blob([Uint8Array.from(artifact.bytes).buffer], { type: 'image/png' }),
+            );
+          } catch (error: unknown) {
+            rejectPromise(
+              error instanceof Error ? error : new Error(errorMessageOf(error)),
+            );
+          }
+        });
+      }),
+    );
+    void clipboardWrite
+      .then(() => {
+        renderStatus.textContent = 'PNG copied to the clipboard';
+      })
+      .catch((error: unknown) => {
+        showExportError(error);
+      })
+      .finally(() => {
+        setExportBusy(false);
+      });
+  } catch (error: unknown) {
+    showExportError(error);
+    setExportBusy(false);
+  }
 }
 
 async function createArtifact(

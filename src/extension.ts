@@ -23,6 +23,7 @@ const CONFIGURE_DEFAULT_EDITOR_COMMAND = 'mermaidPreviewOffline.configureDefault
 const CHOOSE_LAYOUT_COMMAND = 'mermaidPreviewOffline.chooseEditorLayout';
 const CYCLE_LAYOUT_COMMAND = 'mermaidPreviewOffline.cycleEditorLayout';
 const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
+const EXPORT_FOLDER_COMMAND = 'mermaidPreviewOffline.exportFolder';
 const NEW_DIAGRAM_COMMAND = 'mermaidPreviewOffline.newDiagram';
 const OPEN_GALLERY_FOR_FILE_COMMAND = 'mermaidPreviewOffline.openGalleryForFile';
 const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
@@ -101,6 +102,9 @@ export function activate(context: vscode.ExtensionContext): void {
       await layoutController.applyMode(uri, 'preview');
       await provider.showExportDialog(uri);
     }),
+    vscode.commands.registerCommand(EXPORT_FOLDER_COMMAND, async (resource?: vscode.Uri) => {
+      await provider.exportFolder(resource);
+    }),
     vscode.commands.registerCommand(NEW_DIAGRAM_COMMAND, async () => {
       await projectFeatures.showGallery('templates');
     }),
@@ -115,8 +119,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(BROWSE_EXAMPLES_COMMAND, async () => {
       await projectFeatures.showGallery('examples');
     }),
+    // Backward-compatible alias for users who assigned the former duplicate command.
     vscode.commands.registerCommand(GENERATE_FROM_TEMPLATE_COMMAND, async () => {
-      await projectFeatures.showGallery('templates');
+      await vscode.commands.executeCommand(NEW_DIAGRAM_COMMAND);
     }),
     vscode.commands.registerCommand(GENERATE_ERD_FROM_SQL_COMMAND, async () => {
       await diagramGenerationFeatures.generateErdFromSql();

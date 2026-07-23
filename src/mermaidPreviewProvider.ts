@@ -71,6 +71,12 @@ interface BatchSession {
   webview: vscode.Webview;
 }
 
+interface PendingFolderExport {
+  files: BatchFile[];
+  settings: ExportSettings;
+  sourceDirectory: vscode.Uri;
+}
+
 type SharedPreviewAppearance = Pick<
   PreviewConfiguration,
   'diagramDensity' | 'diagramSurface' | 'diagramTheme'
@@ -80,6 +86,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
   private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
   private readonly readyPanels = new Set<vscode.WebviewPanel>();
   private readonly pendingExportDialogs = new Set<string>();
+  private readonly pendingFolderExports = new Map<string, PendingFolderExport>();
   private readonly batchSessions = new Map<string, BatchSession>();
   private appearanceUpdateQueue = Promise.resolve();
   private reviewPromptQueue = Promise.resolve();
@@ -112,6 +119,81 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     this.pendingExportDialogs.add(key);
     if (!panel) {
       await vscode.commands.executeCommand('vscode.openWith', documentUri, MERMAID_PREVIEW_VIEW_TYPE);
+    }
+  }
+
+  public async exportFolder(sourceDirectory?: vscode.Uri): Promise<void> {
+    let directory = sourceDirectory;
+    if (!directory) {
+      const selection = await vscode.window.showOpenDialog({
+        canSelectFiles: false,
+        canSelectFolders: true,
+        canSelectMany: false,
+        defaultUri: vscode.workspace.workspaceFolders?.[0]?.uri,
+        openLabel: 'Select Mermaid source folder',
+        title: 'Export all Mermaid files from a folder',
+      });
+      directory = selection?.[0];
+    }
+    if (!directory) {
+      return;
+    }
+
+    try {
+      const metadata = await vscode.workspace.fs.stat(directory);
+      if ((metadata.type & vscode.FileType.Directory) === 0) {
+        void vscode.window.showWarningMessage(
+          'Select a folder to export its Mermaid diagrams.',
+        );
+        return;
+      }
+      const files = await this.collectMermaidFiles(directory);
+      if (files.length === 0) {
+        void vscode.window.showWarningMessage(
+          'No .mmd or .mermaid files were found in that folder.',
+        );
+        return;
+      }
+
+      const documentUri = files[0]!.uri;
+      const settings = readExportConfiguration(documentUri);
+      const readyPanel = this.readyPanels.values().next().value;
+      if (readyPanel) {
+        await this.startBatchExport(
+          documentUri,
+          readyPanel.webview,
+          settings,
+          directory,
+          files,
+        );
+        return;
+      }
+
+      const panelKey = documentUri.toString();
+      this.pendingFolderExports.set(panelKey, {
+        files,
+        settings,
+        sourceDirectory: directory,
+      });
+      const existingPanel = this.panels.get(panelKey)?.values().next().value;
+      if (existingPanel) {
+        existingPanel.reveal(existingPanel.viewColumn, true);
+        return;
+      }
+      try {
+        await vscode.commands.executeCommand(
+          'vscode.openWith',
+          documentUri,
+          MERMAID_PREVIEW_VIEW_TYPE,
+        );
+      } catch (error: unknown) {
+        this.pendingFolderExports.delete(panelKey);
+        throw error;
+      }
+    } catch (error: unknown) {
+      void vscode.window.showErrorMessage(
+        `Could not export Mermaid folder: ${errorMessageOf(error)}`,
+      );
     }
   }
 
@@ -343,6 +425,17 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           if (this.pendingExportDialogs.delete(panelKey)) {
             await webview.postMessage({ type: 'showExportDialog' });
           }
+          const pendingFolderExport = this.pendingFolderExports.get(panelKey);
+          if (pendingFolderExport) {
+            this.pendingFolderExports.delete(panelKey);
+            await this.startBatchExport(
+              document.uri,
+              webview,
+              pendingFolderExport.settings,
+              pendingFolderExport.sourceDirectory,
+              pendingFolderExport.files,
+            );
+          }
           break;
         }
         case 'chooseEditorMode':
@@ -437,6 +530,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       if (remainingPanels?.size === 0) {
         this.panels.delete(panelKey);
         this.pendingExportDialogs.delete(panelKey);
+        this.pendingFolderExports.delete(panelKey);
       }
       this.readyPanels.delete(webviewPanel);
       void this.layoutController.saveCurrentRatio(document.uri, true);
@@ -625,21 +719,25 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     documentUri: vscode.Uri,
     webview: vscode.Webview,
     rawSettings: ExportSettings,
+    providedSourceDirectory?: vscode.Uri,
+    providedFiles?: BatchFile[],
   ): Promise<void> {
     const defaultDirectory = vscode.Uri.joinPath(documentUri, '..');
-    const sourceSelection = await vscode.window.showOpenDialog({
-      canSelectFiles: false,
-      canSelectFolders: true,
-      canSelectMany: false,
-      defaultUri: defaultDirectory,
-      openLabel: 'Select Mermaid source folder',
-      title: 'Export all Mermaid files from a folder',
-    });
-    const sourceDirectory = sourceSelection?.[0];
+    const sourceSelection = providedSourceDirectory
+      ? undefined
+      : await vscode.window.showOpenDialog({
+          canSelectFiles: false,
+          canSelectFolders: true,
+          canSelectMany: false,
+          defaultUri: defaultDirectory,
+          openLabel: 'Select Mermaid source folder',
+          title: 'Export all Mermaid files from a folder',
+        });
+    const sourceDirectory = providedSourceDirectory ?? sourceSelection?.[0];
     if (!sourceDirectory) {
       return;
     }
-    const files = await this.collectMermaidFiles(sourceDirectory);
+    const files = providedFiles ?? await this.collectMermaidFiles(sourceDirectory);
     if (files.length === 0) {
       void vscode.window.showWarningMessage('No .mmd or .mermaid files were found in that folder.');
       return;

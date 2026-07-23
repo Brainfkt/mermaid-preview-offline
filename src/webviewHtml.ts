@@ -60,6 +60,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       </button>
       <span class="divider" aria-hidden="true"></span>
       <button class="button button--quiet" id="copy-svg" type="button" disabled>Copy SVG</button>
+      <button class="button button--quiet" id="save-svg" type="button" disabled>Save SVG</button>
       <button class="button button--accent button--export" id="export-open" type="button" disabled>
         ${icon('export')}
         <span>Export</span>
