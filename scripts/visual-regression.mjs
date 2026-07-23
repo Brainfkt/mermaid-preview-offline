@@ -56,6 +56,28 @@ let html = createWebviewHtml({
 const stub = `<script nonce="${nonce}">
   let persistedState;
   const postedMessages = [];
+  const clipboardWrites = [];
+  class HarnessClipboardItem {
+    constructor(data) {
+      this.data = data;
+    }
+  }
+  Object.defineProperty(globalThis, 'ClipboardItem', {
+    configurable: true,
+    value: HarnessClipboardItem,
+  });
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: {
+      write: async (items) => {
+        const blob = await items[0]?.data?.['image/png'];
+        if (!(blob instanceof Blob) || blob.type !== 'image/png' || blob.size === 0) {
+          throw new Error('Clipboard did not receive a valid PNG Blob.');
+        }
+        clipboardWrites.push({ blob, items });
+      },
+    },
+  });
   let resolveWebviewReady;
   const webviewReady = new Promise((resolve) => { resolveWebviewReady = resolve; });
   globalThis.acquireVsCodeApi = () => ({
@@ -256,6 +278,19 @@ const runner = `<script nonce="${nonce}">
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 't' }));
     if (getComputedStyle(document.querySelector('.toolbar')).display === 'none') {
       throw new Error('The toolbar must remain visible.');
+    }
+
+    const directSvgSaveStart = postedMessages.length;
+    const directSvgSaveButton = document.querySelector('#save-svg');
+    if (directSvgSaveButton.disabled) {
+      throw new Error('Save SVG stayed disabled after a successful diagram render.');
+    }
+    directSvgSaveButton.click();
+    const directSvgSaveMessage = postedMessages
+      .slice(directSvgSaveStart)
+      .find((message) => message.type === 'saveSvg');
+    if (!directSvgSaveMessage?.svg.includes('<svg')) {
+      throw new Error('Save SVG did not forward the current original SVG.');
     }
 
     const themeSelect = document.querySelector('[data-theme="forest"]');
@@ -482,6 +517,20 @@ const runner = `<script nonce="${nonce}">
     if (!document.querySelector('#export-preview-error').hidden) {
       throw new Error('The professional export preview reports: ' +
         document.querySelector('#export-preview-error').textContent);
+    }
+    const pngCopyStart = clipboardWrites.length;
+    document.querySelector('#export-copy-png').click();
+    await waitFor(
+      () => clipboardWrites.length > pngCopyStart ||
+        !document.querySelector('#export-preview-error').hidden,
+      'PNG clipboard export result',
+    );
+    if (!document.querySelector('#export-preview-error').hidden) {
+      throw new Error('The PNG clipboard export reports: ' +
+        document.querySelector('#export-preview-error').textContent);
+    }
+    if (document.querySelector('#render-status').textContent !== 'PNG copied to the clipboard') {
+      throw new Error('The PNG clipboard export did not report success.');
     }
     const exportFormat = document.querySelector('#export-format');
     exportFormat.value = 'webp';
