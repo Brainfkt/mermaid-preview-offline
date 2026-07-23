@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 
 import {
+  editorModeAfterSplitClose,
   editorLayoutFor,
   editorLayoutMatches,
   nextPreviewMode,
   readSourceRatio,
   shouldApplyEditorLayout,
-  shouldCloseRemainingSplitTab,
 } from './editorLayout';
 import type { SplitEditorTabKind } from './editorLayout';
 import type { MermaidEditorMode } from './protocol';
@@ -61,7 +61,9 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   private layoutTransitioning = false;
   private pendingMode: MermaidEditorMode | undefined;
   private requestedSourceKey: string | undefined;
-  private readonly copiedPreviewUris = new Set<string>();
+  private readonly detachedPanels = new Set<vscode.WebviewPanel>();
+  private readonly pendingDetachedCopies = new Map<string, Set<object>>();
+  private readonly unavailablePanels = new WeakSet<vscode.WebviewPanel>();
 
   public readonly onDidChangeMode = this.modeEmitter.event;
 
@@ -73,6 +75,8 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   public dispose(): void {
     this.modeEmitter.dispose();
     this.panels.clear();
+    this.detachedPanels.clear();
+    this.pendingDetachedCopies.clear();
   }
 
   public getMode(): MermaidEditorMode {
@@ -86,16 +90,21 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   public registerPanel(uri: vscode.Uri, panel: vscode.WebviewPanel): vscode.Disposable {
     const key = uri.toString();
     const entries = this.panels.get(key) ?? new Set<vscode.WebviewPanel>();
+    if (entries.size > 0 && this.consumePendingDetachedCopy(key)) {
+      this.detachedPanels.add(panel);
+    }
     entries.add(panel);
     this.panels.set(key, entries);
     return new vscode.Disposable(() => {
+      this.unavailablePanels.add(panel);
+      const wasDetached = this.detachedPanels.delete(panel);
       const current = this.panels.get(key);
       current?.delete(panel);
-      if ((current?.size ?? 0) <= 1) {
-        this.copiedPreviewUris.delete(key);
-      }
       if (current?.size === 0) {
         this.panels.delete(key);
+      }
+      if (!wasDetached) {
+        void this.handleManagedPreviewClosed(uri);
       }
     });
   }
@@ -104,20 +113,28 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     uri: vscode.Uri,
     preferredPanel?: vscode.WebviewPanel,
   ): Promise<void> {
-    const panel = this.registeredPanel(uri, preferredPanel);
+    let panel = this.panelForCopy(uri, preferredPanel);
+    if (!panel) {
+      await this.applyMode(uri, 'preview');
+      panel = this.panelForCopy(uri);
+    }
     if (!panel) {
       return;
     }
     panel.reveal(panel.viewColumn, false);
     const key = uri.toString();
-    this.copiedPreviewUris.add(key);
+    const copyToken = {};
+    const pending = this.pendingDetachedCopies.get(key) ?? new Set<object>();
+    pending.add(copyToken);
+    this.pendingDetachedCopies.set(key, pending);
     try {
       await vscode.commands.executeCommand('workbench.action.copyEditorToNewWindow');
-    } catch (error: unknown) {
-      if ((this.panels.get(key)?.size ?? 0) <= 1) {
-        this.copiedPreviewUris.delete(key);
+    } finally {
+      const current = this.pendingDetachedCopies.get(key);
+      current?.delete(copyToken);
+      if (current?.size === 0) {
+        this.pendingDetachedCopies.delete(key);
       }
-      throw error;
     }
   }
 
@@ -142,14 +159,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     preferredPanel?: vscode.WebviewPanel,
   ): Promise<void> {
     await this.enqueue(async () => {
-      this.pendingMode = mode;
-      try {
-        await this.arrange(uri, mode, preferredPanel);
-        await this.context.workspaceState.update(MODE_STATE_KEY, mode);
-        this.modeEmitter.fire(mode);
-      } finally {
-        this.pendingMode = undefined;
-      }
+      await this.applyModeNow(uri, mode, preferredPanel);
     });
   }
 
@@ -164,12 +174,15 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     uri: vscode.Uri,
     panel: vscode.WebviewPanel,
   ): Promise<void> {
-    const key = uri.toString();
     await this.enqueue(async () => {
       // Auxiliary editor windows are not represented reliably by ViewColumn.
       // Reapplying the main-window layout here would reveal the copied panel in
       // the original window before its webview can receive the document.
-      if (this.copiedPreviewUris.has(key)) {
+      if (
+        this.detachedPanels.has(panel) ||
+        this.unavailablePanels.has(panel) ||
+        !this.panels.get(uri.toString())?.has(panel)
+      ) {
         return;
       }
       const mode = this.getMode();
@@ -212,7 +225,19 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       if (!split || !isSplitMode(this.getMode())) {
         return;
       }
-      if (await this.closeLastSplitPair(closedTabs, split)) {
+      const uriKey = split.uri.toString();
+      const relevantClosedKinds = closedTabs
+        .filter((tab) => tab.uri === uriKey)
+        .map((tab) => tab.kind);
+      if (relevantClosedKinds.includes('source')) {
+        const replacementSource = this.activeMermaidSourceUri();
+        if (replacementSource && replacementSource.toString() !== uriKey) {
+          await this.arrange(replacementSource, split.mode, undefined, true);
+          this.currentSplit = { mode: split.mode, uri: replacementSource };
+          return;
+        }
+      }
+      if (await this.transitionFromClosedSplitHalf(relevantClosedKinds, split)) {
         return;
       }
       await this.reconcileSplitTabs(
@@ -232,7 +257,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     }
     if (
       !allowHidden &&
-      ![...(this.panels.get(uri.toString()) ?? [])].some((panel) => panel.visible)
+      !this.managedPanels(uri).some((panel) => panel.visible)
     ) {
       return;
     }
@@ -323,8 +348,8 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       preview: false,
       viewColumn: vscode.ViewColumn.One,
     });
-    for (const panel of [...(this.panels.get(uri.toString()) ?? [])]) {
-      panel.dispose();
+    for (const panel of this.managedPanels(uri)) {
+      this.disposePanel(panel);
     }
   }
 
@@ -335,9 +360,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     const panel = this.registeredPanel(uri, preferredPanel);
     if (panel) {
       panel.reveal(vscode.ViewColumn.One, false);
-      if (!this.copiedPreviewUris.has(uri.toString())) {
-        this.disposeOtherPanels(uri, panel);
-      }
+      this.disposeOtherPanels(uri, panel);
       await this.closeSourceTabs(uri);
       return;
     }
@@ -379,7 +402,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   }
 
   private firstPanel(uri: vscode.Uri): vscode.WebviewPanel | undefined {
-    return this.panels.get(uri.toString())?.values().next().value;
+    return this.managedPanels(uri)[0];
   }
 
   private registeredPanel(
@@ -387,24 +410,39 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     preferredPanel?: vscode.WebviewPanel,
   ): vscode.WebviewPanel | undefined {
     const entries = this.panels.get(uri.toString());
-    return preferredPanel && entries?.has(preferredPanel)
+    return preferredPanel &&
+      entries?.has(preferredPanel) &&
+      !this.detachedPanels.has(preferredPanel) &&
+      !this.unavailablePanels.has(preferredPanel)
       ? preferredPanel
       : this.panelInColumn(uri, vscode.ViewColumn.Two) ?? this.firstPanel(uri);
+  }
+
+  private panelForCopy(
+    uri: vscode.Uri,
+    preferredPanel?: vscode.WebviewPanel,
+  ): vscode.WebviewPanel | undefined {
+    const entries = this.panels.get(uri.toString());
+    return preferredPanel &&
+      entries?.has(preferredPanel) &&
+      !this.unavailablePanels.has(preferredPanel)
+      ? preferredPanel
+      : this.registeredPanel(uri);
   }
 
   private panelInColumn(
     uri: vscode.Uri,
     viewColumn: vscode.ViewColumn,
   ): vscode.WebviewPanel | undefined {
-    return [...(this.panels.get(uri.toString()) ?? [])].find(
+    return this.managedPanels(uri).find(
       (panel) => panel.viewColumn === viewColumn,
     );
   }
 
   private disposeOtherPanels(uri: vscode.Uri, retained: vscode.WebviewPanel): void {
-    for (const panel of [...(this.panels.get(uri.toString()) ?? [])]) {
+    for (const panel of this.managedPanels(uri)) {
       if (panel !== retained) {
-        panel.dispose();
+        this.disposePanel(panel);
       }
     }
   }
@@ -412,8 +450,12 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   private disposeOtherSplitPanels(retained?: vscode.WebviewPanel): void {
     for (const entries of [...this.panels.values()]) {
       for (const panel of [...entries]) {
-        if (panel !== retained) {
-          panel.dispose();
+        if (
+          panel !== retained &&
+          !this.detachedPanels.has(panel) &&
+          !this.unavailablePanels.has(panel)
+        ) {
+          this.disposePanel(panel);
         }
       }
     }
@@ -427,38 +469,23 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       this.disposeOtherSplitPanels(retainedPanel);
     }
     await this.closeDuplicateSourceTabs(uri);
-    await this.closeUnexpectedPreviewTabs(uri);
   }
 
-  private async closeLastSplitPair(
-    closedTabs: readonly ClosedTabIdentity[],
+  private async transitionFromClosedSplitHalf(
+    closedKinds: readonly SplitEditorTabKind[],
     split: ActiveSplit,
   ): Promise<boolean> {
-    const uriKey = split.uri.toString();
-    const closedKinds = closedTabs.map((tab): SplitEditorTabKind =>
-      tab.uri === uriKey ? tab.kind : 'other',
-    );
-    const remainingTabs = vscode.window.tabGroups.all.flatMap((group) => group.tabs);
-    const remainingKinds = remainingTabs.map((tab) => this.splitTabKind(tab, uriKey));
-    const remainingTab = remainingTabs[0];
-    if (!remainingTab || !shouldCloseRemainingSplitTab(closedKinds, remainingKinds)) {
+    const remainingKinds = this.remainingSplitKinds(split.uri);
+    const mode = editorModeAfterSplitClose(closedKinds, remainingKinds);
+    if (!mode) {
+      if (closedKinds.includes('source') && closedKinds.includes('preview')) {
+        this.currentSplit = undefined;
+      }
       return false;
     }
 
     await this.saveSplitRatio(split);
-    this.layoutTransitioning = true;
-    try {
-      const didClose = await vscode.window.tabGroups.close(remainingTab, true);
-      this.currentSplit = undefined;
-      if (didClose && vscode.window.tabGroups.all.every((group) => group.tabs.length === 0)) {
-        await vscode.commands.executeCommand(
-          'vscode.setEditorLayout',
-          editorLayoutFor('preview', 0.5),
-        );
-      }
-    } finally {
-      this.layoutTransitioning = false;
-    }
+    await this.applyModeNow(split.uri, mode, this.firstPanel(split.uri));
     return true;
   }
 
@@ -473,35 +500,6 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       return { kind: 'preview', uri: tab.input.uri.toString() };
     }
     return { kind: 'other' };
-  }
-
-  private splitTabKind(tab: vscode.Tab, uriKey: string): SplitEditorTabKind {
-    const identity = this.closedTabIdentity(tab);
-    return identity.uri === uriKey ? identity.kind : 'other';
-  }
-
-  private async closeUnexpectedPreviewTabs(uri: vscode.Uri): Promise<void> {
-    const previewTabs = vscode.window.tabGroups.all.flatMap((group) =>
-      group.tabs.filter(
-        (tab) =>
-          tab.input instanceof vscode.TabInputCustom &&
-          tab.input.viewType === this.viewType,
-      ),
-    );
-    const retainedTab = previewTabs.find(
-      (tab) =>
-        tab.group.viewColumn === vscode.ViewColumn.Two &&
-        tab.isActive &&
-        tab.input instanceof vscode.TabInputCustom &&
-        tab.input.uri.toString() === uri.toString(),
-    );
-    if (!retainedTab) {
-      return;
-    }
-    const unexpectedTabs = previewTabs.filter((tab) => tab !== retainedTab);
-    if (unexpectedTabs.length > 0) {
-      await vscode.window.tabGroups.close(unexpectedTabs, true);
-    }
   }
 
   private async closeDuplicateSourceTabs(uri: vscode.Uri): Promise<void> {
@@ -536,6 +534,88 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     return `${RATIO_STATE_KEY_PREFIX}${uri.toString()}`;
   }
 
+  private async applyModeNow(
+    uri: vscode.Uri,
+    mode: MermaidEditorMode,
+    preferredPanel?: vscode.WebviewPanel,
+  ): Promise<void> {
+    this.pendingMode = mode;
+    try {
+      await this.arrange(uri, mode, preferredPanel);
+      await this.context.workspaceState.update(MODE_STATE_KEY, mode);
+      this.modeEmitter.fire(mode);
+    } finally {
+      this.pendingMode = undefined;
+    }
+  }
+
+  private async handleManagedPreviewClosed(uri: vscode.Uri): Promise<void> {
+    await this.enqueue(async () => {
+      const split = this.currentSplit;
+      if (
+        !split ||
+        split.uri.toString() !== uri.toString() ||
+        !isSplitMode(this.getMode()) ||
+        this.firstPanel(uri)
+      ) {
+        return;
+      }
+      await this.transitionFromClosedSplitHalf(['preview'], split);
+    });
+  }
+
+  private managedPanels(uri: vscode.Uri): vscode.WebviewPanel[] {
+    return [...(this.panels.get(uri.toString()) ?? [])].filter(
+      (panel) =>
+        !this.detachedPanels.has(panel) &&
+        !this.unavailablePanels.has(panel),
+    );
+  }
+
+  private disposePanel(panel: vscode.WebviewPanel): void {
+    this.unavailablePanels.add(panel);
+    panel.dispose();
+  }
+
+  private consumePendingDetachedCopy(uriKey: string): boolean {
+    const pending = this.pendingDetachedCopies.get(uriKey);
+    const copyToken = pending?.values().next().value;
+    if (!copyToken) {
+      return false;
+    }
+    pending?.delete(copyToken);
+    if (pending?.size === 0) {
+      this.pendingDetachedCopies.delete(uriKey);
+    }
+    return true;
+  }
+
+  private remainingSplitKinds(uri: vscode.Uri): SplitEditorTabKind[] {
+    const uriKey = uri.toString();
+    const kinds: SplitEditorTabKind[] = [];
+    const hasSource = vscode.window.tabGroups.all.some((group) =>
+      group.tabs.some(
+        (tab) =>
+          tab.input instanceof vscode.TabInputText &&
+          tab.input.uri.toString() === uriKey,
+      ),
+    );
+    if (hasSource) {
+      kinds.push('source');
+    }
+    if (this.firstPanel(uri)) {
+      kinds.push('preview');
+    }
+    return kinds;
+  }
+
+  private activeMermaidSourceUri(): vscode.Uri | undefined {
+    const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+    return input instanceof vscode.TabInputText && isMermaidUri(input.uri)
+      ? input.uri
+      : undefined;
+  }
+
   private async enqueue(operation: () => Promise<void>): Promise<void> {
     const next = this.arrangement.catch(() => undefined).then(operation);
     this.arrangement = next;
@@ -549,4 +629,8 @@ export function isEditorMode(value: unknown): value is MermaidEditorMode {
 
 function isSplitMode(mode: MermaidEditorMode): mode is SplitMode {
   return mode === 'beside' || mode === 'above';
+}
+
+function isMermaidUri(uri: vscode.Uri): boolean {
+  return /\.(?:mmd|mermaid)$/iu.test(uri.path);
 }

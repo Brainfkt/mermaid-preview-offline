@@ -65,18 +65,19 @@ export function shouldApplyEditorLayout(
   );
 }
 
-export function shouldCloseRemainingSplitTab(
+export function editorModeAfterSplitClose(
   closedTabs: readonly SplitEditorTabKind[],
   remainingTabs: readonly SplitEditorTabKind[],
-): boolean {
-  if (remainingTabs.length !== 1) {
-    return false;
+): Extract<MermaidEditorMode, 'preview' | 'source'> | undefined {
+  const hasPreview = remainingTabs.includes('preview');
+  const hasSource = remainingTabs.includes('source');
+  if (closedTabs.includes('source') && hasPreview && !hasSource) {
+    return 'preview';
   }
-  const remaining = remainingTabs[0];
-  return (
-    (remaining === 'preview' && closedTabs.includes('source')) ||
-    (remaining === 'source' && closedTabs.includes('preview'))
-  );
+  if (closedTabs.includes('preview') && hasSource && !hasPreview) {
+    return 'source';
+  }
+  return undefined;
 }
 
 export function readSourceRatio(

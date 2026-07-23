@@ -122,9 +122,16 @@ void test('new-window file previews are copied so both windows stay rendered', (
     resolve(__dirname, '../../src/editorLayoutController.ts'),
     'utf8',
   );
+  const command = extension.match(
+    /registerCommand\(OPEN_PREVIEW_NEW_WINDOW_COMMAND,[\s\S]*?\n\s*\}\),/u,
+  )?.[0];
+  assert.ok(command);
   assert.match(extension, /copyPreviewToNewWindow/u);
   assert.match(provider, /copyPreviewToNewWindow/u);
   assert.match(controller, /workbench\.action\.copyEditorToNewWindow/u);
+  assert.doesNotMatch(command, /applyMode/u);
+  assert.match(controller, /pendingDetachedCopies/u);
+  assert.match(controller, /detachedPanels\.has\(panel\)/u);
   assert.doesNotMatch(extension, /workbench\.action\.moveEditorGroupToNewWindow/u);
   assert.doesNotMatch(provider, /workbench\.action\.moveEditorGroupToNewWindow/u);
 });
@@ -377,7 +384,8 @@ void test('split preview follows the active source without duplicate custom edit
   assert.match(extension, /handleTabsChanged/u);
   assert.match(controller, /disposeOtherSplitPanels/u);
   assert.match(controller, /closeDuplicateSourceTabs/u);
-  assert.match(controller, /closeUnexpectedPreviewTabs/u);
+  assert.match(controller, /detachedPanels/u);
+  assert.match(controller, /editorModeAfterSplitClose/u);
 });
 
 void test('Mermaid rendering stays out of the DOM-less extension host', () => {

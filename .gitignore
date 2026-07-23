@@ -5,3 +5,4 @@ artifacts/
 dist/
 node_modules/
 *.vsix
+docs/FEATURES_SURFACE_MATRIX.fr.md

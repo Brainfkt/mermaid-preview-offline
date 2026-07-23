@@ -79,7 +79,6 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(OPEN_PREVIEW_NEW_WINDOW_COMMAND, async (resource?: vscode.Uri) => {
       const uri = mermaidUri(resource);
       if (!uri) return;
-      await layoutController.applyMode(uri, 'preview');
       await layoutController.copyPreviewToNewWindow(uri);
     }),
     vscode.commands.registerCommand(CHOOSE_LAYOUT_COMMAND, async (resource?: vscode.Uri) => {

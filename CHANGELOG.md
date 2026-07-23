@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.4
+
+- fixed file navigation in **Beside** and **Above** so selecting another Mermaid
+  file from the Explorer or source tabs always refreshes both the native source
+  editor and its matching preview, regardless of which editor group had focus;
+- made copied previews independent from the main editor layout, so opening a
+  preview in a new VS Code window no longer disables synchronization or forces
+  the main window back to **Preview only**;
+- made split layouts degrade predictably when one half is closed: closing the
+  source keeps the diagram as **Preview only**, while closing the preview keeps
+  the native editor as **Source only**;
+- isolated disposed and auxiliary preview panels from layout reconciliation to
+  prevent stale panels and detached windows from interfering with navigation.
+
 ## 1.2.3
 
 - fixed **Open Preview in New Window** so the preview opens in the auxiliary

@@ -4,12 +4,12 @@ import { test } from 'node:test';
 import {
   ABOVE_ORIENTATION,
   BESIDE_ORIENTATION,
+  editorModeAfterSplitClose,
   editorLayoutFor,
   editorLayoutMatches,
   nextPreviewMode,
   readSourceRatio,
   shouldApplyEditorLayout,
-  shouldCloseRemainingSplitTab,
 } from '../src/editorLayout';
 
 void test('preview layouts cycle while source-only rejoins the preview cycle', () => {
@@ -115,11 +115,14 @@ void test('matching split layouts stay stable while switching Mermaid source tab
   assert.equal(shouldApplyEditorLayout(beside, 'above'), true);
 });
 
-void test('the last source and preview tabs close as one split pair', () => {
-  assert.equal(shouldCloseRemainingSplitTab(['source'], ['preview']), true);
-  assert.equal(shouldCloseRemainingSplitTab(['preview'], ['source']), true);
-  assert.equal(shouldCloseRemainingSplitTab(['source'], ['source']), false);
-  assert.equal(shouldCloseRemainingSplitTab(['preview'], ['preview']), false);
-  assert.equal(shouldCloseRemainingSplitTab(['source'], ['preview', 'other']), false);
-  assert.equal(shouldCloseRemainingSplitTab(['other'], ['preview']), false);
+void test('closing one split half keeps the surviving editor in a single mode', () => {
+  assert.equal(editorModeAfterSplitClose(['source'], ['preview']), 'preview');
+  assert.equal(editorModeAfterSplitClose(['preview'], ['source']), 'source');
+  assert.equal(editorModeAfterSplitClose(['source'], ['source']), undefined);
+  assert.equal(editorModeAfterSplitClose(['preview'], ['preview']), undefined);
+  assert.equal(editorModeAfterSplitClose(['source'], ['preview', 'other']), 'preview');
+  assert.equal(editorModeAfterSplitClose(['preview'], ['source', 'other']), 'source');
+  assert.equal(editorModeAfterSplitClose(['source'], ['preview', 'source']), undefined);
+  assert.equal(editorModeAfterSplitClose(['source', 'preview'], []), undefined);
+  assert.equal(editorModeAfterSplitClose(['other'], ['preview']), undefined);
 });

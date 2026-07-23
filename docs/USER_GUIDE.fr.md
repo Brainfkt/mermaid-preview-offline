@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.2 — Guide utilisateur
+# Mermaid Preview Offline 1.2.4 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,7 +8,7 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.2. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.4. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
@@ -73,9 +73,17 @@ focus à l’aperçu. Le focus est également restauré après chaque changement
 disposition, et `P` continue de fonctionner lorsqu’un bouton de la barre d’outils
 possède le focus. Les champs du formulaire d’export conservent leur saisie normale.
 
-Une seule paire source/aperçu compagnon suit la source Mermaid active. Lorsque
-vous sélectionnez un autre onglet texte Mermaid en mode Beside ou Above, son
-aperçu remplace le précédent au lieu de créer des panneaux en double.
+Une seule paire source/aperçu compagnon suit le fichier Mermaid actif. Lorsque
+vous sélectionnez un autre fichier dans l’Explorateur ou un autre onglet texte
+Mermaid en mode Beside ou Above, les deux parties passent sur ce fichier, quel
+que soit le groupe qui possédait auparavant le focus. Fermer la partie source
+conserve le diagramme en mode Preview only ; fermer la partie aperçu conserve
+l’éditeur natif en mode Source only.
+
+Copier l’aperçu dans une nouvelle fenêtre VS Code ne modifie pas la disposition
+Beside ou Above de la fenêtre principale. Les aperçus auxiliaires sont
+indépendants et n’interfèrent ni avec la navigation entre fichiers ni avec la
+réconciliation de la vue fractionnée principale.
 
 ### Restauration de session
 
@@ -623,7 +631,7 @@ configurés. Le document source n’est pas écrasé.
 |---|---|
 | **Mermaid Preview: Open Offline Preview** | Ouvre un fichier Mermaid dans l’aperçu personnalisé. |
 | **Mermaid Preview: Open Preview to the Side** | Ouvre un aperçu compagnon dans un autre groupe d’éditeurs. |
-| **Mermaid Preview: Open Preview in New Window** | Déplace l’aperçu dans une fenêtre VS Code distincte. |
+| **Mermaid Preview: Open Preview in New Window** | Copie l’aperçu dans une fenêtre VS Code distincte tout en conservant l’original visible. |
 | **Mermaid Preview: Choose Editor Layout** | Permet de choisir l’une des quatre dispositions. |
 | **Mermaid Preview: Preview Only** | Passe en mode Preview only. |
 | **Mermaid Preview: Source Only** | Passe en mode Source only. |

@@ -62,13 +62,15 @@ and editor layout stay synchronized across files. Choose **Preview only**,
 **Source only**, **Beside**, or **Above** from the preview toolbar. Beside and
 Above use VS Code's real text editor, so completion, formatting, snippets, quick
 fixes, and diagnostics remain available. Their native group ratio is restored
-per file. Selecting another Mermaid source tab immediately replaces the
-companion preview, while the extension keeps a single source/preview pair for
-the active document. With the preview focused, press `P` repeatedly to cycle
-through Preview only, Beside, and Above. Use `Alt+P` from the Mermaid source
-editor (`Option+P` on macOS), so plain `P` remains available for typing. Clicking
-the canvas or minimap focuses the preview, and focus follows every layout
-transition.
+per file. Selecting another Mermaid file from the Explorer or source tabs
+immediately updates both halves, while the extension keeps a single matching
+source/preview pair for the active document. Closing one half collapses the
+survivor to Preview only or Source only. A preview copied to a separate VS Code
+window remains independent and does not disturb the main Beside or Above
+layout. With the preview focused, press `P` repeatedly to cycle through Preview
+only, Beside, and Above. Use `Alt+P` from the Mermaid source editor (`Option+P`
+on macOS), so plain `P` remains available for typing. Clicking the canvas or
+minimap focuses the preview, and focus follows every layout transition.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/editor-layout.png" alt="VS Code quick pick offering Preview only, Source only, Beside, and Above Mermaid editor layouts" width="720">

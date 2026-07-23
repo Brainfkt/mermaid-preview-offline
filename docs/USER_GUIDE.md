@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.2 — User guide
+# Mermaid Preview Offline 1.2.4 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,7 +7,7 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.2 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.4 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
@@ -66,9 +66,15 @@ Click anywhere on the diagram canvas or minimap to focus the preview. The focus
 is also restored after each layout transition, and `P` continues to work when a
 toolbar button has focus. Export form fields keep their normal keyboard input.
 
-Only one companion source/preview pair follows the active Mermaid source. When
-you select another Mermaid text tab in Beside or Above, its preview replaces the
-previous companion instead of creating duplicate panels.
+Only one companion source/preview pair follows the active Mermaid file. When
+you select another file from the Explorer or another Mermaid text tab in Beside
+or Above, both halves switch to that file regardless of which group previously
+had focus. Closing the source half keeps the diagram in Preview only; closing
+the preview half keeps the native editor in Source only.
+
+Copying the preview to a new VS Code window does not change the main Beside or
+Above layout. Auxiliary previews are independent and do not interfere with file
+navigation or split reconciliation in the main window.
 
 ### Session restoration
 
