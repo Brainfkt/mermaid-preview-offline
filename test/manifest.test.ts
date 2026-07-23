@@ -78,9 +78,9 @@ void test('preview commands expose all four native editor layouts', () => {
     ...layoutCommands,
     'mermaidPreviewOffline.configureDefaultEditor',
     'mermaidPreviewOffline.export',
+    'mermaidPreviewOffline.exportFolder',
     'mermaidPreviewOffline.newDiagram',
     'mermaidPreviewOffline.browseExamples',
-    'mermaidPreviewOffline.generateFromTemplate',
     'mermaidPreviewOffline.compareGitVersions',
     'mermaidPreviewOffline.previewVisualDiff',
     'mermaidPreviewOffline.previewDocumentationBlock',
@@ -106,6 +106,7 @@ void test('preview commands expose all four native editor layouts', () => {
   );
   assert.deepEqual(explorerCommands.slice(0, 4), layoutCommands);
   assert.ok(explorerCommands.includes('mermaidPreviewOffline.configureDefaultEditor'));
+  assert.ok(explorerCommands.includes('mermaidPreviewOffline.exportFolder'));
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   assert.equal(titleCommands[0]?.command, 'mermaidPreviewOffline.chooseEditorLayout');
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
@@ -158,7 +159,6 @@ void test('v0.6 project workflows expose Diagram Studio and visual Git diff comm
   const projectCommands = [
     'mermaidPreviewOffline.newDiagram',
     'mermaidPreviewOffline.browseExamples',
-    'mermaidPreviewOffline.generateFromTemplate',
     'mermaidPreviewOffline.compareGitVersions',
     'mermaidPreviewOffline.previewVisualDiff',
   ];
@@ -166,11 +166,47 @@ void test('v0.6 project workflows expose Diagram Studio and visual Git diff comm
     assert.ok(commands.includes(command));
     assert.ok(manifest.activationEvents.includes(`onCommand:${command}`));
   }
+  assert.ok(
+    manifest.activationEvents.includes(
+      'onCommand:mermaidPreviewOffline.generateFromTemplate',
+    ),
+  );
+  assert.ok(!commands.includes('mermaidPreviewOffline.generateFromTemplate'));
+  const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
+  assert.match(
+    extension,
+    /registerCommand\(GENERATE_FROM_TEMPLATE_COMMAND[\s\S]*executeCommand\(NEW_DIAGRAM_COMMAND\)/u,
+  );
   const explorerCommands = manifest.contributes.menus['explorer/context'] ?? [];
   assert.ok(explorerCommands.some((entry) => entry.command === 'mermaidPreviewOffline.compareGitVersions'));
   const titleCommands = manifest.contributes.menus['editor/title'] ?? [];
   const visualDiff = titleCommands.find((entry) => entry.command === 'mermaidPreviewOffline.previewVisualDiff');
   assert.match(visualDiff?.when ?? '', /textCompareEditorVisible/u);
+});
+
+void test('folder export is available from Explorer and reuses batch export', () => {
+  const command = manifest.contributes.commands.find(
+    (entry) => entry.command === 'mermaidPreviewOffline.exportFolder',
+  );
+  assert.equal(command?.title, 'Mermaid Preview: Export Folder…');
+  assert.ok(
+    manifest.activationEvents.includes(
+      'onCommand:mermaidPreviewOffline.exportFolder',
+    ),
+  );
+  const explorerEntry = (manifest.contributes.menus['explorer/context'] ?? []).find(
+    (entry) => entry.command === 'mermaidPreviewOffline.exportFolder',
+  );
+  assert.match(explorerEntry?.when ?? '', /explorerResourceIsFolder/u);
+  const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
+  const provider = readFileSync(
+    resolve(__dirname, '../../src/mermaidPreviewProvider.ts'),
+    'utf8',
+  );
+  assert.match(extension, /provider\.exportFolder\(resource\)/u);
+  assert.match(provider, /public async exportFolder/u);
+  assert.match(provider, /this\.startBatchExport/u);
+  assert.match(provider, /providedSourceDirectory/u);
 });
 
 void test('v1.0 local source generators are explicit commands with activation events', () => {

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { test } from 'node:test';
 
 import { createWebviewHtml } from '../src/webviewHtml';
@@ -43,10 +45,25 @@ void test('the compact toolbar exposes controls in the requested order', () => {
     'id="refresh"',
     'id="theme-picker"',
     'id="copy-svg"',
+    'id="save-svg"',
     'id="export-open"',
   ].map((marker) => html.indexOf(marker));
   assert.ok(controlOrder.every((position) => position >= 0));
   assert.deepEqual(controlOrder, [...controlOrder].sort((left, right) => left - right));
+});
+
+void test('the preview exposes direct original SVG copy and save actions', () => {
+  assert.match(html, /id="copy-svg"[^>]*>Copy SVG</u);
+  assert.match(html, /id="save-svg"[^>]*>Save SVG</u);
+  const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
+  assert.match(webview, /bindButton\('save-svg'/u);
+  assert.match(webview, /postMessage\(\{ type: 'saveSvg', svg: lastSvg \}\)/u);
+  const provider = readFileSync(
+    resolve(__dirname, '../../src/mermaidPreviewProvider.ts'),
+    'utf8',
+  );
+  assert.match(provider, /case 'saveSvg'/u);
+  assert.match(provider, /this\.saveSvg\(document\.uri, message\.svg\)/u);
 });
 
 void test('v0.5 professional export exposes preview, profiles, formats, and batch actions', () => {
