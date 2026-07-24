@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.5 — Guide utilisateur
+# Mermaid Preview Offline 1.2.6 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,30 +8,27 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.5. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.6. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
 
-## Nouveautés de la version 1.2.5
+## Nouveautés de la version 1.2.6
 
-La version 1.2.5 revoit en profondeur le cycle de vie des aperçus et des
-fenêtres :
+La version 1.2.6 supprime la chorégraphie de groupes d’éditeurs derrière les
+aperçus divisés :
 
-- les changements de disposition concernent uniquement la source ou l’aperçu
-  Mermaid demandé et préservent les autres groupes, onglets et dimensions
-  personnalisées de VS Code ;
-- chaque aperçu reste attaché à son fichier au lieu de suivre le focus de
-  l’éditeur source, ce qui permet de conserver plusieurs aperçus sans qu’ils se
-  remplacent ;
-- les aperçus détachés sont isolés de la fenêtre principale et ne peuvent pas
-  modifier sa disposition **Beside** ou **Above** ;
-- les aperçus masqués libèrent leur moteur Mermaid, puis restaurent le zoom et
-  le défilement depuis un état léger lorsqu’ils réapparaissent ;
-- les exports réutilisent un aperçu existant même pendant son initialisation,
-  et les exports de dossiers se mettent en pause si leur moteur est masqué ;
-- le pop-out de la documentation déplace uniquement l’aperçu, et non tous les
-  onglets de son groupe.
+- Preview, Beside et Above résident désormais dans un seul onglet personnalisé ;
+- changer de disposition ne peut plus créer, redimensionner, déplacer ou fermer
+  les groupes d’éditeurs VS Code ;
+- Beside et Above utilisent un séparateur local déplaçable dont la proportion
+  est restaurée ;
+- Source only ouvre automatiquement l’éditeur texte Mermaid complet de VS Code ;
+- les modifications de la source du split sont sérialisées et vérifiées par
+  version ;
+- la barre gagne des intitulés larges, un collapse progressif, des réglages de
+  visibilité et d’intitulés, ainsi qu’une sélection fonction par fonction, avec
+  les icônes seules par défaut.
 
 ## Démarrage rapide
 
@@ -72,18 +69,25 @@ ouvre l’aperçu dans un autre groupe.
 | Disposition | Résultat |
 |---|---|
 | **Preview only** | Le diagramme rendu occupe tout le groupe d’éditeurs. |
-| **Source only** | L’éditeur texte Mermaid natif de VS Code occupe tout le groupe d’éditeurs. |
+| **Source only** | L’éditeur texte Mermaid complet de VS Code s’ouvre dans la colonne de l’aperçu. |
 | **Beside** | Le code source est à gauche et l’aperçu à droite. |
 | **Above** | Le code source est au-dessus de l’aperçu. |
 
 ![Le sélecteur de disposition proposant Preview only, Source only, Beside et Above](../media/screenshots/editor-layout.png)
 
-Beside et Above utilisent un véritable éditeur texte VS Code : la coloration
-syntaxique, l’autocomplétion, l’aide au survol, le formatage, les diagnostics,
-les snippets, les corrections rapides et le renommage restent donc disponibles.
-Faites glisser le séparateur des groupes d’éditeurs VS Code pour redimensionner
-la paire. L’extension ne remplace ni ne réinitialise le reste de votre
-disposition : VS Code reste propriétaire des groupes et de leurs dimensions.
+Preview, Beside et Above restent dans le même onglet personnalisé. Beside et
+Above utilisent un split local : les sélectionner ne crée pas un second groupe
+d’éditeurs et ne modifie pas les autres onglets. Faites glisser le séparateur
+interne pour redimensionner la paire ; sa proportion est restaurée avec le
+fichier. Source only quitte cette surface et ouvre automatiquement l’éditeur
+texte complet de VS Code.
+
+La source intégrée à Beside et Above prend en charge l’édition, la navigation
+par ligne, l’enregistrement et une synchronisation protégée contre les conflits.
+Elle reste volontairement une textarea légère : coloration, autocomplétion,
+aide au survol, snippets, formatage, diagnostics, corrections rapides et
+renommage restent dans l’éditeur VS Code complet. Utilisez **Source only** ou
+**Full editor** pour ces fonctions.
 Lorsque l’aperçu possède le focus, appuyez plusieurs fois sur `P` pour parcourir
 Preview only, Beside, Above, puis revenir à Preview only. Depuis l’éditeur source
 Mermaid, utilisez `Alt+P` (`Option+P` sous macOS) pour rejoindre ou poursuivre ce
@@ -95,9 +99,10 @@ possède le focus. Les champs du formulaire d’export conservent leur saisie no
 
 Chaque aperçu reste attaché à son fichier Mermaid. Ouvrir ou sélectionner une
 autre source ne ferme, ne remplace et ne déplace jamais un aperçu existant.
-Exécutez Beside ou Above pour le nouveau fichier si vous souhaitez une autre
-paire. Fermer la partie source conserve le diagramme en mode Preview only ;
-fermer la partie aperçu conserve l’éditeur natif en mode Source only.
+Exécutez Beside ou Above pour un autre fichier si vous souhaitez une autre paire
+interne. Le mode des aperçus gérés est commun à l’espace de travail : après
+avoir choisi Preview, Beside ou Above, chaque fichier Mermaid ouvert depuis
+l’Explorateur hérite de ce mode. Les fenêtres détachées restent indépendantes.
 
 Copier l’aperçu dans une nouvelle fenêtre VS Code ne modifie pas la disposition
 Beside ou Above de la fenêtre principale. Les aperçus auxiliaires sont
@@ -106,12 +111,11 @@ ne peuvent pas modifier la disposition de la fenêtre d’origine.
 
 ### Restauration de session
 
-Le zoom, le mode d’ajustement et la position de défilement sont enregistrés pour
-chaque fichier Mermaid. VS Code restaure la disposition des onglets restés
-ouverts et la position de leurs groupes ; un fichier rouvert dans un nouvel
-onglet autonome démarre en mode Preview only jusqu’à la sélection explicite
-d’une autre disposition. Lorsqu’une webview est reconstruite, l’extension
-réapplique son état léger au lieu de conserver tous les moteurs de rendu Mermaid
+Le zoom, le mode d’ajustement, la position de défilement et la proportion du
+split sont enregistrés pour chaque fichier Mermaid. Le mode Preview/Beside/Above
+est enregistré une seule fois pour l’espace de travail afin de suivre la
+navigation entre les fichiers. Lorsqu’une webview est reconstruite, l’extension
+réapplique cet état léger au lieu de conserver tous les moteurs de rendu Mermaid
 cachés en mémoire. Le thème et la police des diagrammes sont communs aux aperçus
 de la fenêtre VS Code actuelle.
 
@@ -133,6 +137,25 @@ texte actuel. Le retour au mode automatique déclenche immédiatement le rendu.
 Le pied de page indique la taille UTF-8 de la source, les dimensions naturelles
 du diagramme, l’état et la durée du rendu, ainsi que le pourcentage de zoom
 actuel.
+
+### Barre d’outils responsive
+
+La barre est regroupée dans cet ordre : mode de preview ; zoom ; actualisation
+et recherche ; apparence, Copy SVG, Save SVG et Export ; nouvelle fenêtre. Les
+séparateurs restent alignés sur ces groupes même lorsque certaines fonctions
+sont désactivées.
+
+Le mode par défaut utilise uniquement les icônes. En mode responsive ou avec
+les intitulés forcés, **Fit**, Zoom in et Zoom out restent malgré tout des icônes
+seules. Les autres intitulés responsive disparaissent dans cet ordre exact :
+nouvelle fenêtre, Export, Copy/Save SVG, Recherche, puis Apparence. Refresh et
+le mode de preview conservent leurs intitulés jusqu’aux largeurs les plus
+étroites. Les infobulles et noms accessibles restent disponibles.
+
+Utilisez `toolbar.labelMode` pour conserver ce comportement responsive, forcer
+les icônes seules ou toujours afficher les intitulés. `toolbar.visible` masque
+la barre complète et `toolbar.controls` sélectionne précisément les actions
+affichées.
 
 ### Garde-fous sur les ressources
 
@@ -650,7 +673,7 @@ configurés. Le document source n’est pas écrasé.
 | **Mermaid Preview: Open Preview in New Window** | Copie l’aperçu dans une fenêtre VS Code distincte tout en conservant l’original visible. |
 | **Mermaid Preview: Choose Editor Layout** | Permet de choisir l’une des quatre dispositions. |
 | **Mermaid Preview: Preview Only** | Passe en mode Preview only. |
-| **Mermaid Preview: Source Only** | Passe en mode Source only. |
+| **Mermaid Preview: Source Only** | Ouvre l’éditeur texte Mermaid complet de VS Code dans la colonne de l’aperçu. |
 | **Mermaid Preview: Source Beside Preview** | Passe en mode Beside. |
 | **Mermaid Preview: Source Above Preview** | Passe en mode Above. |
 | **Mermaid Preview: Configure Default Editor** | Modifie l’association de l’éditeur dans l’espace de travail. |
@@ -684,6 +707,9 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Disponibilité de la minimap par ressource. |
 | `mermaidPreviewOffline.navigation.mouse` | `always` | Politique de déplacement direct : `always`, `alt` ou `never` ; `never` désactive le déplacement direct. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Contrôles de navigation : `always`, `onHoverOrFocus` ou `never`. |
+| `mermaidPreviewOffline.toolbar.visible` | `true` | Affiche ou masque toute la barre d’outils de l’aperçu. |
+| `mermaidPreviewOffline.toolbar.labelMode` | `icons` | Utilise `icons`, `responsive` ou `always` ; Fit et le zoom restent des icônes seules. |
+| `mermaidPreviewOffline.toolbar.controls` | toutes les fonctions | Sélectionne les actions parmi `layout`, `zoom`, `refresh`, `search`, `appearance`, `copySvg`, `saveSvg`, `export` et `newWindow`. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Identifiants Markdown/MDX exacts reconnus comme Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Active le redimensionnement vertical des cartes documentaires. |
 | `mermaidPreviewOffline.documentation.maxHeight` | vide | Maximum validé facultatif, par exemple `720px` ou `80vh`. |
@@ -710,6 +736,10 @@ Exemple de réglages d’espace de travail :
 {
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
+  "mermaidPreviewOffline.toolbar.labelMode": "responsive",
+  "mermaidPreviewOffline.toolbar.controls": [
+    "layout", "zoom", "refresh", "search", "appearance", "export", "newWindow"
+  ],
   "mermaidPreviewOffline.diagramTheme": "adaptive",
   "mermaidPreviewOffline.diagramDensity": "comfortable",
   "mermaidPreviewOffline.canvas.background": "paper",

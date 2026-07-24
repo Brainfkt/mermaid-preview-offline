@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.5 — User guide
+# Mermaid Preview Offline 1.2.6 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,26 +7,21 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.5 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.6 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
-## New in version 1.2.5
+## New in version 1.2.6
 
-Version 1.2.5 overhauls preview and window lifecycle management:
+Version 1.2.6 removes the editor-group choreography behind split previews:
 
-- layout changes affect only the requested Mermaid source or preview and
-  preserve unrelated VS Code groups, tabs, and custom sizes;
-- each preview stays pinned to its file instead of following source-editor
-  focus, so several previews can coexist without replacing one another;
-- detached previews are isolated from the main window and cannot alter its
-  **Beside** or **Above** layout;
-- hidden previews release their Mermaid runtime and restore zoom and scroll
-  from lightweight state when shown again;
-- exports reuse an existing preview even while it is still initializing, and
-  folder exports pause safely while their renderer is hidden;
-- documentation pop-out moves only the preview editor rather than every tab in
-  its editor group.
+- Preview, Beside, and Above now live inside one custom-editor tab;
+- changing layout cannot create, resize, move, or close VS Code editor groups;
+- Beside and Above use a local draggable separator whose ratio is restored;
+- Source only opens VS Code's full Mermaid text editor automatically;
+- integrated split-source edits are serialized and version-checked;
+- the toolbar gains wide labels, progressive collapse, complete visibility and
+  label settings, and per-control selection, with icon-only as the default.
 
 ## Quick start
 
@@ -65,17 +60,24 @@ editor visible and opens the preview in another group.
 | Layout | Result |
 |---|---|
 | **Preview only** | The rendered diagram fills the editor group. |
-| **Source only** | VS Code's native Mermaid text editor fills the editor group. |
+| **Source only** | VS Code's full Mermaid text editor opens in the preview column. |
 | **Beside** | Source is on the left and the preview is on the right. |
 | **Above** | Source is above the preview. |
 
 ![The editor-layout picker offering Preview only, Source only, Beside, and Above](../media/screenshots/editor-layout.png)
 
-Beside and Above use a real VS Code text editor, so syntax coloring, completion,
-hover help, formatting, diagnostics, snippets, quick fixes, and rename continue
-to work. Drag VS Code's editor-group separator to resize the pair. The extension
-does not replace or reset the rest of your editor layout; VS Code owns the
-groups and their sizes.
+Preview, Beside, and Above stay inside the same custom-editor tab. Beside and
+Above use a local split, so selecting either layout does not create a second
+editor group or alter unrelated tabs. Drag the internal separator to resize the
+pair; the ratio is restored with the file. Source only leaves the custom surface
+and opens VS Code's full text editor automatically.
+
+The source surface embedded in Beside and Above supports editing, line
+navigation, save, and conflict-safe synchronization. It is intentionally a
+lightweight textarea, so syntax coloring, completion, hover help, snippets,
+formatting, diagnostics, quick fixes, and rename remain in the full VS Code
+editor. Use **Source only** or **Full editor** whenever those features are
+needed.
 With the preview focused, press `P` repeatedly to cycle through Preview only,
 Beside, Above, and back to Preview only. From the Mermaid source editor, use
 `Alt+P` (`Option+P` on macOS) to enter or continue that cycle; plain `P` remains
@@ -86,9 +88,9 @@ toolbar button has focus. Export form fields keep their normal keyboard input.
 
 Each preview stays pinned to its Mermaid file. Opening or focusing another
 source never closes, replaces, or moves an existing preview. Run Beside or Above
-for the new file when you want another pair. Closing the source half keeps the
-diagram in Preview only; closing the preview half keeps the native editor in
-Source only.
+for another file when you want another internal pair. The managed preview mode
+is workspace-wide: after selecting Preview, Beside, or Above, every Mermaid file
+opened from the Explorer inherits that mode. Detached windows remain independent.
 
 Copying the preview to a new VS Code window does not change the main Beside or
 Above layout. Auxiliary previews are explicitly marked as detached, keep their
@@ -96,13 +98,12 @@ own view state, and cannot change the layout of the original window.
 
 ### Session restoration
 
-Zoom, fit mode, and scroll position are stored per Mermaid file. VS Code
-restores the layout of open editor tabs and their group positions; a file opened
-again as a new standalone tab starts in Preview only until another layout is
-explicitly selected. When a webview is reconstructed, the extension reapplies
-its lightweight saved view state instead of keeping every hidden Mermaid
-renderer alive. The selected diagram theme and diagram font are shared by
-previews in the current VS Code window.
+Zoom, fit mode, scroll position, and split ratio are stored per Mermaid file.
+The selected Preview/Beside/Above mode is stored once for the workspace so it
+survives navigation between files. When a webview is reconstructed, the
+extension reapplies this lightweight state instead of keeping every hidden
+Mermaid renderer alive. The selected diagram theme and diagram font are shared
+by previews in the current VS Code window.
 
 ## Rendering and navigation
 
@@ -120,6 +121,22 @@ Changing back to automatic mode renders immediately.
 
 The footer reports the UTF-8 source size, natural diagram dimensions, render
 status and timing, and current zoom percentage.
+
+### Responsive toolbar
+
+The toolbar is grouped in this order: preview mode; zoom; refresh and search;
+appearance, Copy SVG, Save SVG, and Export; new window. Separators remain
+aligned with those groups even when individual controls are disabled.
+
+The default label mode is icon-only. In responsive or always-labelled mode,
+**Fit**, Zoom in, and Zoom out still remain icon-only. Other responsive labels
+disappear in this exact order: new window, Export, Copy/Save SVG, Search, then
+Appearance. Refresh and Preview mode keep their labels until very narrow
+widths. Tooltips and accessible names remain available after collapse.
+
+Use `toolbar.labelMode` to keep the responsive behavior, force an icon-only
+bar, or always show labels. `toolbar.visible` hides the complete bar, and
+`toolbar.controls` selects the exact actions shown.
 
 ### Resource safeguards
 
@@ -616,7 +633,7 @@ overwritten.
 | **Mermaid Preview: Open Preview in New Window** | Copy the preview to a separate VS Code window while keeping the original visible. |
 | **Mermaid Preview: Choose Editor Layout** | Choose one of the four layouts. |
 | **Mermaid Preview: Preview Only** | Switch to Preview only. |
-| **Mermaid Preview: Source Only** | Switch to Source only. |
+| **Mermaid Preview: Source Only** | Open VS Code's full Mermaid text editor in the preview column. |
 | **Mermaid Preview: Source Beside Preview** | Switch to Beside. |
 | **Mermaid Preview: Source Above Preview** | Switch to Above. |
 | **Mermaid Preview: Configure Default Editor** | Change the workspace editor association. |
@@ -649,6 +666,9 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Resource-level minimap availability. |
 | `mermaidPreviewOffline.navigation.mouse` | `always` | Direct panning policy: `always`, `alt`, or `never`; `never` disables direct panning. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Navigation controls: `always`, `onHoverOrFocus`, or `never`. |
+| `mermaidPreviewOffline.toolbar.visible` | `true` | Show or hide the complete preview toolbar. |
+| `mermaidPreviewOffline.toolbar.labelMode` | `icons` | Use `icons`, `responsive`, or `always`; Fit and zoom remain icon-only. |
+| `mermaidPreviewOffline.toolbar.controls` | all controls | Select toolbar actions from `layout`, `zoom`, `refresh`, `search`, `appearance`, `copySvg`, `saveSvg`, `export`, and `newWindow`. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Exact Markdown/MDX identifiers recognized as Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Enables vertical resizing for documentation diagram cards. |
 | `mermaidPreviewOffline.documentation.maxHeight` | empty | Optional validated maximum such as `720px` or `80vh`. |
@@ -675,6 +695,10 @@ Example workspace settings:
 {
   "mermaidPreviewOffline.refreshMode": "automatic",
   "mermaidPreviewOffline.refreshDelay": 200,
+  "mermaidPreviewOffline.toolbar.labelMode": "responsive",
+  "mermaidPreviewOffline.toolbar.controls": [
+    "layout", "zoom", "refresh", "search", "appearance", "export", "newWindow"
+  ],
   "mermaidPreviewOffline.diagramTheme": "adaptive",
   "mermaidPreviewOffline.diagramDensity": "comfortable",
   "mermaidPreviewOffline.canvas.background": "paper",

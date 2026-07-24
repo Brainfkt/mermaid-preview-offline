@@ -39,15 +39,20 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
-## What's new in 1.2.5
+## What's new in 1.2.6
 
-Version 1.2.5 makes multi-window and multi-preview workflows substantially more
-predictable. Layout commands now move only the requested Mermaid source or
-preview, leaving unrelated editor groups, tabs, and custom sizes untouched.
-Each preview remains pinned to its file, detached windows are isolated from the
-main window, and hidden previews release their Mermaid runtime while preserving
-zoom and scroll state. The release also prevents duplicate previews during
-exports and moves only the documentation preview when it is popped out.
+Version 1.2.6 keeps **Preview**, **Beside**, and **Above** inside one
+custom-editor tab. Above and Beside no longer create or rearrange VS Code editor
+groups; their separator is local, draggable, and restored per file. **Source
+only** now opens VS Code's full Mermaid text editor automatically. The source
+surface embedded in Beside and Above still synchronizes versioned edits safely.
+
+The toolbar now follows a stable five-group order and adapts naturally to its
+viewport. The default is icon-only, and **Fit**, Zoom in, and Zoom out never
+receive text labels. In responsive mode, the other labels collapse in this
+order: new window, Export, Copy/Save SVG, Search, then Appearance. Settings can
+enable responsive labels, keep every supported label, hide the toolbar, or
+select its exact controls.
 
 ## Why use it?
 
@@ -68,25 +73,30 @@ Keep several Mermaid previews open in normal VS Code editor groups. Each view
 has its own zoom level and exposes file size, natural diagram dimensions,
 rendering time, and zoom percentage in the footer. Zoom and scroll position are
 restored per preview after VS Code restarts, while the selected diagram theme
-stays shared and each open file keeps its own editor layout. Choose **Preview only**,
-**Source only**, **Beside**, or **Above** from the preview toolbar. Beside and
-Above use VS Code's real text editor, so completion, formatting, snippets, quick
-fixes, and diagnostics remain available. VS Code owns group sizes and the
-extension never resets the rest of your editor layout. Every preview stays
-pinned to its file, so focusing another source does not replace or close
-existing previews. Closing one half leaves the survivor in Preview only or
-Source only. A preview copied to a separate VS Code window is marked detached
-and cannot disturb the main Beside or Above layout. With the preview focused,
-press `P` repeatedly to cycle through Preview
-only, Beside, and Above. Use `Alt+P` from the Mermaid source editor (`Option+P`
-on macOS), so plain `P` remains available for typing. Clicking the canvas or
-minimap focuses the preview, and focus follows every layout transition.
+and Preview/Beside/Above mode stay shared across the workspace. Choose
+**Preview only**, **Source only**, **Beside**, or **Above** from the preview toolbar.
+When another Mermaid file is opened from the Explorer, it immediately inherits
+the current preview mode.
+Preview, Beside, and Above are surfaces of the same custom-editor tab, so
+changing among them cannot create, resize, move, or close unrelated editor
+groups. Source only opens VS Code's full text editor in the preview column.
+Drag the internal separator in Beside or Above; the split ratio is restored per
+file.
+
+The integrated source surface supports direct editing, line navigation,
+conflict-safe synchronization, and save. It intentionally remains lightweight:
+select **Source only** or **Full editor** for VS Code completion, syntax
+coloring, formatting, snippets, quick fixes, diagnostics, or rename. Every
+preview stays pinned to its file, and a preview copied to another
+VS Code window keeps an independent mode without disturbing the original.
+Press `P` with the preview focused to cycle Preview only, Beside, and Above.
+Use `Alt+P` (`Option+P` on macOS) while editing source.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/editor-layout.png" alt="VS Code quick pick offering Preview only, Source only, Beside, and Above Mermaid editor layouts" width="720">
 </p>
 
-<p align="center"><em>Switch between the four native editor layouts without leaving the preview.</em></p>
+<p align="center"><em>Keep split previews internal, or hand Source only to VS Code’s full editor.</em></p>
 
 ![A complete Mermaid Gantt release plan rendered in the VS Code preview](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/gantt.png)
 
@@ -148,8 +158,8 @@ unchanged output and does not receive export-time font embedding.
 1. Install **Mermaid Preview — 100% Offline** from the
    [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=brainfkt.mermaid-preview-offline).
 2. Open a `.mmd` or `.mermaid` file from the Explorer.
-3. Select the layout control and choose **Source**, **Beside**, or **Above** to
-   edit in VS Code's native Mermaid editor.
+3. Choose **Beside** or **Above** to edit in the split preview, or **Source
+   only** to open VS Code's full Mermaid editor.
 4. Use **Export** to preview the final result, tune its output profile, and save
    PNG, WebP, PDF, or SVG.
 
@@ -182,9 +192,10 @@ SVG. Neither action opens the professional export dialog.
   and missing node identifiers.
 - Keyword completion, contextual hover help, and 43 diagram-family snippets.
 - Formatting, node/link insertion, missing-ID generation, and rename support.
-- Four workspace-persistent native layouts: Preview, Source, Beside, and Above.
-- Per-file layout choices with native VS Code group resizing.
-- Beside and Above follow the active Mermaid source without duplicate previews.
+- One workspace-wide Preview/Beside/Above selection plus a Source-only handoff
+  to VS Code's full text editor.
+- Per-file draggable split ratios without VS Code editor-group mutations.
+- Versioned, conflict-safe source editing with a one-click full-editor escape hatch.
 - Fit-to-window, incremental zoom, drag-to-pan, and an optional minimap.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
 - Eleven workspace-wide classic and modern appearances in a visual gallery.
@@ -264,7 +275,7 @@ and current limitations.
 | `E` | Switch to Source-only mode |
 | **Editor layout** | Choose Preview, Source, Beside, or Above |
 | Explorer context menu | Open the selected Mermaid file in any of the four layouts |
-| Drag the native group separator | Resize source and preview using VS Code's native layout |
+| Drag the internal separator | Resize source and preview without changing VS Code editor groups |
 | **Open in new window** | Copy the live preview into a separate VS Code window while keeping the original visible |
 | Minimap | Click or drag to navigate an overflowing diagram |
 | `R` | Refresh the diagram |
@@ -289,6 +300,9 @@ and current limitations.
 | `mermaidPreviewOffline.minimap.enabled` | `true` | Show the minimap when the diagram exceeds the viewport. |
 | `mermaidPreviewOffline.navigation.mouse` | `always` | Pan directly with `always`, require Alt/Option with `alt`, or disable direct panning with `never`. |
 | `mermaidPreviewOffline.navigation.controls` | `always` | Show controls `always`, `onHoverOrFocus`, or `never`. |
+| `mermaidPreviewOffline.toolbar.visible` | `true` | Show or completely hide the preview toolbar. |
+| `mermaidPreviewOffline.toolbar.labelMode` | `icons` | Keep the compact default, use responsive labels, or always show supported labels. Fit and zoom remain icon-only. |
+| `mermaidPreviewOffline.toolbar.controls` | all controls | Select the exact toolbar actions to show; canonical ordering is preserved. |
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Recognize additional exact Markdown/MDX block language identifiers. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Allow vertical resizing of documentation diagram cards. |
 | `mermaidPreviewOffline.documentation.maxHeight` | empty | Cap documentation cards with a validated CSS length such as `720px` or `80vh`. |
@@ -334,9 +348,9 @@ the same oversized operation.
 | **Mermaid Preview: Open Preview to the Side** | Keep the current editor visible and open its preview beside it. |
 | **Mermaid Preview: Choose Editor Layout** | Select Preview only, Source only, Beside, or Above. |
 | **Mermaid Preview: Preview Only** | Show only the rendered diagram. |
-| **Mermaid Preview: Source Only** | Show only VS Code's native Mermaid editor. |
-| **Mermaid Preview: Source Beside Preview** | Arrange source and preview horizontally. |
-| **Mermaid Preview: Source Above Preview** | Arrange source and preview vertically. |
+| **Mermaid Preview: Source Only** | Open VS Code's full Mermaid text editor in the current preview column. |
+| **Mermaid Preview: Source Beside Preview** | Arrange the internal source and preview surfaces horizontally. |
+| **Mermaid Preview: Source Above Preview** | Arrange the internal source and preview surfaces vertically. |
 | **Mermaid Preview: Configure Default Editor** | Associate Mermaid files with the offline preview or text editor. |
 | **Mermaid: Format Document** | Format indentation and supported Mermaid block structure. |
 | **Mermaid: Insert Node or Link** | Insert a flowchart node or a link between identifiers. |
