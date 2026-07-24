@@ -72,6 +72,14 @@ const vscode = acquireVsCodeApi();
 const rawPreviousState = vscode.getState();
 const hadPersistedState = rawPreviousState !== undefined;
 const initialState = normalizePreviewState(rawPreviousState);
+const workspace = element<HTMLElement>('workspace');
+const sourcePane = element<HTMLElement>('source-pane');
+const previewPane = element<HTMLElement>('preview-pane');
+const sourceEditor = element<HTMLTextAreaElement>('source-editor');
+const sourceLineNumbers = element<HTMLElement>('source-line-numbers');
+const sourceEditStatus = element<HTMLElement>('source-edit-status');
+const sourceReloadButton = element<HTMLButtonElement>('source-reload');
+const splitHandle = element<HTMLElement>('split-handle');
 const viewport = element<HTMLElement>('viewport');
 const diagram = element<HTMLElement>('diagram');
 const minimap = element<HTMLElement>('minimap');
@@ -134,6 +142,7 @@ let zoom = initialState.zoom;
 let autoFit = initialState.autoFit;
 let savedScrollLeft = initialState.scrollLeft;
 let savedScrollTop = initialState.scrollTop;
+let splitRatio = initialState.splitRatio;
 let editorMode: MermaidEditorMode = 'preview';
 let detachedPreview = false;
 let diagramTheme: DiagramTheme = DEFAULT_CONFIGURATION.diagramTheme;
@@ -167,6 +176,12 @@ let exportDialogRequested = false;
 let searchMatches: Element[] = [];
 let searchIndex = -1;
 let diagramPointerStart: { x: number; y: number } | undefined;
+let sourceDocumentVersion = -1;
+let lastAcknowledgedSource = '';
+let sourceEditSequence = 0;
+let sourceEditTimer: number | undefined;
+let sourceEditInFlight: { requestId: number; source: string } | undefined;
+let conflictingDocument: { source: string; version: number } | undefined;
 
 updateThemePicker();
 applyCanvasAppearance();
@@ -200,6 +215,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       latestSourceUri = message.sourceUri;
       latestVersion = message.version;
       latestByteLength = message.byteLength;
+      receiveDocumentSource(message.documentSource, message.version);
       updateFileSize(message.byteLength);
       pendingDocument = false;
       updateLargeFileLabel(message.isLargeFile, message.byteLength);
@@ -224,10 +240,14 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       fileName.textContent = message.fileName;
       latestVersion = message.version;
       latestByteLength = message.byteLength;
+      receiveDocumentSource(message.documentSource, message.version);
       updateFileSize(message.byteLength);
       pendingDocument = true;
       renderStatus.textContent = 'Changes pending';
       updateRefreshControls();
+      break;
+    case 'sourceEditResult':
+      handleSourceEditResult(message);
       break;
     case 'restoreViewState':
       restoreViewState(message.state);
