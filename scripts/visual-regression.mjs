@@ -179,19 +179,36 @@ const runner = `<script nonce="${nonce}">
       }, '*');
       await delay(50);
       const toolbarStyle = getComputedStyle(document.querySelector('.toolbar'));
+      const toolbar = document.querySelector('.toolbar');
       const workspaceBounds = document.querySelector('#workspace').getBoundingClientRect();
       const viewportBounds = document.querySelector('#viewport').getBoundingClientRect();
-      const toolbarBounds = document.querySelector('.toolbar').getBoundingClientRect();
+      const toolbarBounds = toolbar.getBoundingClientRect();
       const statusbarBounds = document.querySelector('.statusbar').getBoundingClientRect();
       if (Math.abs(viewportBounds.top) > 1 ||
           Math.abs(viewportBounds.bottom - document.documentElement.clientHeight) > 1 ||
           Math.abs(workspaceBounds.height - viewportBounds.height) > 1 ||
           toolbarBounds.top < viewportBounds.top ||
           toolbarBounds.bottom <= viewportBounds.top ||
+          toolbarBounds.right > viewportBounds.right + 1 ||
+          toolbar.scrollWidth > toolbar.clientWidth + 1 ||
           Math.abs(statusbarBounds.bottom - viewportBounds.bottom) > 1 ||
           getComputedStyle(document.querySelector('.toolbar')).position !== 'absolute' ||
           getComputedStyle(document.querySelector('.statusbar')).position !== 'absolute') {
-        throw new Error('The preview surface does not extend underneath the toolbar and footer.');
+        throw new Error('The preview surface or responsive toolbar exceeds its viewport.');
+      }
+      for (const selector of [
+        '#editor-layout .button__label',
+        '#theme-picker .button__label',
+        '#copy-svg .button__label',
+        '#save-svg .button__label',
+        '#export-open .button__label',
+      ]) {
+        if (getComputedStyle(document.querySelector(selector)).display !== 'none') {
+          throw new Error(selector + ': the toolbar label did not collapse at 800px.');
+        }
+      }
+      if (getComputedStyle(document.querySelector('#fit .button__label')).display === 'none') {
+        throw new Error('The Fit label collapsed before the narrowest toolbar breakpoint.');
       }
       if (scheme.name !== 'high-contrast' && toolbarStyle.backdropFilter === 'none') {
         throw new Error(scheme.name + ': the toolbar glass backdrop filter is missing.');

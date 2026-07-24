@@ -139,6 +139,13 @@ select:focus-visible {
 .button__icon {
   width: 16px;
   height: 16px;
+  flex: 0 0 16px;
+}
+
+.button--labeled-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .button--zoom-step {
@@ -907,6 +914,36 @@ body.vscode-high-contrast-light .glass-surface {
   }
 }
 
+@media (max-width: 1120px) {
+  .button--collapse-first {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-first .button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .button--collapse-second {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-second .button__label {
+    display: none;
+  }
+}
+
 @media (max-width: 670px) {
   .toolbar {
     max-width: calc(100% - 8px);
@@ -971,6 +1008,35 @@ body.vscode-high-contrast-light .glass-surface {
   .export-panel__copy-actions,
   .export-panel__save-actions {
     width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .button--collapse-third {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-third .button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 430px) {
+  .toolbar {
+    padding-inline: 2px;
+  }
+
+  .toolbar__group {
+    gap: 1px;
+  }
+
+  .toolbar .divider {
+    display: none;
   }
 }
 

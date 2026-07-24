@@ -37,33 +37,42 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
 <body>
   <header class="toolbar glass-surface" aria-label="Mermaid preview controls">
     <div class="toolbar__group">
-      <button class="button button--layout" id="editor-layout" type="button" title="Editor layout: Preview only" aria-label="Choose editor layout">
+      <button class="button button--layout button--collapse-second" id="editor-layout" type="button" title="Editor layout: Preview only" aria-label="Choose editor layout">
         ${icon('layout')}
-        <span id="editor-layout-label">Preview</span>
+        <span class="button__label" id="editor-layout-label">Preview</span>
       </button>
       <span class="divider" aria-hidden="true"></span>
       <div class="toolbar__group toolbar__navigation" id="diagram-navigation-controls">
         <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
-        <button class="button button--zoom" id="fit" type="button" title="Fit diagram (0)">Fit</button>
+        <button class="button button--zoom button--labeled-icon button--collapse-third" id="fit" type="button" title="Fit diagram (0)" aria-label="Fit diagram">
+          ${icon('fit')}
+          <span class="button__label">Fit</span>
+        </button>
         <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
       </div>
       <span class="divider" aria-hidden="true"></span>
       <button class="button button--icon button--refresh" id="refresh" type="button" title="Refresh diagram (R)" aria-label="Refresh diagram">
         ${icon('refresh')}
       </button>
-      <button class="button appearance-picker" id="theme-picker" type="button" title="Diagram appearance: Adaptive" aria-label="Choose diagram appearance" aria-expanded="false">
+      <button class="button appearance-picker button--collapse-second" id="theme-picker" type="button" title="Diagram appearance: Adaptive" aria-label="Choose diagram appearance" aria-expanded="false">
         ${icon('palette')}
-        <span id="appearance-label">Adaptive</span>
+        <span class="button__label" id="appearance-label">Adaptive</span>
       </button>
       <button class="button button--icon" id="search-open" type="button" title="Find in diagram (/ or Ctrl/Cmd+F)" aria-label="Find in diagram">
         ${icon('search')}
       </button>
       <span class="divider" aria-hidden="true"></span>
-      <button class="button button--quiet" id="copy-svg" type="button" disabled>Copy SVG</button>
-      <button class="button button--quiet" id="save-svg" type="button" disabled>Save SVG</button>
-      <button class="button button--accent button--export" id="export-open" type="button" disabled>
+      <button class="button button--quiet button--labeled-icon button--collapse-first" id="copy-svg" type="button" title="Copy original SVG" aria-label="Copy original SVG" disabled>
+        ${icon('copy')}
+        <span class="button__label">Copy SVG</span>
+      </button>
+      <button class="button button--quiet button--labeled-icon button--collapse-first" id="save-svg" type="button" title="Save original SVG" aria-label="Save original SVG" disabled>
+        ${icon('save')}
+        <span class="button__label">Save SVG</span>
+      </button>
+      <button class="button button--accent button--export button--collapse-second" id="export-open" type="button" title="Export diagram" aria-label="Export diagram" disabled>
         ${icon('export')}
-        <span>Export</span>
+        <span class="button__label">Export</span>
       </button>
       <span class="metadata-chip" id="large-file-label" hidden></span>
       <span class="divider" aria-hidden="true"></span>
@@ -311,13 +320,18 @@ function surfaceSwatch(value: string, color: string, label: string): string {
   return `<button class="surface-swatch surface-swatch--${value}" type="button" data-surface="${value}" title="${label}"${style}><i></i><span>${label}</span></button>`;
 }
 
-function icon(name: 'export' | 'layout' | 'newWindow' | 'palette' | 'refresh' | 'search'): string {
+function icon(
+  name: 'copy' | 'export' | 'fit' | 'layout' | 'newWindow' | 'palette' | 'refresh' | 'save' | 'search',
+): string {
   const paths: Record<typeof name, string> = {
+    copy: '<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
     export: '<path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M5 19h14"/>',
+    fit: '<path d="M8 4H4v4M16 4h4v4M20 16v4h-4M4 16v4h4"/>',
     layout: '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M3.5 10h17M11 10v10"/>',
     palette:
       '<path d="M12 3a9 9 0 0 0 0 18h1.5a1.5 1.5 0 0 0 0-3H12a2 2 0 0 1 0-4h2.5A6.5 6.5 0 0 0 21 7.5C21 5 17 3 12 3Z"/><circle cx="7.5" cy="10" r="1"/><circle cx="10" cy="6.8" r="1"/><circle cx="14" cy="6.5" r="1"/><circle cx="17.2" cy="9" r="1"/>',
     refresh: '<path d="M20 6v5h-5M4 18v-5h5M6.1 9a7 7 0 0 1 11.4-2.6L20 9M4 15l2.5 2.6A7 7 0 0 0 17.9 15"/>',
+    save: '<path d="M5 4h11l3 3v13H5Z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
     newWindow: '<rect x="4" y="7" width="12" height="12" rx="2"/><path d="M12 4h8v8M20 4l-9 9"/>',
   };

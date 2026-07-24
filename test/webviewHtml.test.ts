@@ -12,6 +12,7 @@ const html = createWebviewHtml({
   styleUri: 'vscode-webview://test-source/media/preview.css',
   title: 'Preview <unsafe>',
 });
+const previewCss = readFileSync(resolve(__dirname, '../../media/preview.css'), 'utf8');
 
 void test('la webview interdit les connexions et les contenus exécutables distants', () => {
   assert.match(html, /default-src 'none'/u);
@@ -53,8 +54,8 @@ void test('the compact toolbar exposes controls in the requested order', () => {
 });
 
 void test('the preview exposes direct original SVG copy and save actions', () => {
-  assert.match(html, /id="copy-svg"[^>]*>Copy SVG</u);
-  assert.match(html, /id="save-svg"[^>]*>Save SVG</u);
+  assert.match(html, /id="copy-svg"[^>]*aria-label="Copy original SVG"[\s\S]*?<span class="button__label">Copy SVG<\/span>/u);
+  assert.match(html, /id="save-svg"[^>]*aria-label="Save original SVG"[\s\S]*?<span class="button__label">Save SVG<\/span>/u);
   const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
   assert.match(webview, /bindButton\('save-svg'/u);
   assert.match(webview, /postMessage\(\{ type: 'saveSvg', svg: lastSvg \}\)/u);
@@ -64,6 +65,28 @@ void test('the preview exposes direct original SVG copy and save actions', () =>
   );
   assert.match(provider, /case 'saveSvg'/u);
   assert.match(provider, /this\.saveSvg\(document\.uri, message\.svg\)/u);
+});
+
+void test('toolbar labels collapse progressively while icon actions remain accessible', () => {
+  for (const marker of [
+    'button--collapse-first',
+    'button--collapse-second',
+    'button--collapse-third',
+  ]) {
+    assert.match(html, new RegExp(marker, 'u'));
+  }
+  for (const accessibleName of [
+    'aria-label="Fit diagram"',
+    'aria-label="Copy original SVG"',
+    'aria-label="Save original SVG"',
+    'aria-label="Export diagram"',
+  ]) {
+    assert.match(html, new RegExp(accessibleName, 'u'));
+  }
+  assert.match(previewCss, /@media \(max-width: 1120px\)[\s\S]*?\.button--collapse-first \.button__label\s*\{\s*display: none;/u);
+  assert.match(previewCss, /@media \(max-width: 860px\)[\s\S]*?\.button--collapse-second \.button__label\s*\{\s*display: none;/u);
+  assert.match(previewCss, /@media \(max-width: 560px\)[\s\S]*?\.button--collapse-third \.button__label\s*\{\s*display: none;/u);
+  assert.match(previewCss, /@media \(max-width: 430px\)[\s\S]*?\.toolbar \.divider\s*\{\s*display: none;/u);
 });
 
 void test('v0.5 professional export exposes preview, profiles, formats, and batch actions', () => {
