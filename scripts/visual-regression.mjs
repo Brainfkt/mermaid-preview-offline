@@ -225,6 +225,7 @@ const runner = `<script nonce="${nonce}">
         version += 1;
         window.postMessage({
           type: 'document',
+          documentSource: example.source,
           source: example.source,
           fileName: example.fileName,
           sourceUri: 'file:///examples/' + example.fileName,
@@ -269,7 +270,7 @@ const runner = `<script nonce="${nonce}">
     layoutButton.click();
     const layoutMessages = postedMessages.slice(layoutMessageStart);
     if (layoutMessages.length !== 1 || layoutMessages[0]?.type !== 'chooseEditorMode') {
-      throw new Error('The layout control did not emit one native editor choice request.');
+      throw new Error('The layout control did not emit one internal editor choice request.');
     }
     for (const [mode, label] of [
       ['preview', 'Preview'],
@@ -277,12 +278,56 @@ const runner = `<script nonce="${nonce}">
       ['above', 'Above'],
       ['source', 'Source'],
     ]) {
-      window.postMessage({ type: 'editorMode', mode }, '*');
+      window.postMessage({ type: 'editorMode', detached: false, mode }, '*');
       await waitFor(
-        () => document.querySelector('#editor-layout-label')?.textContent === label,
-        mode + ' native editor layout label',
+        () => document.querySelector('#editor-layout-label')?.textContent === label &&
+          document.querySelector('#workspace')?.classList.contains('workspace--' + mode),
+        mode + ' internal editor layout',
       );
+      const sourceBounds = document.querySelector('#source-pane').getBoundingClientRect();
+      const previewBounds = document.querySelector('#preview-pane').getBoundingClientRect();
+      if (mode === 'beside' &&
+          (sourceBounds.width <= 0 || previewBounds.width <= 0 ||
+           sourceBounds.right > previewBounds.left + 1)) {
+        throw new Error('Beside did not keep source and preview in one horizontal editor.');
+      }
+      if (mode === 'above' &&
+          (sourceBounds.height <= 0 || previewBounds.height <= 0 ||
+           sourceBounds.bottom > previewBounds.top + 1)) {
+        throw new Error('Above did not keep source and preview in one vertical editor.');
+      }
     }
+    const sourceInput = document.querySelector('#source-editor');
+    const sourceEditStart = postedMessages.length;
+    sourceInput.value += '\\n%% internal editor smoke test';
+    sourceInput.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText' }));
+    await waitFor(
+      () => postedMessages.slice(sourceEditStart).some((message) =>
+        message.type === 'replaceDocument'),
+      'internal source edit request',
+    );
+    const sourceEdit = postedMessages.slice(sourceEditStart).find((message) =>
+      message.type === 'replaceDocument');
+    window.postMessage({
+      type: 'sourceEditResult',
+      applied: true,
+      requestId: sourceEdit.requestId,
+      version: sourceEdit.version + 1,
+    }, '*');
+    await waitFor(
+      () => document.querySelector('#source-edit-status')?.textContent === 'Saved',
+      'internal source edit acknowledgement',
+    );
+    const sourceSaveStart = postedMessages.length;
+    sourceInput.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true,
+      ctrlKey: true,
+      key: 's',
+    }));
+    if (!postedMessages.slice(sourceSaveStart).some((message) => message.type === 'saveDocument')) {
+      throw new Error('Ctrl/Cmd+S did not request a source document save.');
+    }
+    window.postMessage({ type: 'editorMode', detached: false, mode: 'preview' }, '*');
 
     if (document.querySelector('#fullscreen') || document.querySelector('#pan-mode')) {
       throw new Error('Removed full-screen or pan-mode controls are still visible.');
@@ -339,6 +384,7 @@ const runner = `<script nonce="${nonce}">
     version += 1;
     window.postMessage({
       type: 'document',
+      documentSource: accentedSource,
       source: accentedSource,
       fileName: 'accented-labels.mmd',
       sourceUri: 'file:///examples/accented-labels.mmd',
@@ -430,6 +476,7 @@ const runner = `<script nonce="${nonce}">
     version += 1;
     window.postMessage({
       type: 'document',
+      documentSource: minimapExample.source,
       source: minimapExample.source,
       fileName: minimapExample.fileName,
       sourceUri: 'file:///examples/' + minimapExample.fileName,
@@ -616,6 +663,7 @@ const runner = `<script nonce="${nonce}">
     const invalidSource = 'flowchart LR\\n  broken -->';
     window.postMessage({
       type: 'document',
+      documentSource: invalidSource,
       source: invalidSource,
       fileName: 'invalid.mmd',
       sourceUri: 'file:///examples/invalid.mmd',
