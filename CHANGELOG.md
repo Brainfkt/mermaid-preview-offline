@@ -1,6 +1,28 @@
 # Changelog
 
-## Unreleased
+## 1.2.6
+
+- moved Preview, Beside, and Above into one custom-editor tab, removing the
+  extra VS Code editor groups and layout mutations that made Above/Beside
+  sensitive to focus, tab closures, window moves, and custom group sizes;
+- changed **Source only** to open VS Code's full Mermaid text editor
+  automatically in the preview column;
+- added an internal draggable split with per-file ratio restoration, versioned
+  and serialized source edits, conflict detection, direct save, and a **Full
+  editor** escape hatch for VS Code language features;
+- synchronized the selected Preview, Beside, or Above mode across Mermaid files
+  opened from the Explorer while keeping detached windows independent;
+- reordered the toolbar into layout; zoom; refresh/search;
+  appearance/copy/save/export; and new-window groups;
+- kept Fit, Zoom in, and Zoom out icon-only while labelling the other supported
+  wide toolbar actions, then progressively collapsed labels in the order new
+  window, Export,
+  Copy/Save SVG, Search, and Appearance before compacting essential controls;
+- added `toolbar.visible`, `toolbar.labelMode`, and `toolbar.controls` settings
+  to hide the bar, force icon-only or labelled behavior, and select its exact
+  actions while preserving canonical ordering; icon-only is the default;
+- kept the toolbar hidden until its configuration is available, preventing a
+  one-frame flash of unconfigured controls while switching files;
 
 ## 1.2.5
 
