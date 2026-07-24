@@ -256,7 +256,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       editorMode = message.mode;
       detachedPreview = message.detached;
       updateEditorMode();
-      requestAnimationFrame(focusPreviewSurface);
+      requestAnimationFrame(focusActiveSurface);
       break;
     case 'exportConfiguration':
       exportSettings = normalizeExportSettings(message.settings);
@@ -499,7 +499,7 @@ installSplitResize();
 updateNavigationConfiguration();
 
 new ResizeObserver(() => {
-  if (autoFit && !diagram.hidden) {
+  if (editorMode !== 'source' && autoFit && !diagram.hidden) {
     fitDiagram();
   } else {
     updateMinimap();
@@ -606,7 +606,7 @@ async function renderLatest(): Promise<void> {
       exportDialogRequested = false;
       openExportDialog();
     }
-    if (autoFit) {
+    if (autoFit && editorMode !== 'source') {
       fitDiagram();
     } else {
       applyZoom();
@@ -831,26 +831,44 @@ function updateEditorMode(): void {
     source: 'Source',
   };
   const descriptions: Record<MermaidEditorMode, string> = {
-    above: 'Source above preview',
-    beside: 'Source beside preview',
+    above: 'Source above preview in one editor',
+    beside: 'Source beside preview in one editor',
     preview: 'Preview only',
     source: 'Source only',
   };
-  editorLayoutButton.disabled = detachedPreview;
-  editorLayoutLabel.textContent = detachedPreview ? 'Detached' : labels[editorMode];
-  if (detachedPreview) {
-    editorLayoutButton.title = 'Detached preview; editor layout stays independent';
-    editorLayoutButton.setAttribute(
-      'aria-label',
-      'Detached preview; editor layout controls are available in the original window',
-    );
-    return;
-  }
-  editorLayoutButton.title = `Editor layout: ${descriptions[editorMode]} (P to cycle)`;
+  workspace.classList.remove(
+    'workspace--preview',
+    'workspace--source',
+    'workspace--beside',
+    'workspace--above',
+  );
+  workspace.classList.add(`workspace--${editorMode}`);
+  const sourceVisible = editorMode !== 'preview';
+  const previewVisible = editorMode !== 'source';
+  sourcePane.setAttribute('aria-hidden', String(!sourceVisible));
+  previewPane.setAttribute('aria-hidden', String(!previewVisible));
+  splitHandle.setAttribute(
+    'aria-orientation',
+    editorMode === 'above' ? 'horizontal' : 'vertical',
+  );
+  editorLayoutButton.disabled = false;
+  editorLayoutLabel.textContent = labels[editorMode];
+  const detachedSuffix = detachedPreview ? ' in this detached window' : '';
+  editorLayoutButton.title =
+    `Editor layout: ${descriptions[editorMode]}${detachedSuffix} (P to cycle)`;
   editorLayoutButton.setAttribute(
     'aria-label',
-    `Choose editor layout, current layout: ${descriptions[editorMode]}; press P to cycle preview layouts`,
+    `Choose editor layout, current layout: ${descriptions[editorMode]}${detachedSuffix}; ` +
+      'press P to cycle preview layouts',
   );
+  applySplitRatio();
+  window.requestAnimationFrame(() => {
+    if (previewVisible && autoFit && !diagram.hidden) {
+      fitDiagram();
+    } else {
+      updateMinimap();
+    }
+  });
 }
 
 function updateFileSize(byteLength: number): void {
@@ -1460,7 +1478,218 @@ function cleanupFailedRender(renderId: string): void {
 }
 
 function openSourceOnly(): void {
+  editorMode = 'source';
+  updateEditorMode();
+  requestAnimationFrame(() => sourceEditor.focus({ preventScroll: true }));
   vscode.postMessage({ type: 'setEditorMode', mode: 'source' });
+}
+
+function receiveDocumentSource(source: string, version: number): void {
+  if (sourceDocumentVersion < 0) {
+    setSourceDocument(source, version);
+    return;
+  }
+  if (sourceEditInFlight?.source === source) {
+    sourceDocumentVersion = version;
+    lastAcknowledgedSource = source;
+    updateSourceEditStatus();
+    return;
+  }
+  if (!sourceEditInFlight && sourceEditor.value === lastAcknowledgedSource) {
+    setSourceDocument(source, version);
+    return;
+  }
+  if (source === lastAcknowledgedSource) {
+    sourceDocumentVersion = version;
+    return;
+  }
+  conflictingDocument = { source, version };
+  sourceReloadButton.hidden = false;
+  sourceEditStatus.textContent = 'File changed elsewhere';
+}
+
+function setSourceDocument(source: string, version: number): void {
+  sourceDocumentVersion = version;
+  lastAcknowledgedSource = source;
+  conflictingDocument = undefined;
+  sourceReloadButton.hidden = true;
+  if (sourceEditor.value !== source) {
+    const selectionStart = Math.min(sourceEditor.selectionStart, source.length);
+    const selectionEnd = Math.min(sourceEditor.selectionEnd, source.length);
+    sourceEditor.value = source;
+    sourceEditor.setSelectionRange(selectionStart, selectionEnd);
+  }
+  updateSourceLineNumbers();
+  updateSourceEditStatus();
+}
+
+function handleSourceInput(): void {
+  updateSourceLineNumbers();
+  sourceEditStatus.textContent = 'Editing…';
+  if (sourceEditTimer !== undefined) {
+    window.clearTimeout(sourceEditTimer);
+  }
+  sourceEditTimer = window.setTimeout(() => {
+    sourceEditTimer = undefined;
+    flushSourceEdit();
+  }, 120);
+}
+
+function flushSourceEdit(): void {
+  if (sourceEditTimer !== undefined) {
+    window.clearTimeout(sourceEditTimer);
+    sourceEditTimer = undefined;
+  }
+  if (sourceEditInFlight || sourceDocumentVersion < 0) {
+    return;
+  }
+  const source = sourceEditor.value;
+  if (source === lastAcknowledgedSource) {
+    updateSourceEditStatus();
+    return;
+  }
+  sourceEditSequence += 1;
+  sourceEditInFlight = { requestId: sourceEditSequence, source };
+  sourceEditStatus.textContent = 'Saving…';
+  vscode.postMessage({
+    type: 'replaceDocument',
+    requestId: sourceEditSequence,
+    source,
+    version: sourceDocumentVersion,
+  });
+}
+
+function handleSourceEditResult(
+  message: Extract<ExtensionToWebviewMessage, { type: 'sourceEditResult' }>,
+): void {
+  const pending = sourceEditInFlight;
+  if (!pending || pending.requestId !== message.requestId) {
+    return;
+  }
+  sourceEditInFlight = undefined;
+  sourceDocumentVersion = message.version;
+  if (message.applied) {
+    lastAcknowledgedSource = pending.source;
+    conflictingDocument = undefined;
+    sourceReloadButton.hidden = true;
+    updateSourceEditStatus();
+    if (sourceEditor.value !== lastAcknowledgedSource) {
+      flushSourceEdit();
+    }
+    return;
+  }
+  if (message.documentSource !== undefined) {
+    conflictingDocument = {
+      source: message.documentSource,
+      version: message.version,
+    };
+    sourceReloadButton.hidden = false;
+  }
+  sourceEditStatus.textContent = message.error
+    ? `Save failed: ${message.error}`
+    : 'File changed elsewhere';
+}
+
+function updateSourceEditStatus(): void {
+  if (conflictingDocument) {
+    sourceEditStatus.textContent = 'File changed elsewhere';
+  } else if (sourceEditInFlight) {
+    sourceEditStatus.textContent = 'Saving…';
+  } else if (sourceEditor.value !== lastAcknowledgedSource) {
+    sourceEditStatus.textContent = 'Unsaved';
+  } else {
+    sourceEditStatus.textContent = 'Saved';
+  }
+}
+
+function reloadConflictingSource(): void {
+  if (!conflictingDocument) return;
+  setSourceDocument(conflictingDocument.source, conflictingDocument.version);
+}
+
+function updateSourceLineNumbers(): void {
+  const lineCount = Math.max(sourceEditor.value.split('\n').length, 1);
+  let numbers = '';
+  for (let line = 1; line <= lineCount; line += 1) {
+    numbers += `${line}\n`;
+  }
+  sourceLineNumbers.textContent = numbers;
+  sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
+}
+
+function handleSourceEditorKeydown(event: KeyboardEvent): void {
+  if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey) {
+    event.preventDefault();
+    const indentation = '  ';
+    sourceEditor.setRangeText(
+      indentation,
+      sourceEditor.selectionStart,
+      sourceEditor.selectionEnd,
+      'end',
+    );
+    handleSourceInput();
+    return;
+  }
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
+    event.preventDefault();
+    flushSourceEdit();
+    vscode.postMessage({ type: 'saveDocument' });
+    return;
+  }
+  if (event.altKey && event.key.toLowerCase() === 'p') {
+    event.preventDefault();
+    flushSourceEdit();
+    vscode.postMessage({ type: 'cycleEditorMode' });
+  }
+}
+
+function applySplitRatio(): void {
+  workspace.style.setProperty('--source-ratio', `${Math.round(splitRatio * 10_000) / 100}%`);
+  splitHandle.setAttribute('aria-valuenow', String(Math.round(splitRatio * 100)));
+}
+
+function installSplitResize(): void {
+  let pointerId: number | undefined;
+  const updateFromPointer = (event: PointerEvent): void => {
+    if (pointerId !== event.pointerId) return;
+    const bounds = workspace.getBoundingClientRect();
+    const next = editorMode === 'above'
+      ? (event.clientY - bounds.top) / Math.max(bounds.height, 1)
+      : (event.clientX - bounds.left) / Math.max(bounds.width, 1);
+    splitRatio = clamp(next, 0.2, 0.8);
+    applySplitRatio();
+    schedulePersistState();
+  };
+  const stop = (event: PointerEvent): void => {
+    if (pointerId !== event.pointerId) return;
+    splitHandle.releasePointerCapture(pointerId);
+    pointerId = undefined;
+    splitHandle.classList.remove('split-handle--dragging');
+    persistState();
+  };
+  splitHandle.addEventListener('pointerdown', (event) => {
+    if (editorMode !== 'above' && editorMode !== 'beside') return;
+    pointerId = event.pointerId;
+    splitHandle.setPointerCapture(pointerId);
+    splitHandle.classList.add('split-handle--dragging');
+    updateFromPointer(event);
+  });
+  splitHandle.addEventListener('pointermove', updateFromPointer);
+  splitHandle.addEventListener('pointerup', stop);
+  splitHandle.addEventListener('pointercancel', stop);
+  splitHandle.addEventListener('keydown', (event) => {
+    const decrease =
+      (editorMode === 'beside' && event.key === 'ArrowLeft') ||
+      (editorMode === 'above' && event.key === 'ArrowUp');
+    const increase =
+      (editorMode === 'beside' && event.key === 'ArrowRight') ||
+      (editorMode === 'above' && event.key === 'ArrowDown');
+    if (!decrease && !increase) return;
+    event.preventDefault();
+    splitRatio = clamp(splitRatio + (increase ? 0.05 : -0.05), 0.2, 0.8);
+    applySplitRatio();
+    persistState();
+  });
 }
 
 function bindButton(id: string, listener: () => void): void {
@@ -1494,8 +1723,16 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 function focusPreviewSurface(): void {
-  if (!exportDialog.open) {
+  if (!exportDialog.open && editorMode !== 'source') {
     viewport.focus({ preventScroll: true });
+  }
+}
+
+function focusActiveSurface(): void {
+  if (editorMode === 'source') {
+    sourceEditor.focus({ preventScroll: true });
+  } else {
+    focusPreviewSurface();
   }
 }
 
@@ -1503,7 +1740,12 @@ function installPreviewFocus(): void {
   window.addEventListener(
     'pointerdown',
     (event) => {
-      if (!isInteractiveTarget(event.target) && !exportDialog.open) {
+      if (
+        event.target instanceof Node &&
+        previewPane.contains(event.target) &&
+        !isInteractiveTarget(event.target) &&
+        !exportDialog.open
+      ) {
         focusPreviewSurface();
       }
     },
@@ -1559,7 +1801,7 @@ function installSourceNavigation(): void {
     const group = clickableDiagramGroup(event.target);
     if (!group) return;
     const line = sourceLineFor(group);
-    if (line !== undefined) vscode.postMessage({ type: 'revealSourceLine', line });
+    if (line !== undefined) revealInternalSourceLine(line);
   });
   diagram.addEventListener('keydown', (event) => {
     if ((event.key !== 'Enter' && event.key !== ' ') || !(event.target instanceof Element)) return;
@@ -1568,9 +1810,31 @@ function installSourceNavigation(): void {
     const line = sourceLineFor(group);
     if (line !== undefined) {
       event.preventDefault();
-      vscode.postMessage({ type: 'revealSourceLine', line });
+      revealInternalSourceLine(line);
     }
   });
+}
+
+function revealInternalSourceLine(line: number): void {
+  if (editorMode === 'preview') {
+    editorMode = 'beside';
+    updateEditorMode();
+    vscode.postMessage({ type: 'setEditorMode', mode: 'beside' });
+  }
+  const source = sourceEditor.value;
+  let start = 0;
+  for (let currentLine = 0; currentLine < line && start < source.length; currentLine += 1) {
+    const nextBreak = source.indexOf('\n', start);
+    start = nextBreak < 0 ? source.length : nextBreak + 1;
+  }
+  const end = source.indexOf('\n', start);
+  sourceEditor.focus({ preventScroll: true });
+  sourceEditor.setSelectionRange(start, end < 0 ? source.length : end);
+  const lineHeight = Number.parseFloat(getComputedStyle(sourceEditor).lineHeight);
+  if (Number.isFinite(lineHeight)) {
+    sourceEditor.scrollTop = Math.max(0, line * lineHeight - sourceEditor.clientHeight / 2);
+    sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
+  }
 }
 
 function clearSearchHighlights(): void {

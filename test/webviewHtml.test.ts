@@ -124,10 +124,13 @@ void test('layout, refresh, and theme controls stay compact and the footer is un
   assert.doesNotMatch(html, /Rendering locally/u);
 });
 
-void test('navigation controls use native editor layouts and expose focused reading tools', () => {
+void test('navigation controls use one internal editor surface and expose focused reading tools', () => {
   assert.match(html, /id="editor-layout"/u);
-  assert.doesNotMatch(html, /id="source-editor"/u);
-  assert.doesNotMatch(html, /<textarea/u);
+  assert.match(html, /id="source-editor"/u);
+  assert.match(html, /id="source-line-numbers"/u);
+  assert.match(html, /id="split-handle"/u);
+  assert.match(html, /id="open-native-source"/u);
+  assert.match(html, /<textarea[\s\S]*aria-label="Mermaid source editor"/u);
   assert.doesNotMatch(html, /id="fullscreen"/u);
   assert.doesNotMatch(html, /id="pan-mode"/u);
   assert.match(html, /id="open-new-window"/u);

@@ -62,7 +62,7 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies.katex, undefined);
 });
 
-void test('preview commands expose all four native editor layouts', () => {
+void test('preview commands expose all four single-editor layouts', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
   const layoutCommands = [
     'mermaidPreviewOffline.openPreviewOnly',
@@ -372,7 +372,7 @@ void test('the extension can run in local and remote VS Code extension hosts', (
   assert.deepEqual(manifest.extensionKind, ['workspace', 'ui']);
 });
 
-void test('preview placement preserves the user layout and scopes state per resource', () => {
+void test('preview layouts stay inside one custom editor and scope state per resource', () => {
   const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
   const controller = readFileSync(
     resolve(__dirname, '../../src/editorLayoutController.ts'),
@@ -382,20 +382,30 @@ void test('preview placement preserves the user layout and scopes state per reso
     resolve(__dirname, '../../src/documentationFeatures.ts'),
     'utf8',
   );
+  const provider = readFileSync(
+    resolve(__dirname, '../../src/mermaidPreviewProvider.ts'),
+    'utf8',
+  );
+  const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
   assert.match(extension, /supportsMultipleEditorsPerDocument:\s*true/u);
-  assert.match(extension, /onDidChangeTabs/u);
-  assert.match(extension, /handleTabsChanged/u);
+  assert.doesNotMatch(extension, /onDidChangeTabs/u);
+  assert.doesNotMatch(extension, /handleTabsChanged/u);
   assert.doesNotMatch(extension, /onDidChangeActiveTextEditor/u);
   assert.doesNotMatch(extension, /syncPreviewForSource/u);
   assert.doesNotMatch(controller, /vscode\.getEditorLayout/u);
   assert.doesNotMatch(controller, /vscode\.setEditorLayout/u);
   assert.doesNotMatch(controller, /tabGroups\.close/u);
   assert.doesNotMatch(controller, /ViewColumn\.(?:One|Two)/u);
+  assert.doesNotMatch(controller, /ViewColumn\.Beside/u);
+  assert.doesNotMatch(controller, /newGroupBelow/u);
+  assert.doesNotMatch(controller, /showTextDocument/u);
   assert.match(controller, /MODE_STATE_KEY_PREFIX/u);
-  assert.match(controller, /vscode\.ViewColumn\.Beside/u);
-  assert.match(controller, /workbench\.action\.newGroupBelow/u);
   assert.match(controller, /detachedPanels/u);
-  assert.match(controller, /editorModeAfterSplitClose/u);
+  assert.match(controller, /rendered inside one custom-editor panel/u);
+  assert.match(provider, /vscode\.workspace\.applyEdit\(edit\)/u);
+  assert.match(webview, /workspace--beside/u);
+  assert.match(webview, /workspace--above/u);
+  assert.match(webview, /installSplitResize\(\)/u);
   assert.match(documentation, /workbench\.action\.moveEditorToNewWindow/u);
   assert.doesNotMatch(documentation, /workbench\.action\.moveEditorGroupToNewWindow/u);
 });

@@ -1319,9 +1319,11 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     message?: unknown;
     mode?: unknown;
     profiles?: unknown;
+    requestId?: unknown;
     relativeDirectory?: unknown;
     rendered?: unknown;
     settings?: unknown;
+    source?: unknown;
     state?: unknown;
     surface?: unknown;
     density?: unknown;
