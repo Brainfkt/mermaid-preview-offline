@@ -301,6 +301,11 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
 bindButton('editor-layout', () => {
   vscode.postMessage({ type: 'chooseEditorMode' });
 });
+bindButton('open-native-source', () => {
+  flushSourceEdit();
+  vscode.postMessage({ type: 'openNativeSource' });
+});
+bindButton('source-reload', reloadConflictingSource);
 bindButton('empty-open-source', openSourceOnly);
 bindButton('empty-open-gallery', () => vscode.postMessage({ type: 'openDiagramGallery' }));
 bindButton('error-open-source', openSourceOnly);
@@ -378,6 +383,12 @@ surfaceCustomColor.addEventListener('input', () => {
     preset: 'custom',
   });
 });
+sourceEditor.addEventListener('input', handleSourceInput);
+sourceEditor.addEventListener('scroll', () => {
+  sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
+});
+sourceEditor.addEventListener('blur', flushSourceEdit);
+sourceEditor.addEventListener('keydown', handleSourceEditorKeydown);
 searchInput.addEventListener('input', updateDiagramSearch);
 searchInput.addEventListener('keydown', (event) => {
   if (event.key === 'Enter') {
@@ -409,7 +420,6 @@ window.addEventListener('keydown', (event) => {
   }
   if (
     event.key.toLowerCase() === 'p' &&
-    !detachedPreview &&
     !event.metaKey &&
     !event.ctrlKey &&
     !event.altKey &&
@@ -485,6 +495,7 @@ installDragToPan();
 installMinimapNavigation();
 installPreviewFocus();
 installSourceNavigation();
+installSplitResize();
 updateNavigationConfiguration();
 
 new ResizeObserver(() => {
@@ -513,6 +524,7 @@ new MutationObserver(() => {
 }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
 window.addEventListener('pagehide', () => {
+  flushSourceEdit();
   persistState();
   clearMinimapThumbnail();
 });
@@ -706,6 +718,8 @@ function restoreViewState(value: PersistedPreviewState): void {
   autoFit = state.autoFit;
   savedScrollLeft = state.scrollLeft;
   savedScrollTop = state.scrollTop;
+  splitRatio = state.splitRatio;
+  applySplitRatio();
   applyZoom();
   persistState();
 }
@@ -719,6 +733,7 @@ function persistState(): void {
     autoFit,
     scrollLeft: savedScrollLeft,
     scrollTop: savedScrollTop,
+    splitRatio,
     zoom,
   };
   vscode.setState(state);
