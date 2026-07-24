@@ -132,6 +132,7 @@ void test('new-window file previews are copied so both windows stay rendered', (
   assert.doesNotMatch(command, /applyMode/u);
   assert.match(controller, /pendingDetachedCopies/u);
   assert.match(controller, /detachedPanels\.has\(panel\)/u);
+  assert.match(controller, /DETACHED_COPY_TIMEOUT_MS/u);
   assert.doesNotMatch(extension, /workbench\.action\.moveEditorGroupToNewWindow/u);
   assert.doesNotMatch(provider, /workbench\.action\.moveEditorGroupToNewWindow/u);
 });
@@ -371,21 +372,32 @@ void test('the extension can run in local and remote VS Code extension hosts', (
   assert.deepEqual(manifest.extensionKind, ['workspace', 'ui']);
 });
 
-void test('split preview follows the active source without duplicate custom editors', () => {
+void test('preview placement preserves the user layout and scopes state per resource', () => {
   const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
   const controller = readFileSync(
     resolve(__dirname, '../../src/editorLayoutController.ts'),
     'utf8',
   );
+  const documentation = readFileSync(
+    resolve(__dirname, '../../src/documentationFeatures.ts'),
+    'utf8',
+  );
   assert.match(extension, /supportsMultipleEditorsPerDocument:\s*true/u);
-  assert.match(extension, /onDidChangeActiveTextEditor/u);
   assert.match(extension, /onDidChangeTabs/u);
-  assert.match(extension, /syncPreviewForSource/u);
   assert.match(extension, /handleTabsChanged/u);
-  assert.match(controller, /disposeOtherSplitPanels/u);
-  assert.match(controller, /closeDuplicateSourceTabs/u);
+  assert.doesNotMatch(extension, /onDidChangeActiveTextEditor/u);
+  assert.doesNotMatch(extension, /syncPreviewForSource/u);
+  assert.doesNotMatch(controller, /vscode\.getEditorLayout/u);
+  assert.doesNotMatch(controller, /vscode\.setEditorLayout/u);
+  assert.doesNotMatch(controller, /tabGroups\.close/u);
+  assert.doesNotMatch(controller, /ViewColumn\.(?:One|Two)/u);
+  assert.match(controller, /MODE_STATE_KEY_PREFIX/u);
+  assert.match(controller, /vscode\.ViewColumn\.Beside/u);
+  assert.match(controller, /workbench\.action\.newGroupBelow/u);
   assert.match(controller, /detachedPanels/u);
   assert.match(controller, /editorModeAfterSplitClose/u);
+  assert.match(documentation, /workbench\.action\.moveEditorToNewWindow/u);
+  assert.doesNotMatch(documentation, /workbench\.action\.moveEditorGroupToNewWindow/u);
 });
 
 void test('Mermaid rendering stays out of the DOM-less extension host', () => {
