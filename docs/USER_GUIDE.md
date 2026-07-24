@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.4 — User guide
+# Mermaid Preview Offline 1.2.5 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,9 +7,26 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.4 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.5 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
+
+## New in version 1.2.5
+
+Version 1.2.5 overhauls preview and window lifecycle management:
+
+- layout changes affect only the requested Mermaid source or preview and
+  preserve unrelated VS Code groups, tabs, and custom sizes;
+- each preview stays pinned to its file instead of following source-editor
+  focus, so several previews can coexist without replacing one another;
+- detached previews are isolated from the main window and cannot alter its
+  **Beside** or **Above** layout;
+- hidden previews release their Mermaid runtime and restore zoom and scroll
+  from lightweight state when shown again;
+- exports reuse an existing preview even while it is still initializing, and
+  folder exports pause safely while their renderer is hidden;
+- documentation pop-out moves only the preview editor rather than every tab in
+  its editor group.
 
 ## Quick start
 
@@ -57,7 +74,8 @@ editor visible and opens the preview in another group.
 Beside and Above use a real VS Code text editor, so syntax coloring, completion,
 hover help, formatting, diagnostics, snippets, quick fixes, and rename continue
 to work. Drag VS Code's editor-group separator to resize the pair. The extension
-stores that proportion per file and restores it when the split is recreated.
+does not replace or reset the rest of your editor layout; VS Code owns the
+groups and their sizes.
 With the preview focused, press `P` repeatedly to cycle through Preview only,
 Beside, Above, and back to Preview only. From the Mermaid source editor, use
 `Alt+P` (`Option+P` on macOS) to enter or continue that cycle; plain `P` remains
@@ -66,27 +84,25 @@ Click anywhere on the diagram canvas or minimap to focus the preview. The focus
 is also restored after each layout transition, and `P` continues to work when a
 toolbar button has focus. Export form fields keep their normal keyboard input.
 
-Only one companion source/preview pair follows the active Mermaid file. When
-you select another file from the Explorer or another Mermaid text tab in Beside
-or Above, both halves switch to that file regardless of which group previously
-had focus. Closing the source half keeps the diagram in Preview only; closing
-the preview half keeps the native editor in Source only.
+Each preview stays pinned to its Mermaid file. Opening or focusing another
+source never closes, replaces, or moves an existing preview. Run Beside or Above
+for the new file when you want another pair. Closing the source half keeps the
+diagram in Preview only; closing the preview half keeps the native editor in
+Source only.
 
 Copying the preview to a new VS Code window does not change the main Beside or
-Above layout. Auxiliary previews are independent and do not interfere with file
-navigation or split reconciliation in the main window.
+Above layout. Auxiliary previews are explicitly marked as detached, keep their
+own view state, and cannot change the layout of the original window.
 
 ### Session restoration
 
-The selected layout is stored for the workspace. For each Mermaid file, the
-extension also stores zoom, fit mode, scroll position, and the native split
-ratio. VS Code restores open editor tabs; when a preview is reconstructed, the
-extension reapplies its stored view state. The selected diagram theme and
-diagram font are shared by previews in the current VS Code window.
-
-If the restored split no longer matches the expected layout, select the desired
-layout again. If a stale preview survives an interrupted remote session, close
-that tab and reopen the Mermaid source; the source file remains authoritative.
+Zoom, fit mode, and scroll position are stored per Mermaid file. VS Code
+restores the layout of open editor tabs and their group positions; a file opened
+again as a new standalone tab starts in Preview only until another layout is
+explicitly selected. When a webview is reconstructed, the extension reapplies
+its lightweight saved view state instead of keeping every hidden Mermaid
+renderer alive. The selected diagram theme and diagram font are shared by
+previews in the current VS Code window.
 
 ## Rendering and navigation
 
@@ -575,7 +591,8 @@ When resizing is enabled, drag the handle below a card or focus it and use the
 arrow keys; `documentation.maxHeight` can cap its height.
 Select **Present** to show one diagram per full-window slide; use the arrow,
 Page Up/Page Down, Home/End, or Space keys and press Escape to return. **Pop
-out** moves the documentation preview to a separate VS Code window.
+out** moves only the documentation preview editor to a separate VS Code window;
+other tabs in its former group stay where they are.
 
 ![Markdown source beside a live document preview containing multiple Mermaid diagrams](../media/screenshots/preview-markdown.png)
 

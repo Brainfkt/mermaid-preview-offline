@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.4 — Guide utilisateur
+# Mermaid Preview Offline 1.2.5 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,10 +8,30 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.4. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.5. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
+
+## Nouveautés de la version 1.2.5
+
+La version 1.2.5 revoit en profondeur le cycle de vie des aperçus et des
+fenêtres :
+
+- les changements de disposition concernent uniquement la source ou l’aperçu
+  Mermaid demandé et préservent les autres groupes, onglets et dimensions
+  personnalisées de VS Code ;
+- chaque aperçu reste attaché à son fichier au lieu de suivre le focus de
+  l’éditeur source, ce qui permet de conserver plusieurs aperçus sans qu’ils se
+  remplacent ;
+- les aperçus détachés sont isolés de la fenêtre principale et ne peuvent pas
+  modifier sa disposition **Beside** ou **Above** ;
+- les aperçus masqués libèrent leur moteur Mermaid, puis restaurent le zoom et
+  le défilement depuis un état léger lorsqu’ils réapparaissent ;
+- les exports réutilisent un aperçu existant même pendant son initialisation,
+  et les exports de dossiers se mettent en pause si leur moteur est masqué ;
+- le pop-out de la documentation déplace uniquement l’aperçu, et non tous les
+  onglets de son groupe.
 
 ## Démarrage rapide
 
@@ -62,8 +82,8 @@ Beside et Above utilisent un véritable éditeur texte VS Code : la coloration
 syntaxique, l’autocomplétion, l’aide au survol, le formatage, les diagnostics,
 les snippets, les corrections rapides et le renommage restent donc disponibles.
 Faites glisser le séparateur des groupes d’éditeurs VS Code pour redimensionner
-la paire. L’extension mémorise cette proportion pour chaque fichier et la
-restaure lorsque la vue fractionnée est recréée.
+la paire. L’extension ne remplace ni ne réinitialise le reste de votre
+disposition : VS Code reste propriétaire des groupes et de leurs dimensions.
 Lorsque l’aperçu possède le focus, appuyez plusieurs fois sur `P` pour parcourir
 Preview only, Beside, Above, puis revenir à Preview only. Depuis l’éditeur source
 Mermaid, utilisez `Alt+P` (`Option+P` sous macOS) pour rejoindre ou poursuivre ce
@@ -73,31 +93,27 @@ focus à l’aperçu. Le focus est également restauré après chaque changement
 disposition, et `P` continue de fonctionner lorsqu’un bouton de la barre d’outils
 possède le focus. Les champs du formulaire d’export conservent leur saisie normale.
 
-Une seule paire source/aperçu compagnon suit le fichier Mermaid actif. Lorsque
-vous sélectionnez un autre fichier dans l’Explorateur ou un autre onglet texte
-Mermaid en mode Beside ou Above, les deux parties passent sur ce fichier, quel
-que soit le groupe qui possédait auparavant le focus. Fermer la partie source
-conserve le diagramme en mode Preview only ; fermer la partie aperçu conserve
-l’éditeur natif en mode Source only.
+Chaque aperçu reste attaché à son fichier Mermaid. Ouvrir ou sélectionner une
+autre source ne ferme, ne remplace et ne déplace jamais un aperçu existant.
+Exécutez Beside ou Above pour le nouveau fichier si vous souhaitez une autre
+paire. Fermer la partie source conserve le diagramme en mode Preview only ;
+fermer la partie aperçu conserve l’éditeur natif en mode Source only.
 
 Copier l’aperçu dans une nouvelle fenêtre VS Code ne modifie pas la disposition
 Beside ou Above de la fenêtre principale. Les aperçus auxiliaires sont
-indépendants et n’interfèrent ni avec la navigation entre fichiers ni avec la
-réconciliation de la vue fractionnée principale.
+explicitement marqués comme détachés, conservent leur propre état d’affichage et
+ne peuvent pas modifier la disposition de la fenêtre d’origine.
 
 ### Restauration de session
 
-La disposition sélectionnée est enregistrée pour l’espace de travail. Pour
-chaque fichier Mermaid, l’extension enregistre également le zoom, le mode
-d’ajustement, la position de défilement et la proportion de la vue fractionnée
-native. VS Code restaure les onglets ouverts ; lorsqu’un aperçu est reconstruit,
-l’extension réapplique son état d’affichage enregistré. Le thème et la police
-des diagrammes sont communs aux aperçus de la fenêtre VS Code actuelle.
-
-Si la vue fractionnée restaurée ne correspond plus à la disposition attendue,
-sélectionnez de nouveau la disposition voulue. Si un aperçu obsolète subsiste
-après l’interruption d’une session distante, fermez cet onglet et rouvrez la
-source Mermaid ; le fichier source reste la référence.
+Le zoom, le mode d’ajustement et la position de défilement sont enregistrés pour
+chaque fichier Mermaid. VS Code restaure la disposition des onglets restés
+ouverts et la position de leurs groupes ; un fichier rouvert dans un nouvel
+onglet autonome démarre en mode Preview only jusqu’à la sélection explicite
+d’une autre disposition. Lorsqu’une webview est reconstruite, l’extension
+réapplique son état léger au lieu de conserver tous les moteurs de rendu Mermaid
+cachés en mémoire. Le thème et la police des diagrammes sont communs aux aperçus
+de la fenêtre VS Code actuelle.
 
 ## Rendu et navigation
 
@@ -610,7 +626,7 @@ limiter sa hauteur.
 Sélectionnez **Present** pour afficher un diagramme par diapositive plein écran ;
 utilisez les flèches, Page précédente/suivante, Début/Fin ou Espace, puis Échap
 pour revenir. **Pop out** déplace l’aperçu documentaire dans une fenêtre VS Code
-distincte.
+distincte, sans déplacer les autres onglets de son groupe.
 
 ![La source Markdown à côté de l’aperçu en direct de plusieurs diagrammes Mermaid intégrés](../media/screenshots/preview-markdown.png)
 
