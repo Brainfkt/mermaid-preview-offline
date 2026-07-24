@@ -39,6 +39,16 @@ void test('detached previews keep an independent internal layout', () => {
   assert.doesNotMatch(webview, /editorLayoutButton\.disabled = detachedPreview/u);
 });
 
+void test('managed previews share their selected layout across Mermaid files', () => {
+  const controller = source('editorLayoutController.ts');
+
+  assert.match(controller, /MODE_STATE_KEY = 'mermaidPreviewOffline\.editorMode'/u);
+  assert.match(controller, /pendingSharedMode/u);
+  assert.match(controller, /workspaceState\.get<unknown>\(MODE_STATE_KEY\)/u);
+  assert.match(controller, /modeEmitter\.fire\(\{ mode \}\)/u);
+  assert.doesNotMatch(controller, /modeKey\(/u);
+});
+
 void test('internal source edits are versioned, serialized, and conflict-safe', () => {
   const provider = source('mermaidPreviewProvider.ts');
   const protocol = source('protocol.ts');
@@ -54,6 +64,22 @@ void test('internal source edits are versioned, serialized, and conflict-safe', 
   assert.match(webview, /sourceReloadButton\.hidden = false/u);
   assert.match(webview, /vscode\.postMessage\(\{\s*type: 'replaceDocument'/u);
   assert.match(webview, /vscode\.postMessage\(\{ type: 'saveDocument' \}\)/u);
+});
+
+void test('Source only opens the full VS Code text editor instead of the internal textarea', () => {
+  const controller = source('editorLayoutController.ts');
+  const webview = source('webview.ts');
+  const openSourceOnly = webview.match(
+    /function openSourceOnly\(\): void \{[\s\S]*?\n\}/u,
+  )?.[0];
+
+  assert.ok(openSourceOnly);
+  assert.match(controller, /if \(mode === 'source'\)/u);
+  assert.match(controller, /vscode\.workspace\.openTextDocument\(uri\)/u);
+  assert.match(controller, /vscode\.window\.showTextDocument\(document/u);
+  assert.match(openSourceOnly, /flushSourceEdit\(\)/u);
+  assert.match(openSourceOnly, /postMessage\(\{ type: 'openNativeSource' \}\)/u);
+  assert.doesNotMatch(openSourceOnly, /editorMode = 'source'/u);
 });
 
 void test('documentation preview readiness is bounded and pop-out moves only its editor', () => {
