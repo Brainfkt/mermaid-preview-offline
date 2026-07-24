@@ -85,7 +85,7 @@ export type ExtensionToWebviewMessage =
       type: 'restoreViewState';
       state: PersistedPreviewState;
     }
-  | { type: 'editorMode'; mode: MermaidEditorMode }
+  | { type: 'editorMode'; detached: boolean; mode: MermaidEditorMode }
   | { type: 'exportConfiguration'; profiles: ExportProfile[]; settings: ExportSettings }
   | { type: 'showExportDialog' }
   | {

@@ -59,6 +59,7 @@ interface PendingDocumentationExport {
 
 type DocumentationExportFormat = Extract<ExportFormat, 'png' | 'svg'>;
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
+const DOCUMENTATION_READY_TIMEOUT_MS = 15_000;
 
 export class MermaidDocumentationFeatures implements vscode.Disposable {
   private readonly disposables: vscode.Disposable[] = [];
@@ -66,6 +67,8 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private panelReady: Promise<void> = Promise.resolve();
   private resolvePanelReady: (() => void) | undefined;
+  private rejectPanelReady: ((error: Error) => void) | undefined;
+  private panelReadyTimer: NodeJS.Timeout | undefined;
   private previewContext: PreviewContext | undefined;
   private previewBlocks: MermaidDocumentationBlock[] = [];
   private refreshGeneration = 0;
@@ -187,12 +190,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       return;
     }
 
-    this.previewContext = { kind, mode: 'all', uri: document.uri };
-    this.ensurePanel(document);
-    await this.panelReady;
-    await this.postPreviewData(document);
-
     try {
+      this.previewContext = { kind, mode: 'all', uri: document.uri };
+      this.ensurePanel(document);
+      await this.panelReady;
+      await this.postPreviewData(document);
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -218,9 +220,15 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
   }
 
   private async showPreview(document: vscode.TextDocument): Promise<void> {
-    this.ensurePanel(document);
-    await this.panelReady;
-    await this.postPreviewData(document);
+    try {
+      this.ensurePanel(document);
+      await this.panelReady;
+      await this.postPreviewData(document);
+    } catch (error: unknown) {
+      void vscode.window.showErrorMessage(
+        `Could not open Mermaid documentation preview: ${errorMessageOf(error)}`,
+      );
+    }
   }
 
   private ensurePanel(document: vscode.TextDocument): void {
@@ -243,9 +251,17 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       },
     );
     this.panel = panel;
-    this.panelReady = new Promise((resolve) => {
+    this.panelReady = new Promise((resolve, reject) => {
       this.resolvePanelReady = resolve;
+      this.rejectPanelReady = reject;
     });
+    this.panelReadyTimer = setTimeout(() => {
+      if (this.panel !== panel || !this.rejectPanelReady) return;
+      this.settlePanelReady(
+        new Error('The documentation preview did not become ready in time.'),
+      );
+      panel.dispose();
+    }, DOCUMENTATION_READY_TIMEOUT_MS);
     const scriptUri = panel.webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionContext.extensionUri, 'dist', 'documentation-webview.js'),
     );
@@ -272,8 +288,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       viewStateSubscription.dispose();
       if (this.panel === panel) this.panel = undefined;
       this.dirtyWhileHidden = false;
-      this.resolvePanelReady?.();
-      this.resolvePanelReady = undefined;
+      this.settlePanelReady(new Error('The documentation preview was closed before it was ready.'));
       this.panelReady = Promise.resolve();
       this.rejectPendingExports(new Error('The documentation renderer was closed.'));
     });
@@ -282,8 +297,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
   private async handleWebviewMessage(message: unknown): Promise<void> {
     if (!isDocumentationWebviewMessage(message)) return;
     if (message.type === 'ready') {
-      this.resolvePanelReady?.();
-      this.resolvePanelReady = undefined;
+      this.settlePanelReady();
       return;
     }
     if (message.type === 'revealSource') {
@@ -292,7 +306,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     }
     if (message.type === 'openInNewWindow') {
       this.panel?.reveal(vscode.ViewColumn.Active, false);
-      await vscode.commands.executeCommand('workbench.action.moveEditorGroupToNewWindow');
+      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
       return;
     }
     const pending = this.pendingExports.get(message.requestId);
@@ -530,6 +544,22 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       pending.reject(error);
     }
     this.pendingExports.clear();
+  }
+
+  private settlePanelReady(error?: Error): void {
+    if (this.panelReadyTimer) {
+      clearTimeout(this.panelReadyTimer);
+      this.panelReadyTimer = undefined;
+    }
+    const resolve = this.resolvePanelReady;
+    const reject = this.rejectPanelReady;
+    this.resolvePanelReady = undefined;
+    this.rejectPanelReady = undefined;
+    if (error) {
+      reject?.(error);
+    } else {
+      resolve?.();
+    }
   }
 }
 

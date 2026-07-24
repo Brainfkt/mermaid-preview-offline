@@ -58,15 +58,9 @@ export function activate(context: vscode.ExtensionContext): void {
     documentationFeatures,
     vscode.window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, provider, {
       supportsMultipleEditorsPerDocument: true,
-      webviewOptions: { retainContextWhenHidden: true },
+      webviewOptions: { retainContextWhenHidden: false },
     }),
     vscode.tasks.registerTaskProvider(MERMAID_EXPORT_TASK_TYPE, exportTaskProvider),
-    vscode.window.onDidChangeActiveTextEditor((editor) => {
-      const uri = editor?.document.uri;
-      if (uri && isMermaidDocument(uri)) {
-        void layoutController.syncPreviewForSource(uri);
-      }
-    }),
     vscode.window.tabGroups.onDidChangeTabs((event) => {
       void layoutController.handleTabsChanged(event);
     }),
@@ -165,10 +159,6 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  const activeSourceUri = vscode.window.activeTextEditor?.document.uri;
-  if (activeSourceUri && isMermaidDocument(activeSourceUri)) {
-    void layoutController.syncPreviewForSource(activeSourceUri);
-  }
 }
 
 export function deactivate(): void {}

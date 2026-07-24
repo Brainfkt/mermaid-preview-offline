@@ -65,7 +65,9 @@ interface BatchSession {
   files: BatchFile[];
   nextIndex: number;
   outputDirectory: vscode.Uri;
+  paused: boolean;
   pendingFile?: BatchFile;
+  processingResult: boolean;
   settings: ExportSettings;
   total: number;
   webview: vscode.Webview;
@@ -108,18 +110,19 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
   public async showExportDialog(documentUri: vscode.Uri): Promise<void> {
     const key = documentUri.toString();
-    const panel = [...(this.panels.get(key) ?? [])].find((candidate) =>
-      this.readyPanels.has(candidate),
-    );
-    if (panel) {
-      panel.reveal(panel.viewColumn, true);
-      await panel.webview.postMessage({ type: 'showExportDialog' });
+    const readyPanel = this.panelForInteraction(documentUri, true);
+    if (readyPanel) {
+      readyPanel.reveal(readyPanel.viewColumn ?? vscode.ViewColumn.Active, true);
+      await readyPanel.webview.postMessage({ type: 'showExportDialog' });
       return;
     }
     this.pendingExportDialogs.add(key);
-    if (!panel) {
-      await vscode.commands.executeCommand('vscode.openWith', documentUri, MERMAID_PREVIEW_VIEW_TYPE);
+    const existingPanel = this.panelForInteraction(documentUri, false);
+    if (existingPanel) {
+      existingPanel.reveal(existingPanel.viewColumn ?? vscode.ViewColumn.Active, true);
+      return;
     }
+    await vscode.commands.executeCommand('vscode.openWith', documentUri, MERMAID_PREVIEW_VIEW_TYPE);
   }
 
   public async exportFolder(sourceDirectory?: vscode.Uri): Promise<void> {
@@ -157,7 +160,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
 
       const documentUri = files[0]!.uri;
       const settings = readExportConfiguration(documentUri);
-      const readyPanel = this.readyPanels.values().next().value;
+      const readyPanel = this.readyRenderPanel();
       if (readyPanel) {
         await this.startBatchExport(
           documentUri,
@@ -177,7 +180,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       });
       const existingPanel = this.panels.get(panelKey)?.values().next().value;
       if (existingPanel) {
-        existingPanel.reveal(existingPanel.viewColumn, true);
+        existingPanel.reveal(existingPanel.viewColumn ?? vscode.ViewColumn.Active, true);
         return;
       }
       try {
@@ -373,15 +376,23 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       }
     });
 
-    const modeSubscription = this.layoutController.onDidChangeMode((mode) => {
-      void webview.postMessage({ type: 'editorMode', mode });
+    const modeSubscription = this.layoutController.onDidChangeMode((event) => {
+      if (
+        event.uri.toString() === document.uri.toString() &&
+        !this.layoutController.isDetachedPanel(webviewPanel)
+      ) {
+        void webview.postMessage({
+          detached: false,
+          type: 'editorMode',
+          mode: this.layoutController.modeForPanel(document.uri, webviewPanel),
+        });
+      }
     });
 
     const panelStateSubscription = webviewPanel.onDidChangeViewState((event) => {
-      if (event.webviewPanel.active) {
-        void this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
-      } else {
-        void this.layoutController.saveCurrentRatio(document.uri, true);
+      if (!event.webviewPanel.visible) {
+        this.readyPanels.delete(webviewPanel);
+        this.pauseBatchSessions(webview);
       }
       if (event.webviewPanel.visible && dirtyWhileHidden) {
         if (configuration().refreshMode === 'manual') {
@@ -417,11 +428,14 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
             }
           }
           await webview.postMessage({
+            detached: this.layoutController.isDetachedPanel(webviewPanel),
             type: 'editorMode',
-            mode: this.layoutController.getMode(),
+            mode: this.layoutController.isDetachedPanel(webviewPanel)
+              ? 'preview'
+              : this.layoutController.modeForPanel(document.uri, webviewPanel),
           });
           queueDocument(0);
-          await this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
+          await this.resumeBatchSessions(webview);
           if (this.pendingExportDialogs.delete(panelKey)) {
             await webview.postMessage({ type: 'showExportDialog' });
           }
@@ -533,7 +547,10 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         this.pendingFolderExports.delete(panelKey);
       }
       this.readyPanels.delete(webviewPanel);
-      void this.layoutController.saveCurrentRatio(document.uri, true);
+      this.cancelBatchSessions(
+        webview,
+        'The preview used for folder export was closed.',
+      );
       if (documentTimer) clearTimeout(documentTimer);
       if (stateTimer) clearTimeout(stateTimer);
       if (pendingState) void this.context.workspaceState.update(stateKey, pendingState);
@@ -545,11 +562,45 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       panelRegistration.dispose();
     });
 
-    void this.layoutController.restoreModeForPanel(document.uri, webviewPanel);
   }
 
   private exportProfiles(): ExportProfile[] {
     return normalizeExportProfiles(this.context.globalState.get(EXPORT_PROFILES_KEY));
+  }
+
+  private panelForInteraction(
+    uri: vscode.Uri,
+    readyOnly: boolean,
+  ): vscode.WebviewPanel | undefined {
+    const panels = [...(this.panels.get(uri.toString()) ?? [])].filter(
+      (panel) => !readyOnly || this.readyPanels.has(panel),
+    );
+    const managed = panels.filter(
+      (panel) => !this.layoutController.isDetachedPanel(panel),
+    );
+    return (
+      managed.find((panel) => panel.active) ??
+      managed.find((panel) => panel.visible) ??
+      managed[0] ??
+      panels.find((panel) => panel.active) ??
+      panels.find((panel) => panel.visible) ??
+      panels[0]
+    );
+  }
+
+  private readyRenderPanel(): vscode.WebviewPanel | undefined {
+    const panels = [...this.readyPanels];
+    const managed = panels.filter(
+      (panel) => !this.layoutController.isDetachedPanel(panel),
+    );
+    return (
+      managed.find((panel) => panel.active) ??
+      managed.find((panel) => panel.visible) ??
+      managed[0] ??
+      panels.find((panel) => panel.active) ??
+      panels.find((panel) => panel.visible) ??
+      panels[0]
+    );
   }
 
   private async revealSourceLine(
@@ -564,7 +615,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       preserveFocus: false,
       preview: false,
       selection: new vscode.Range(position, position),
-      viewColumn: vscode.ViewColumn.One,
+      viewColumn:
+        this.layoutController.sourceColumnFor(document.uri) ??
+        vscode.ViewColumn.Active,
     });
     editor.revealRange(
       new vscode.Range(position, position),
@@ -762,6 +815,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       files,
       nextIndex: 0,
       outputDirectory,
+      paused: false,
+      processingResult: false,
       settings: normalizeExportSettings(rawSettings),
       total: files.length,
       webview,
@@ -802,7 +857,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     if (!session) {
       return;
     }
-    if (session.pendingFile) {
+    if (session.paused || session.pendingFile) {
       return;
     }
     const file = session.files[session.nextIndex];
@@ -824,6 +879,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       const source = await inlineLocalImages(sourceText, (reference) =>
         loadWorkspaceImage(file.uri, reference),
       );
+      if (session.paused || session.pendingFile !== file) {
+        return;
+      }
       const delivered = await session.webview.postMessage({
         type: 'batchExportFile',
         batchId,
@@ -838,6 +896,9 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         throw new Error('The export renderer is no longer available.');
       }
     } catch (error: unknown) {
+      if (session.paused || session.pendingFile !== file) {
+        return;
+      }
       session.failures.push(`${file.fileName}: ${errorMessageOf(error)}`);
       session.completed += 1;
       session.pendingFile = undefined;
@@ -860,6 +921,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     ) {
       return;
     }
+    session.processingResult = true;
     try {
       const directory = pendingFile.relativeDirectory
         ? vscode.Uri.joinPath(session.outputDirectory, ...pendingFile.relativeDirectory.split('/'))
@@ -873,6 +935,8 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       await vscode.workspace.fs.writeFile(target, decodeBase64(message.artifact.dataBase64));
     } catch (error: unknown) {
       session.failures.push(`${pendingFile.fileName}: ${errorMessageOf(error)}`);
+    } finally {
+      session.processingResult = false;
     }
     session.pendingFile = undefined;
     session.completed += 1;
@@ -911,6 +975,35 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     void vscode.window.showWarningMessage(
       `${succeeded}/${session.total} diagrams exported. ${session.failures.length} failed: ${firstFailure}`,
     );
+  }
+
+  private pauseBatchSessions(webview: vscode.Webview): void {
+    for (const session of this.batchSessions.values()) {
+      if (session.webview !== webview || session.paused) continue;
+      session.paused = true;
+      if (session.pendingFile && !session.processingResult) {
+        session.nextIndex = Math.max(0, session.nextIndex - 1);
+        session.pendingFile = undefined;
+      }
+    }
+  }
+
+  private async resumeBatchSessions(webview: vscode.Webview): Promise<void> {
+    for (const [batchId, session] of this.batchSessions) {
+      if (session.webview !== webview || !session.paused) continue;
+      session.paused = false;
+      await this.sendNextBatchFile(batchId);
+    }
+  }
+
+  private cancelBatchSessions(webview: vscode.Webview, reason: string): void {
+    for (const [batchId, session] of this.batchSessions) {
+      if (session.webview !== webview) continue;
+      this.batchSessions.delete(batchId);
+      void vscode.window.showWarningMessage(
+        `${reason} ${session.completed}/${session.total} diagrams completed.`,
+      );
+    }
   }
 
   private async saveSvg(documentUri: vscode.Uri, svg: string): Promise<void> {

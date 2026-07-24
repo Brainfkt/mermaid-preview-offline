@@ -135,6 +135,7 @@ let autoFit = initialState.autoFit;
 let savedScrollLeft = initialState.scrollLeft;
 let savedScrollTop = initialState.scrollTop;
 let editorMode: MermaidEditorMode = 'preview';
+let detachedPreview = false;
 let diagramTheme: DiagramTheme = DEFAULT_CONFIGURATION.diagramTheme;
 let naturalWidth = 800;
 let naturalHeight = 600;
@@ -233,6 +234,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       break;
     case 'editorMode':
       editorMode = message.mode;
+      detachedPreview = message.detached;
       updateEditorMode();
       requestAnimationFrame(focusPreviewSurface);
       break;
@@ -387,6 +389,7 @@ window.addEventListener('keydown', (event) => {
   }
   if (
     event.key.toLowerCase() === 'p' &&
+    !detachedPreview &&
     !event.metaKey &&
     !event.ctrlKey &&
     !event.altKey &&
@@ -798,7 +801,16 @@ function updateEditorMode(): void {
     preview: 'Preview only',
     source: 'Source only',
   };
-  editorLayoutLabel.textContent = labels[editorMode];
+  editorLayoutButton.disabled = detachedPreview;
+  editorLayoutLabel.textContent = detachedPreview ? 'Detached' : labels[editorMode];
+  if (detachedPreview) {
+    editorLayoutButton.title = 'Detached preview; editor layout stays independent';
+    editorLayoutButton.setAttribute(
+      'aria-label',
+      'Detached preview; editor layout controls are available in the original window',
+    );
+    return;
+  }
   editorLayoutButton.title = `Editor layout: ${descriptions[editorMode]} (P to cycle)`;
   editorLayoutButton.setAttribute(
     'aria-label',
