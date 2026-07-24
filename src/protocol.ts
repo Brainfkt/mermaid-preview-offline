@@ -57,6 +57,7 @@ export interface PersistedPreviewState {
   autoFit: boolean;
   scrollLeft: number;
   scrollTop: number;
+  splitRatio: number;
   zoom: number;
 }
 
@@ -67,6 +68,7 @@ export type ExtensionToWebviewMessage =
     }
   | {
       type: 'document';
+      documentSource: string;
       source: string;
       fileName: string;
       sourceUri: string;
@@ -77,9 +79,18 @@ export type ExtensionToWebviewMessage =
     }
   | {
       type: 'documentChanged';
+      documentSource: string;
       fileName: string;
       version: number;
       byteLength: number;
+    }
+  | {
+      type: 'sourceEditResult';
+      applied: boolean;
+      documentSource?: string;
+      error?: string;
+      requestId: number;
+      version: number;
     }
   | {
       type: 'restoreViewState';
@@ -114,9 +125,16 @@ export type WebviewToExtensionMessage =
   | { type: 'cycleEditorMode' }
   | { type: 'setEditorMode'; mode: MermaidEditorMode }
   | { type: 'openInNewWindow' }
+  | { type: 'openNativeSource' }
   | { type: 'openDiagramGallery' }
   | { type: 'requestDocument' }
-  | { type: 'revealSourceLine'; line: number }
+  | {
+      type: 'replaceDocument';
+      requestId: number;
+      source: string;
+      version: number;
+    }
+  | { type: 'saveDocument' }
   | { type: 'setDiagramDensity'; density: DiagramDensity }
   | { type: 'setDiagramSurface'; surface: DiagramSurfaceConfiguration }
   | { type: 'setDiagramTheme'; theme: DiagramTheme }

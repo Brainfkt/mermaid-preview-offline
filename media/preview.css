@@ -345,11 +345,211 @@ select:focus-visible {
 }
 
 .workspace {
+  --source-ratio: 42%;
   position: absolute;
   inset: 0;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+}
+
+.workspace--preview,
+.workspace--source {
+  display: block;
+}
+
+.workspace--beside {
+  display: grid;
+  grid-template-columns: var(--source-ratio) 6px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.workspace--above {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--source-ratio) 6px minmax(0, 1fr);
+}
+
+.workspace--preview .source-pane,
+.workspace--preview .split-handle,
+.workspace--source .preview-pane,
+.workspace--source .split-handle {
+  display: none;
+}
+
+.source-pane,
+.preview-pane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workspace--source .source-pane,
+.workspace--preview .preview-pane {
+  width: 100%;
+  height: 100%;
+}
+
+.source-pane {
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+}
+
+.source-pane__header {
+  z-index: 1;
+  position: absolute;
+  top: 43px;
+  right: 0;
+  left: 0;
+  display: flex;
+  height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--preview-border);
+  padding: 0 9px 0 12px;
+  color: var(--preview-muted);
+  background: color-mix(in srgb, var(--vscode-editor-background) 94%, transparent);
+  font-size: 10px;
+}
+
+.source-pane__header > div {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.source-pane__status {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-pane__reload,
+.source-pane__native {
+  height: 22px;
+  border: 1px solid var(--preview-border);
+  border-radius: 5px;
+  padding: 1px 7px;
+  color: var(--vscode-foreground);
+  background: transparent;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.source-pane__reload:hover,
+.source-pane__native:hover {
+  background: var(--preview-surface-hover);
+}
+
+.source-pane__reload[hidden] {
+  display: none;
+}
+
+.source-editor {
+  position: absolute;
+  inset: 73px 0 28px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.source-editor__lines,
+.source-editor__input {
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  padding-block: 10px 24px;
+  color: var(--vscode-editor-foreground);
+  background: var(--vscode-editor-background);
+  font-family: var(
+    --vscode-editor-font-family,
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace
+  );
+  font-size: var(--vscode-editor-font-size, 13px);
+  font-variant-ligatures: var(--vscode-editor-font-ligatures, none);
+  line-height: 1.55;
+  tab-size: 2;
+}
+
+.source-editor__lines {
+  overflow: hidden;
+  border-right: 1px solid var(--preview-border);
+  padding-right: 9px;
+  color: var(--vscode-editorLineNumber-foreground, var(--preview-muted));
+  text-align: right;
+  user-select: none;
+}
+
+.source-editor__input {
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  padding-right: 16px;
+  padding-left: 14px;
+  outline: 0;
+  white-space: pre;
+}
+
+.source-editor__input:focus {
+  box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.source-editor__input::selection {
+  color: var(--vscode-editor-selectionForeground, inherit);
+  background: var(--vscode-editor-selectionBackground);
+}
+
+.split-handle {
+  z-index: 1;
+  position: relative;
+  background: var(--preview-border);
+  touch-action: none;
+}
+
+.workspace--beside .split-handle {
+  cursor: col-resize;
+}
+
+.workspace--above .split-handle {
+  cursor: row-resize;
+}
+
+.split-handle::after {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--preview-muted);
+  content: '';
+  opacity: 0.55;
+}
+
+.workspace--beside .split-handle::after {
+  top: calc(50% - 18px);
+  left: 2px;
+  width: 2px;
+  height: 36px;
+}
+
+.workspace--above .split-handle::after {
+  top: 2px;
+  left: calc(50% - 18px);
+  width: 36px;
+  height: 2px;
+}
+
+.split-handle:hover,
+.split-handle:focus-visible,
+.split-handle--dragging {
+  background: var(--vscode-focusBorder);
+  outline: 0;
 }
 
 .viewport {

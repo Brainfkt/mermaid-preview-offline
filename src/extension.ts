@@ -61,9 +61,6 @@ export function activate(context: vscode.ExtensionContext): void {
       webviewOptions: { retainContextWhenHidden: false },
     }),
     vscode.tasks.registerTaskProvider(MERMAID_EXPORT_TASK_TYPE, exportTaskProvider),
-    vscode.window.tabGroups.onDidChangeTabs((event) => {
-      void layoutController.handleTabsChanged(event);
-    }),
     vscode.commands.registerCommand(OPEN_PREVIEW_COMMAND, async (resource?: vscode.Uri) => {
       await applyEditorMode(layoutController, 'preview', resource);
     }),

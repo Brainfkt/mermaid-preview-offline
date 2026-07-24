@@ -136,56 +136,91 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
     </div>
   </section>
 
-  <main id="workspace" class="workspace">
-    <div class="diagram-search glass-surface" id="diagram-search" hidden>
-      ${icon('search')}
-      <input id="diagram-search-input" type="search" placeholder="Find a node or label" autocomplete="off" aria-label="Find in diagram">
-      <span id="diagram-search-count" aria-live="polite"></span>
-      <button class="button button--icon" id="diagram-search-previous" type="button" title="Previous match">↑</button>
-      <button class="button button--icon" id="diagram-search-next" type="button" title="Next match">↓</button>
-      <button class="button button--icon" id="diagram-search-close" type="button" title="Close search">×</button>
-    </div>
-    <section id="viewport" class="viewport" tabindex="0" aria-label="Mermaid diagram preview">
-      <section id="empty-state" class="state-card glass-surface">
-        <h1>Empty diagram</h1>
-        <p>This Mermaid diagram is empty.</p>
-        <div class="state-card__actions">
-          <button class="button button--accent" id="empty-open-source" type="button">Open source</button>
-          <button class="button" id="empty-open-gallery" type="button">Browse templates &amp; examples</button>
+  <main id="workspace" class="workspace workspace--preview">
+    <section class="source-pane" id="source-pane" aria-label="Mermaid source">
+      <header class="source-pane__header">
+        <span>Mermaid source</span>
+        <div>
+          <span class="source-pane__status" id="source-edit-status" role="status" aria-live="polite">Saved</span>
+          <button class="source-pane__reload" id="source-reload" type="button" hidden>Reload file</button>
+          <button class="source-pane__native" id="open-native-source" type="button" title="Open the full VS Code text editor">Full editor</button>
         </div>
-      </section>
-
-      <section id="loading-state" class="state-card state-card--compact glass-surface" hidden aria-live="polite">
-        <span class="spinner" aria-hidden="true"></span>
-        <span>Rendering…</span>
-      </section>
-
-      <section id="error-state" class="error-card glass-surface" hidden role="alert">
-        <div class="error-card__heading">
-          <span class="error-card__icon" aria-hidden="true">!</span>
-          <div>
-            <h1>Mermaid could not render this file</h1>
-            <p id="error-help">Fix the source and refresh the preview.</p>
-          </div>
-        </div>
-        <p class="error-card__location" id="error-location" hidden></p>
-        <pre id="error-excerpt" hidden></pre>
-        <details class="error-card__details">
-          <summary>Technical details</summary>
-          <pre id="error-message"></pre>
-        </details>
-        <div class="error-card__actions">
-          <button class="button button--accent" id="error-open-source" type="button">Fix source</button>
-          <button class="button" id="error-retry" type="button">Retry</button>
-        </div>
-      </section>
-
-      <div id="diagram" class="diagram" hidden></div>
+      </header>
+      <div class="source-editor">
+        <pre class="source-editor__lines" id="source-line-numbers" aria-hidden="true">1</pre>
+        <textarea
+          class="source-editor__input"
+          id="source-editor"
+          aria-label="Mermaid source editor"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          wrap="off"
+        ></textarea>
+      </div>
     </section>
-    <aside id="minimap" class="minimap glass-surface" aria-label="Diagram minimap" title="Drag to navigate the diagram" hidden>
-      <div id="minimap-diagram" class="minimap__diagram" aria-hidden="true"></div>
-      <div id="minimap-window" class="minimap__window" aria-hidden="true"></div>
-    </aside>
+    <div
+      class="split-handle"
+      id="split-handle"
+      role="separator"
+      aria-label="Resize source and preview"
+      aria-orientation="vertical"
+      aria-valuemin="20"
+      aria-valuemax="80"
+      aria-valuenow="42"
+      tabindex="0"
+    ></div>
+    <section class="preview-pane" id="preview-pane" aria-label="Mermaid preview">
+      <div class="diagram-search glass-surface" id="diagram-search" hidden>
+        ${icon('search')}
+        <input id="diagram-search-input" type="search" placeholder="Find a node or label" autocomplete="off" aria-label="Find in diagram">
+        <span id="diagram-search-count" aria-live="polite"></span>
+        <button class="button button--icon" id="diagram-search-previous" type="button" title="Previous match">↑</button>
+        <button class="button button--icon" id="diagram-search-next" type="button" title="Next match">↓</button>
+        <button class="button button--icon" id="diagram-search-close" type="button" title="Close search">×</button>
+      </div>
+      <section id="viewport" class="viewport" tabindex="0" aria-label="Mermaid diagram preview">
+        <section id="empty-state" class="state-card glass-surface">
+          <h1>Empty diagram</h1>
+          <p>This Mermaid diagram is empty.</p>
+          <div class="state-card__actions">
+            <button class="button button--accent" id="empty-open-source" type="button">Open source</button>
+            <button class="button" id="empty-open-gallery" type="button">Browse templates &amp; examples</button>
+          </div>
+        </section>
+
+        <section id="loading-state" class="state-card state-card--compact glass-surface" hidden aria-live="polite">
+          <span class="spinner" aria-hidden="true"></span>
+          <span>Rendering…</span>
+        </section>
+
+        <section id="error-state" class="error-card glass-surface" hidden role="alert">
+          <div class="error-card__heading">
+            <span class="error-card__icon" aria-hidden="true">!</span>
+            <div>
+              <h1>Mermaid could not render this file</h1>
+              <p id="error-help">Fix the source and refresh the preview.</p>
+            </div>
+          </div>
+          <p class="error-card__location" id="error-location" hidden></p>
+          <pre id="error-excerpt" hidden></pre>
+          <details class="error-card__details">
+            <summary>Technical details</summary>
+            <pre id="error-message"></pre>
+          </details>
+          <div class="error-card__actions">
+            <button class="button button--accent" id="error-open-source" type="button">Fix source</button>
+            <button class="button" id="error-retry" type="button">Retry</button>
+          </div>
+        </section>
+
+        <div id="diagram" class="diagram" hidden></div>
+      </section>
+      <aside id="minimap" class="minimap glass-surface" aria-label="Diagram minimap" title="Drag to navigate the diagram" hidden>
+        <div id="minimap-diagram" class="minimap__diagram" aria-hidden="true"></div>
+        <div id="minimap-window" class="minimap__window" aria-hidden="true"></div>
+      </aside>
+    </section>
   </main>
 
   <dialog class="export-dialog glass-surface" id="export-dialog" aria-labelledby="export-title">

@@ -8,6 +8,7 @@ export const DEFAULT_PREVIEW_STATE: PersistedPreviewState = {
   autoFit: true,
   scrollLeft: 0,
   scrollTop: 0,
+  splitRatio: 0.42,
   zoom: 1,
 };
 
@@ -20,6 +21,7 @@ export function normalizePreviewState(value: unknown): PersistedPreviewState {
     autoFit: typeof value.autoFit === 'boolean' ? value.autoFit : true,
     scrollLeft: finiteNonNegative(value.scrollLeft),
     scrollTop: finiteNonNegative(value.scrollTop),
+    splitRatio: clamp(finiteNumber(value.splitRatio, 0.42), 0.2, 0.8),
     zoom: clamp(finiteNumber(value.zoom, 1), 0.15, 4),
   };
 }

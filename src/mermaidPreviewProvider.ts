@@ -217,6 +217,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     let documentGeneration = 0;
     let documentTimer: NodeJS.Timeout | undefined;
     let stateTimer: NodeJS.Timeout | undefined;
+    let sourceEditQueue = Promise.resolve();
     let pendingState: PersistedPreviewState | undefined;
     let dirtyWhileHidden = false;
     let lastDocumentLoadError = '';
@@ -285,6 +286,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       lastDocumentLoadError = '';
       await webview.postMessage({
         type: 'document',
+        documentSource,
         source,
         fileName: fileNameOf(document.uri),
         sourceUri: document.uri.toString(),
@@ -356,6 +358,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         if (webviewPanel.visible) {
           void webview.postMessage({
             type: 'documentChanged',
+            documentSource: document.getText(),
             fileName: fileNameOf(document.uri),
             version: document.version,
             byteLength: estimatedDocumentByteLength(document),
@@ -379,10 +382,10 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     const modeSubscription = this.layoutController.onDidChangeMode((event) => {
       if (
         event.uri.toString() === document.uri.toString() &&
-        !this.layoutController.isDetachedPanel(webviewPanel)
+        (!event.panel || event.panel === webviewPanel)
       ) {
         void webview.postMessage({
-          detached: false,
+          detached: this.layoutController.isDetachedPanel(webviewPanel),
           type: 'editorMode',
           mode: this.layoutController.modeForPanel(document.uri, webviewPanel),
         });
@@ -399,6 +402,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           dirtyWhileHidden = false;
           void webview.postMessage({
             type: 'documentChanged',
+            documentSource: document.getText(),
             fileName: fileNameOf(document.uri),
             version: document.version,
             byteLength: estimatedDocumentByteLength(document),
@@ -430,9 +434,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
           await webview.postMessage({
             detached: this.layoutController.isDetachedPanel(webviewPanel),
             type: 'editorMode',
-            mode: this.layoutController.isDetachedPanel(webviewPanel)
-              ? 'preview'
-              : this.layoutController.modeForPanel(document.uri, webviewPanel),
+            mode: this.layoutController.modeForPanel(document.uri, webviewPanel),
           });
           queueDocument(0);
           await this.resumeBatchSessions(webview);
@@ -464,14 +466,29 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         case 'openInNewWindow':
           await this.layoutController.copyPreviewToNewWindow(document.uri, webviewPanel);
           break;
+        case 'openNativeSource':
+          await this.openNativeSource(document, webviewPanel);
+          break;
         case 'openDiagramGallery':
           await vscode.commands.executeCommand(OPEN_GALLERY_FOR_FILE_COMMAND, document.uri);
           break;
         case 'requestDocument':
           queueDocument(0);
           break;
-        case 'revealSourceLine':
-          await this.revealSourceLine(document, webviewPanel, message.line);
+        case 'replaceDocument': {
+          const replace = async (): Promise<void> => {
+            await this.replaceDocumentSource(document, webview, message);
+          };
+          const queued = sourceEditQueue.then(replace, replace);
+          sourceEditQueue = queued.then(() => undefined, () => undefined);
+          await queued;
+          break;
+        }
+        case 'saveDocument':
+          await sourceEditQueue;
+          if (!await document.save()) {
+            void vscode.window.showWarningMessage('Mermaid source could not be saved.');
+          }
           break;
         case 'setDiagramDensity':
           await this.updateAndBroadcastAppearance(
