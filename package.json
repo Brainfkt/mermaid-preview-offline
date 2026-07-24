@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"

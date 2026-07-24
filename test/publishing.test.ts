@@ -39,7 +39,7 @@ void test('le manifeste pointe vers le dépôt autonome', () => {
 });
 
 void test('le publisher et les commandes de publication sont configurés', () => {
-  assert.equal(manifest.version, '1.2.5');
+  assert.equal(manifest.version, '1.2.6');
   assert.match(manifest.publisher, /^[a-zA-Z0-9][a-zA-Z0-9-]{2,49}$/u);
   assert.match(manifest.scripts['package:vsix'] ?? '', /scripts\/package-vsix\.mjs/u);
   assert.match(manifest.scripts['publish:marketplace'] ?? '', /vsce publish/u);
