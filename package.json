@@ -565,6 +565,70 @@
           "scope": "window",
           "description": "Controls the visibility of diagram zoom controls."
         },
+        "mermaidPreviewOffline.toolbar.visible": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Shows the preview toolbar. Keyboard shortcuts and commands remain available when the toolbar is hidden."
+        },
+        "mermaidPreviewOffline.toolbar.labelMode": {
+          "type": "string",
+          "enum": [
+            "responsive",
+            "icons",
+            "always"
+          ],
+          "enumDescriptions": [
+            "Show labels when space permits and collapse them progressively on narrower previews.",
+            "Always use icons only for a lighter toolbar.",
+            "Always show every supported label and allow the toolbar to scroll horizontally when necessary."
+          ],
+          "default": "icons",
+          "scope": "window",
+          "description": "Controls text labels in the preview toolbar. Fit, Zoom in, and Zoom out are always icon-only."
+        },
+        "mermaidPreviewOffline.toolbar.controls": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "layout",
+              "zoom",
+              "refresh",
+              "search",
+              "appearance",
+              "copySvg",
+              "saveSvg",
+              "export",
+              "newWindow"
+            ],
+            "enumDescriptions": [
+              "Preview layout selector.",
+              "Zoom out, Fit, and Zoom in controls.",
+              "Manual refresh action.",
+              "Diagram text search.",
+              "Diagram appearance selector.",
+              "Copy the original SVG.",
+              "Save the original SVG.",
+              "Open the export workflow.",
+              "Open this preview in a new VS Code window."
+            ]
+          },
+          "default": [
+            "layout",
+            "zoom",
+            "refresh",
+            "search",
+            "appearance",
+            "copySvg",
+            "saveSvg",
+            "export",
+            "newWindow"
+          ],
+          "scope": "window",
+          "description": "Selects which controls appear in the preview toolbar. Controls keep their canonical order."
+        },
         "mermaidPreviewOffline.documentation.languages": {
           "type": "array",
           "items": {
