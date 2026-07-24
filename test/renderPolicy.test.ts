@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { PreviewConfiguration } from '../src/protocol';
+import { DEFAULT_TOOLBAR_CONFIGURATION } from '../src/toolbarSettings';
 import {
   effectiveRefreshDelay,
   formatByteLength,
@@ -19,6 +20,7 @@ import {
   navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
   refreshDelay: 140,
   refreshMode: 'automatic',
+  toolbar: DEFAULT_TOOLBAR_CONFIGURATION,
 };
 
 void test('large documents receive an adaptive render debounce', () => {

@@ -3,13 +3,13 @@ import * as vscode from 'vscode';
 import { nextPreviewMode } from './editorLayout';
 import type { MermaidEditorMode } from './protocol';
 
-const MODE_STATE_KEY_PREFIX = 'mermaidPreviewOffline.editorMode.';
+const MODE_STATE_KEY = 'mermaidPreviewOffline.editorMode';
 const DETACHED_COPY_TIMEOUT_MS = 30_000;
 
 interface ModeChange {
   mode: MermaidEditorMode;
   panel?: vscode.WebviewPanel;
-  uri: vscode.Uri;
+  uri?: vscode.Uri;
 }
 
 interface PendingDetachedCopy {
@@ -28,7 +28,7 @@ const MODE_ITEMS: ReadonlyArray<{
     mode: 'preview',
   },
   {
-    description: 'Edit Mermaid source inside the same editor tab',
+    description: 'Open the full VS Code Mermaid text editor',
     label: '$(code) Source only',
     mode: 'source',
   },
@@ -45,18 +45,18 @@ const MODE_ITEMS: ReadonlyArray<{
 ];
 
 /**
- * Stores the layout selected for each Mermaid document. All four layouts are
- * rendered inside one custom-editor panel, so changing mode never creates,
- * moves, resizes, or closes a VS Code editor group.
+ * Stores one preview layout for the workspace so Explorer navigation preserves
+ * Preview, Beside, or Above across Mermaid files. Detached panels keep their own
+ * layout. Source only hands the document to VS Code's full text editor.
  */
 export class MermaidEditorLayoutController implements vscode.Disposable {
   private readonly modeEmitter = new vscode.EventEmitter<ModeChange>();
   private readonly panels = new Map<string, Set<vscode.WebviewPanel>>();
-  private readonly pendingModes = new Map<string, MermaidEditorMode>();
   private readonly detachedPanels = new Set<vscode.WebviewPanel>();
   private readonly detachedPanelModes = new WeakMap<vscode.WebviewPanel, MermaidEditorMode>();
   private readonly pendingDetachedCopies = new Map<string, Set<PendingDetachedCopy>>();
   private readonly unavailablePanels = new WeakSet<vscode.WebviewPanel>();
+  private pendingSharedMode: MermaidEditorMode | undefined;
   private arrangement = Promise.resolve();
 
   public readonly onDidChangeMode = this.modeEmitter.event;
@@ -74,17 +74,15 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
       }
     }
     this.panels.clear();
-    this.pendingModes.clear();
     this.detachedPanels.clear();
     this.pendingDetachedCopies.clear();
   }
 
   public getMode(uri: vscode.Uri): MermaidEditorMode {
-    const key = uri.toString();
-    const pending = this.pendingModes.get(key);
-    if (pending) return pending;
-    const stored = this.context.workspaceState.get<unknown>(this.modeKey(uri));
-    return isEditorMode(stored) ? stored : 'preview';
+    void uri;
+    if (this.pendingSharedMode) return this.pendingSharedMode;
+    const stored = this.context.workspaceState.get<unknown>(MODE_STATE_KEY);
+    return isEditorMode(stored) && stored !== 'source' ? stored : 'preview';
   }
 
   public isDetachedPanel(panel: vscode.WebviewPanel): boolean {
@@ -95,7 +93,8 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     uri: vscode.Uri,
     panel: vscode.WebviewPanel,
   ): MermaidEditorMode {
-    return this.detachedPanelModes.get(panel) ?? this.getMode(uri);
+    const detachedMode = this.detachedPanelModes.get(panel);
+    return detachedMode && detachedMode !== 'source' ? detachedMode : this.getMode(uri);
   }
 
   public registerPanel(uri: vscode.Uri, panel: vscode.WebviewPanel): vscode.Disposable {
@@ -166,6 +165,12 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     mode: MermaidEditorMode,
     preferredPanel?: vscode.WebviewPanel,
   ): Promise<void> {
+    if (mode === 'source') {
+      await this.enqueue(async () => {
+        await this.openFullSourceEditor(uri, preferredPanel);
+      });
+      return;
+    }
     if (preferredPanel && this.isDetachedPanel(preferredPanel)) {
       this.detachedPanelModes.set(preferredPanel, mode);
       this.modeEmitter.fire({ mode, panel: preferredPanel, uri });
@@ -191,8 +196,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     mode: MermaidEditorMode,
     preferredPanel?: vscode.WebviewPanel,
   ): Promise<void> {
-    const key = uri.toString();
-    this.pendingModes.set(key, mode);
+    this.pendingSharedMode = mode;
     try {
       const panel = this.registeredPanel(uri, preferredPanel);
       if (panel) {
@@ -205,10 +209,25 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
           vscode.ViewColumn.Active,
         );
       }
-      await this.storeMode(uri, mode);
+      await this.storeMode(mode);
     } finally {
-      this.pendingModes.delete(key);
+      this.pendingSharedMode = undefined;
     }
+  }
+
+  private async openFullSourceEditor(
+    uri: vscode.Uri,
+    preferredPanel?: vscode.WebviewPanel,
+  ): Promise<void> {
+    const panel = this.registeredPanel(uri, preferredPanel);
+    const viewColumn = panel?.viewColumn ?? vscode.ViewColumn.Active;
+    panel?.reveal(viewColumn, false);
+    const document = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(document, {
+      preserveFocus: false,
+      preview: false,
+      viewColumn,
+    });
   }
 
   private registeredPanel(
@@ -250,9 +269,9 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     );
   }
 
-  private async storeMode(uri: vscode.Uri, mode: MermaidEditorMode): Promise<void> {
-    await this.context.workspaceState.update(this.modeKey(uri), mode);
-    this.modeEmitter.fire({ mode, uri });
+  private async storeMode(mode: MermaidEditorMode): Promise<void> {
+    await this.context.workspaceState.update(MODE_STATE_KEY, mode);
+    this.modeEmitter.fire({ mode });
   }
 
   private createPendingDetachedCopy(
@@ -287,10 +306,6 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     if (!token) return undefined;
     this.cancelPendingDetachedCopy(uriKey, token);
     return token.mode;
-  }
-
-  private modeKey(uri: vscode.Uri): string {
-    return `${MODE_STATE_KEY_PREFIX}${uri.toString()}`;
   }
 
   private async enqueue(operation: () => Promise<void>): Promise<void> {

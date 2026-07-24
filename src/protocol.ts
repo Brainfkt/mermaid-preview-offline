@@ -1,6 +1,7 @@
 import type { ExportProfile, ExportSettings } from './exportSettings';
 import type { DiagramFontFamily } from './diagramFont';
 import type { DiagramNavigationConfiguration } from './navigationSettings';
+import type { ToolbarConfiguration } from './toolbarSettings';
 
 export const DIAGRAM_THEMES = [
   'adaptive',
@@ -51,6 +52,7 @@ export interface PreviewConfiguration {
   navigation: DiagramNavigationConfiguration;
   refreshDelay: number;
   refreshMode: RefreshMode;
+  toolbar: ToolbarConfiguration;
 }
 
 export interface PersistedPreviewState {

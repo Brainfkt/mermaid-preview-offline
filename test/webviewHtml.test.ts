@@ -38,19 +38,37 @@ void test('the compact toolbar exposes controls in the requested order', () => {
   assert.match(html, /id="theme-picker"/u);
   assert.match(html, /data-theme="forest"/u);
   assert.match(html, /class="toolbar glass-surface"/u);
+  assert.match(
+    html,
+    /class="toolbar glass-surface" aria-label="Mermaid preview controls" hidden/u,
+  );
   const controlOrder = [
     'id="editor-layout"',
     'id="zoom-out"',
     'id="fit"',
     'id="zoom-in"',
     'id="refresh"',
+    'id="search-open"',
     'id="theme-picker"',
     'id="copy-svg"',
     'id="save-svg"',
     'id="export-open"',
+    'id="open-new-window"',
   ].map((marker) => html.indexOf(marker));
   assert.ok(controlOrder.every((position) => position >= 0));
   assert.deepEqual(controlOrder, [...controlOrder].sort((left, right) => left - right));
+});
+
+void test('the toolbar remains hidden until its final configuration is applied', () => {
+  const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
+  assert.equal(
+    webview.match(/updateToolbarConfiguration\(\);/gu)?.length,
+    1,
+  );
+  assert.match(
+    webview,
+    /case 'configuration':[\s\S]*?updateToolbarConfiguration\(\);/u,
+  );
 });
 
 void test('the preview exposes direct original SVG copy and save actions', () => {
@@ -69,9 +87,11 @@ void test('the preview exposes direct original SVG copy and save actions', () =>
 
 void test('toolbar labels collapse progressively while icon actions remain accessible', () => {
   for (const marker of [
-    'button--collapse-first',
-    'button--collapse-second',
-    'button--collapse-third',
+    'button--collapse-window',
+    'button--collapse-export',
+    'button--collapse-copy-save',
+    'button--collapse-search',
+    'button--collapse-appearance',
   ]) {
     assert.match(html, new RegExp(marker, 'u'));
   }
@@ -80,13 +100,25 @@ void test('toolbar labels collapse progressively while icon actions remain acces
     'aria-label="Copy original SVG"',
     'aria-label="Save original SVG"',
     'aria-label="Export diagram"',
+    'aria-label="Open preview in a new window"',
   ]) {
     assert.match(html, new RegExp(accessibleName, 'u'));
   }
-  assert.match(previewCss, /@media \(max-width: 1120px\)[\s\S]*?\.button--collapse-first \.button__label\s*\{\s*display: none;/u);
-  assert.match(previewCss, /@media \(max-width: 860px\)[\s\S]*?\.button--collapse-second \.button__label\s*\{\s*display: none;/u);
-  assert.match(previewCss, /@media \(max-width: 560px\)[\s\S]*?\.button--collapse-third \.button__label\s*\{\s*display: none;/u);
-  assert.match(previewCss, /@media \(max-width: 430px\)[\s\S]*?\.toolbar \.divider\s*\{\s*display: none;/u);
+  assert.doesNotMatch(
+    html.slice(html.indexOf('id="fit"'), html.indexOf('</button>', html.indexOf('id="fit"'))),
+    /button__label/u,
+  );
+  const collapseOrder = [
+    '@media (max-width: 1050px)',
+    '@media (max-width: 930px)',
+    '@media (max-width: 820px)',
+    '@media (max-width: 670px)',
+    '@media (max-width: 570px)',
+  ].map((marker) => previewCss.indexOf(marker));
+  assert.ok(collapseOrder.every((position) => position >= 0));
+  assert.deepEqual(collapseOrder, [...collapseOrder].sort((left, right) => left - right));
+  assert.match(previewCss, /\.toolbar--icons \.button__label\s*\{\s*display: none;/u);
+  assert.match(previewCss, /\.toolbar--labels-always \.button__label\s*\{\s*display: inline;/u);
 });
 
 void test('v0.5 professional export exposes preview, profiles, formats, and batch actions', () => {
@@ -112,10 +144,26 @@ void test('v0.5 professional export exposes preview, profiles, formats, and batc
   }
 });
 
-void test('layout, refresh, and theme controls stay compact and the footer is unframed', () => {
+void test('wide toolbar controls are labeled while Fit and zoom stay icon-only', () => {
   const toolbar = html.slice(html.indexOf('<header'), html.indexOf('</header>'));
-  assert.doesNotMatch(toolbar, />\s*Refresh\s*</u);
-  assert.doesNotMatch(toolbar, /theme-picker__label/u);
+  for (const label of [
+    'Preview',
+    'Refresh',
+    'Search',
+    'Adaptive',
+    'Copy SVG',
+    'Save SVG',
+    'Export',
+    'New window',
+  ]) {
+    assert.match(toolbar, new RegExp(`>${label}<`, 'u'));
+  }
+  for (const controlId of ['zoom-out', 'fit', 'zoom-in']) {
+    const start = toolbar.indexOf(`id="${controlId}"`);
+    const end = toolbar.indexOf('</button>', start);
+    assert.ok(start >= 0 && end > start);
+    assert.doesNotMatch(toolbar.slice(start, end), /button__label/u);
+  }
   assert.match(toolbar, /class="button__icon"/u);
   assert.match(html, /<footer class="statusbar">/u);
   assert.doesNotMatch(html, /<footer class="statusbar glass-surface">/u);

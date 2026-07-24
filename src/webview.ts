@@ -44,6 +44,10 @@ import type {
 import { formatByteLength } from './renderPolicy';
 import type { PreviewColorScheme } from './theme';
 import { DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION } from './navigationSettings';
+import {
+  DEFAULT_TOOLBAR_CONFIGURATION,
+  type ToolbarControl,
+} from './toolbarSettings';
 import { writePngToClipboard } from './pngClipboard';
 
 interface VsCodeApi {
@@ -64,6 +68,7 @@ const DEFAULT_CONFIGURATION: PreviewConfiguration = {
   navigation: DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION,
   refreshDelay: 140,
   refreshMode: 'automatic',
+  toolbar: DEFAULT_TOOLBAR_CONFIGURATION,
 };
 
 registerOfflineIconPacks();
@@ -114,6 +119,13 @@ const searchPanel = element<HTMLElement>('diagram-search');
 const searchInput = element<HTMLInputElement>('diagram-search-input');
 const searchCount = element<HTMLElement>('diagram-search-count');
 const navigationControls = element<HTMLElement>('diagram-navigation-controls');
+const toolbar = queryElement<HTMLElement>('.toolbar');
+const toolbarSections = Array.from(
+  toolbar.querySelectorAll<HTMLElement>('[data-toolbar-section]'),
+);
+const toolbarDividers = Array.from(
+  toolbar.querySelectorAll<HTMLElement>('[data-toolbar-divider]'),
+);
 const editorLayoutButton = element<HTMLButtonElement>('editor-layout');
 const editorLayoutLabel = element<HTMLElement>('editor-layout-label');
 const exportDialog = element<HTMLDialogElement>('export-dialog');
@@ -200,6 +212,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       applyCanvasAppearance();
       updateRefreshControls();
       updateNavigationConfiguration();
+      updateToolbarConfiguration();
       updateMinimap();
       if (
         latestSource &&
@@ -1478,10 +1491,8 @@ function cleanupFailedRender(renderId: string): void {
 }
 
 function openSourceOnly(): void {
-  editorMode = 'source';
-  updateEditorMode();
-  requestAnimationFrame(() => sourceEditor.focus({ preventScroll: true }));
-  vscode.postMessage({ type: 'setEditorMode', mode: 'source' });
+  flushSourceEdit();
+  vscode.postMessage({ type: 'openNativeSource' });
 }
 
 function receiveDocumentSource(source: string, version: number): void {
@@ -1702,6 +1713,14 @@ function element<T extends HTMLElement>(id: string): T {
     throw new Error(`Missing webview element: ${id}`);
   }
   return match as T;
+}
+
+function queryElement<T extends Element>(selector: string): T {
+  const match = document.querySelector<T>(selector);
+  if (!match) {
+    throw new Error(`Missing webview element: ${selector}`);
+  }
+  return match;
 }
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
@@ -1991,6 +2010,51 @@ function updateNavigationConfiguration(): void {
   );
   updateNavigationControlsVisibility();
   updatePanAffordance(false);
+}
+
+function updateToolbarConfiguration(): void {
+  const selected = new Set<ToolbarControl>(configuration.toolbar.controls);
+  toolbar.hidden = !configuration.toolbar.visible;
+  document.body.classList.toggle('toolbar-hidden', !configuration.toolbar.visible);
+  toolbar.classList.toggle('toolbar--icons', configuration.toolbar.labelMode === 'icons');
+  toolbar.classList.toggle(
+    'toolbar--labels-always',
+    configuration.toolbar.labelMode === 'always',
+  );
+
+  for (const control of Array.from(
+    toolbar.querySelectorAll<HTMLElement>('[data-toolbar-control]'),
+  )) {
+    const controlName = control.dataset.toolbarControl as ToolbarControl | undefined;
+    control.classList.toggle(
+      'toolbar-control--hidden',
+      controlName === undefined || !selected.has(controlName),
+    );
+  }
+
+  const visibleSections: number[] = [];
+  toolbarSections.forEach((section, index) => {
+    const sectionControls = [
+      ...(section.matches('[data-toolbar-control]') ? [section] : []),
+      ...Array.from(section.querySelectorAll<HTMLElement>('[data-toolbar-control]')),
+    ];
+    const sectionVisible = sectionControls.some(
+      (control) =>
+        !control.classList.contains('toolbar-control--hidden') &&
+        (
+          control !== navigationControls ||
+          configuration.navigation.controlsVisibility !== 'never'
+        ),
+    );
+    section.hidden = !sectionVisible;
+    if (sectionVisible) visibleSections.push(index);
+  });
+
+  for (const divider of toolbarDividers) divider.hidden = true;
+  visibleSections.slice(1).forEach((sectionIndex) => {
+    const divider = toolbarDividers[sectionIndex - 1];
+    if (divider) divider.hidden = false;
+  });
 }
 
 function updateNavigationControlsVisibility(): void {

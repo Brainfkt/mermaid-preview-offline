@@ -14,6 +14,7 @@ interface ExtensionManifest {
         {
           default?: unknown;
           enum?: unknown[];
+          items?: { enum?: unknown[] };
           maximum?: number;
           minimum?: number;
           scope?: string;
@@ -62,7 +63,7 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies.katex, undefined);
 });
 
-void test('preview commands expose all four single-editor layouts', () => {
+void test('preview commands expose the three internal layouts and full Source editor', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
   const layoutCommands = [
     'mermaidPreviewOffline.openPreviewOnly',
@@ -112,6 +113,23 @@ void test('preview commands expose all four single-editor layouts', () => {
   assert.match(titleCommands[0]?.when ?? '', /activeCustomEditorId/u);
 });
 
+void test('toolbar visibility, labels, and controls are user-configurable', () => {
+  const properties = manifest.contributes.configuration.properties;
+  assert.equal(properties['mermaidPreviewOffline.toolbar.visible']?.default, true);
+  assert.deepEqual(
+    properties['mermaidPreviewOffline.toolbar.labelMode']?.enum,
+    ['responsive', 'icons', 'always'],
+  );
+  assert.equal(
+    properties['mermaidPreviewOffline.toolbar.labelMode']?.default,
+    'icons',
+  );
+  assert.deepEqual(
+    properties['mermaidPreviewOffline.toolbar.controls']?.items?.enum,
+    ['layout', 'zoom', 'refresh', 'search', 'appearance', 'copySvg', 'saveSvg', 'export', 'newWindow'],
+  );
+});
+
 void test('new-window file previews are copied so both windows stay rendered', () => {
   const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
   const provider = readFileSync(
@@ -159,7 +177,7 @@ void test('the Mermaid source editor exposes a safe shortcut for cycling preview
   assert.match(webview, /postMessage\(\{ type: 'cycleEditorMode' \}\)/u);
   assert.match(webview, /function installPreviewFocus\(\)/u);
   assert.match(webview, /viewport\.focus\(\{ preventScroll: true \}\)/u);
-  assert.match(webview, /requestAnimationFrame\(focusPreviewSurface\)/u);
+  assert.match(webview, /requestAnimationFrame\(focusActiveSurface\)/u);
 });
 
 void test('v0.6 project workflows expose Diagram Studio and visual Git diff commands', () => {
@@ -372,7 +390,7 @@ void test('the extension can run in local and remote VS Code extension hosts', (
   assert.deepEqual(manifest.extensionKind, ['workspace', 'ui']);
 });
 
-void test('preview layouts stay inside one custom editor and scope state per resource', () => {
+void test('preview layouts stay internal and share state across workspace resources', () => {
   const extension = readFileSync(resolve(__dirname, '../../src/extension.ts'), 'utf8');
   const controller = readFileSync(
     resolve(__dirname, '../../src/editorLayoutController.ts'),
@@ -398,10 +416,16 @@ void test('preview layouts stay inside one custom editor and scope state per res
   assert.doesNotMatch(controller, /ViewColumn\.(?:One|Two)/u);
   assert.doesNotMatch(controller, /ViewColumn\.Beside/u);
   assert.doesNotMatch(controller, /newGroupBelow/u);
-  assert.doesNotMatch(controller, /showTextDocument/u);
-  assert.match(controller, /MODE_STATE_KEY_PREFIX/u);
+  assert.match(controller, /openFullSourceEditor/u);
+  assert.match(controller, /showTextDocument/u);
+  assert.match(controller, /mode === 'source'/u);
+  assert.match(controller, /MODE_STATE_KEY = 'mermaidPreviewOffline\.editorMode'/u);
+  assert.doesNotMatch(controller, /MODE_STATE_KEY_PREFIX/u);
+  assert.match(controller, /workspaceState\.update\(MODE_STATE_KEY, mode\)/u);
+  assert.match(controller, /modeEmitter\.fire\(\{ mode \}\)/u);
+  assert.match(provider, /sharedModeChange/u);
   assert.match(controller, /detachedPanels/u);
-  assert.match(controller, /rendered inside one custom-editor panel/u);
+  assert.match(controller, /Source only hands the[\s\S]*full text editor/u);
   assert.match(provider, /vscode\.workspace\.applyEdit\(edit\)/u);
   assert.match(webview, /workspace--beside/u);
   assert.match(webview, /workspace--above/u);

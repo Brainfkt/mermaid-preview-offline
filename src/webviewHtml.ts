@@ -35,49 +35,61 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
   <link rel="stylesheet" href="${options.styleUri}">
 </head>
 <body>
-  <header class="toolbar glass-surface" aria-label="Mermaid preview controls">
-    <div class="toolbar__group">
-      <button class="button button--layout button--collapse-second" id="editor-layout" type="button" title="Editor layout: Preview only" aria-label="Choose editor layout">
+  <header class="toolbar glass-surface" aria-label="Mermaid preview controls" hidden>
+    <div class="toolbar__group toolbar__section" data-toolbar-section>
+      <button class="button button--layout" id="editor-layout" data-toolbar-control="layout" type="button" title="Editor layout: Preview only" aria-label="Choose editor layout">
         ${icon('layout')}
         <span class="button__label" id="editor-layout-label">Preview</span>
       </button>
-      <span class="divider" aria-hidden="true"></span>
-      <div class="toolbar__group toolbar__navigation" id="diagram-navigation-controls">
-        <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">−</button>
-        <button class="button button--zoom button--labeled-icon button--collapse-third" id="fit" type="button" title="Fit diagram (0)" aria-label="Fit diagram">
-          ${icon('fit')}
-          <span class="button__label">Fit</span>
+    </div>
+    <span class="divider" data-toolbar-divider aria-hidden="true"></span>
+    <div class="toolbar__group toolbar__section toolbar__navigation" id="diagram-navigation-controls" data-toolbar-control="zoom" data-toolbar-section>
+        <button class="button button--icon button--zoom-step" id="zoom-out" type="button" title="Zoom out (−)" aria-label="Zoom out">
+          <span class="button__glyph" aria-hidden="true">−</span>
         </button>
-        <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">+</button>
-      </div>
-      <span class="divider" aria-hidden="true"></span>
-      <button class="button button--icon button--refresh" id="refresh" type="button" title="Refresh diagram (R)" aria-label="Refresh diagram">
+        <button class="button button--icon button--zoom" id="fit" type="button" title="Fit diagram (0)" aria-label="Fit diagram">
+          ${icon('fit')}
+        </button>
+        <button class="button button--icon button--zoom-step" id="zoom-in" type="button" title="Zoom in (+)" aria-label="Zoom in">
+          <span class="button__glyph" aria-hidden="true">+</span>
+        </button>
+    </div>
+    <span class="divider" data-toolbar-divider aria-hidden="true"></span>
+    <div class="toolbar__group toolbar__section" data-toolbar-section>
+      <button class="button button--labeled-icon button--refresh button--collapse-refresh" id="refresh" data-toolbar-control="refresh" type="button" title="Refresh diagram (R)" aria-label="Refresh diagram">
         ${icon('refresh')}
+        <span class="button__label">Refresh</span>
       </button>
-      <button class="button appearance-picker button--collapse-second" id="theme-picker" type="button" title="Diagram appearance: Adaptive" aria-label="Choose diagram appearance" aria-expanded="false">
+      <button class="button button--labeled-icon button--collapse-search" id="search-open" data-toolbar-control="search" type="button" title="Find in diagram (/ or Ctrl/Cmd+F)" aria-label="Find in diagram">
+        ${icon('search')}
+        <span class="button__label">Search</span>
+      </button>
+    </div>
+    <span class="divider" data-toolbar-divider aria-hidden="true"></span>
+    <div class="toolbar__group toolbar__section" data-toolbar-section>
+      <button class="button appearance-picker button--collapse-appearance" id="theme-picker" data-toolbar-control="appearance" type="button" title="Diagram appearance: Adaptive" aria-label="Choose diagram appearance" aria-expanded="false">
         ${icon('palette')}
         <span class="button__label" id="appearance-label">Adaptive</span>
       </button>
-      <button class="button button--icon" id="search-open" type="button" title="Find in diagram (/ or Ctrl/Cmd+F)" aria-label="Find in diagram">
-        ${icon('search')}
-      </button>
-      <span class="divider" aria-hidden="true"></span>
-      <button class="button button--quiet button--labeled-icon button--collapse-first" id="copy-svg" type="button" title="Copy original SVG" aria-label="Copy original SVG" disabled>
+      <button class="button button--quiet button--labeled-icon button--collapse-copy-save" id="copy-svg" data-toolbar-control="copySvg" type="button" title="Copy original SVG" aria-label="Copy original SVG" disabled>
         ${icon('copy')}
         <span class="button__label">Copy SVG</span>
       </button>
-      <button class="button button--quiet button--labeled-icon button--collapse-first" id="save-svg" type="button" title="Save original SVG" aria-label="Save original SVG" disabled>
+      <button class="button button--quiet button--labeled-icon button--collapse-copy-save" id="save-svg" data-toolbar-control="saveSvg" type="button" title="Save original SVG" aria-label="Save original SVG" disabled>
         ${icon('save')}
         <span class="button__label">Save SVG</span>
       </button>
-      <button class="button button--accent button--export button--collapse-second" id="export-open" type="button" title="Export diagram" aria-label="Export diagram" disabled>
+      <button class="button button--accent button--export button--collapse-export" id="export-open" data-toolbar-control="export" type="button" title="Export diagram" aria-label="Export diagram" disabled>
         ${icon('export')}
         <span class="button__label">Export</span>
       </button>
       <span class="metadata-chip" id="large-file-label" hidden></span>
-      <span class="divider" aria-hidden="true"></span>
-      <button class="button button--icon" id="open-new-window" type="button" title="Open preview in a new window" aria-label="Open preview in a new window">
+    </div>
+    <span class="divider" data-toolbar-divider aria-hidden="true"></span>
+    <div class="toolbar__group toolbar__section" data-toolbar-section>
+      <button class="button button--labeled-icon button--collapse-window" id="open-new-window" data-toolbar-control="newWindow" type="button" title="Open preview in a new window" aria-label="Open preview in a new window">
         ${icon('newWindow')}
+        <span class="button__label">New window</span>
       </button>
     </div>
   </header>

@@ -25,6 +25,10 @@ import {
   normalizeDiagramControlsVisibility,
   normalizeDiagramMouseNavigation,
 } from './navigationSettings';
+import {
+  normalizeToolbarControls,
+  normalizeToolbarLabelMode,
+} from './toolbarSettings';
 import { isDiagramTheme, normalizePreviewState } from './previewState';
 import type {
   PersistedPreviewState,
@@ -380,10 +384,13 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     });
 
     const modeSubscription = this.layoutController.onDidChangeMode((event) => {
-      if (
-        event.uri.toString() === document.uri.toString() &&
-        (!event.panel || event.panel === webviewPanel)
-      ) {
+      const sharedModeChange =
+        event.uri === undefined &&
+        !this.layoutController.isDetachedPanel(webviewPanel);
+      const panelModeChange =
+        event.uri?.toString() === document.uri.toString() &&
+        (!event.panel || event.panel === webviewPanel);
+      if (sharedModeChange || panelModeChange) {
         void webview.postMessage({
           detached: this.layoutController.isDetachedPanel(webviewPanel),
           type: 'editorMode',
@@ -1121,6 +1128,9 @@ function readConfiguration(
   const minimapEnabled = configuration.get<boolean>('minimap.enabled', true);
   const mouseNavigation = configuration.get<unknown>('navigation.mouse', 'always');
   const controlsVisibility = configuration.get<unknown>('navigation.controls', 'always');
+  const toolbarVisible = configuration.get<boolean>('toolbar.visible', true);
+  const toolbarLabelMode = configuration.get<unknown>('toolbar.labelMode', 'icons');
+  const toolbarControls = configuration.get<unknown>('toolbar.controls');
 
   return {
     diagramDensity: appearance.diagramDensity,
@@ -1135,6 +1145,11 @@ function readConfiguration(
     },
     refreshDelay: clampInteger(refreshDelay, 0, 2_000),
     refreshMode: refreshMode === 'manual' ? 'manual' : 'automatic',
+    toolbar: {
+      controls: normalizeToolbarControls(toolbarControls),
+      labelMode: normalizeToolbarLabelMode(toolbarLabelMode),
+      visible: toolbarVisible,
+    },
   };
 }
 

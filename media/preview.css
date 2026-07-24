@@ -73,6 +73,13 @@ select {
   padding: 3px 4px;
 }
 
+.toolbar[hidden],
+.toolbar-control--hidden,
+.toolbar__section[hidden],
+.toolbar .divider[hidden] {
+  display: none;
+}
+
 .toolbar__group {
   display: flex;
   min-width: 0;
@@ -149,8 +156,17 @@ select:focus-visible {
 }
 
 .button--zoom-step {
+  color: var(--preview-muted);
   font-size: 18px;
   font-weight: 400;
+}
+
+.button__glyph {
+  width: 16px;
+  flex: 0 0 16px;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
 }
 
 .button--zoom {
@@ -209,6 +225,22 @@ select:focus-visible {
   flex: 0 0 1px;
   margin: 0 3px;
   background: var(--preview-border);
+}
+
+.toolbar--icons .button__label {
+  display: none;
+}
+
+.toolbar--icons .button--labeled-icon,
+.toolbar--icons .appearance-picker,
+.toolbar--icons .button--export,
+.toolbar--icons .button--layout {
+  width: 28px;
+  min-width: 28px;
+  flex: 0 0 28px;
+  justify-content: center;
+  gap: 0;
+  padding: 2px;
 }
 
 .metadata-chip {
@@ -456,6 +488,14 @@ select:focus-visible {
   overflow: hidden;
 }
 
+body.toolbar-hidden .source-pane__header {
+  top: 0;
+}
+
+body.toolbar-hidden .source-editor {
+  inset-block-start: 30px;
+}
+
 .source-editor__lines,
 .source-editor__input {
   height: 100%;
@@ -601,6 +641,15 @@ select:focus-visible {
   min-width: 100%;
   min-height: 100%;
   padding: 52px 36px 36px;
+}
+
+body.toolbar-hidden .diagram {
+  padding-top: 36px;
+}
+
+body.toolbar-hidden .appearance-popover,
+body.toolbar-hidden .diagram-search {
+  top: 8px;
 }
 
 .diagram > svg {
@@ -1114,8 +1163,8 @@ body.vscode-high-contrast-light .glass-surface {
   }
 }
 
-@media (max-width: 1120px) {
-  .button--collapse-first {
+@media (max-width: 1050px) {
+  .button--collapse-window {
     width: 28px;
     min-width: 28px;
     flex: 0 0 28px;
@@ -1124,13 +1173,13 @@ body.vscode-high-contrast-light .glass-surface {
     padding: 2px;
   }
 
-  .button--collapse-first .button__label {
+  .button--collapse-window .button__label {
     display: none;
   }
 }
 
-@media (max-width: 860px) {
-  .button--collapse-second {
+@media (max-width: 930px) {
+  .button--collapse-export {
     width: 28px;
     min-width: 28px;
     flex: 0 0 28px;
@@ -1139,12 +1188,40 @@ body.vscode-high-contrast-light .glass-surface {
     padding: 2px;
   }
 
-  .button--collapse-second .button__label {
+  .button--collapse-export .button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 820px) {
+  .button--collapse-copy-save {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-copy-save .button__label {
     display: none;
   }
 }
 
 @media (max-width: 670px) {
+  .button--collapse-search {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-search .button__label {
+    display: none;
+  }
+
   .toolbar {
     max-width: calc(100% - 8px);
     margin-inline: 4px;
@@ -1211,8 +1288,8 @@ body.vscode-high-contrast-light .glass-surface {
   }
 }
 
-@media (max-width: 560px) {
-  .button--collapse-third {
+@media (max-width: 570px) {
+  .button--collapse-appearance {
     width: 28px;
     min-width: 28px;
     flex: 0 0 28px;
@@ -1221,12 +1298,40 @@ body.vscode-high-contrast-light .glass-surface {
     padding: 2px;
   }
 
-  .button--collapse-third .button__label {
+  .button--collapse-appearance .button__label {
     display: none;
   }
 }
 
-@media (max-width: 430px) {
+@media (max-width: 480px) {
+  .button--collapse-refresh {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--collapse-refresh .button__label {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .button--layout {
+    width: 28px;
+    min-width: 28px;
+    flex: 0 0 28px;
+    justify-content: center;
+    gap: 0;
+    padding: 2px;
+  }
+
+  .button--layout .button__label {
+    display: none;
+  }
+
   .toolbar {
     padding-inline: 2px;
   }
@@ -1238,6 +1343,27 @@ body.vscode-high-contrast-light .glass-surface {
   .toolbar .divider {
     display: none;
   }
+}
+
+.toolbar--labels-always .button__label {
+  display: inline;
+}
+
+.toolbar--labels-always .button--labeled-icon,
+.toolbar--labels-always .appearance-picker,
+.toolbar--labels-always .button--export,
+.toolbar--labels-always .button--layout {
+  width: auto;
+  min-width: 0;
+  flex: 0 1 auto;
+  justify-content: initial;
+  gap: 5px;
+  padding: 3px 8px;
+}
+
+.toolbar--labels-always .button--layout {
+  gap: 6px;
+  padding-inline: 6px 8px;
 }
 
 @media (prefers-reduced-motion: reduce) {

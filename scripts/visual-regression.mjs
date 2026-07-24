@@ -144,6 +144,9 @@ const runner = `<script nonce="${nonce}">
 
   (async () => {
     await webviewReady;
+    if (!document.querySelector('.toolbar')?.hidden) {
+      throw new Error('The toolbar became visible before its configuration was received.');
+    }
     const entries = [];
     const interfaceThemes = [];
     let version = 0;
@@ -175,6 +178,11 @@ const runner = `<script nonce="${nonce}">
           navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
           refreshDelay: 0,
           refreshMode: 'automatic',
+          toolbar: {
+            controls: ['layout', 'zoom', 'refresh', 'search', 'appearance', 'copySvg', 'saveSvg', 'export', 'newWindow'],
+            labelMode: 'responsive',
+            visible: true,
+          },
         },
       }, '*');
       await delay(50);
@@ -197,18 +205,29 @@ const runner = `<script nonce="${nonce}">
         throw new Error('The preview surface or responsive toolbar exceeds its viewport.');
       }
       for (const selector of [
-        '#editor-layout .button__label',
-        '#theme-picker .button__label',
         '#copy-svg .button__label',
         '#save-svg .button__label',
         '#export-open .button__label',
+        '#open-new-window .button__label',
       ]) {
         if (getComputedStyle(document.querySelector(selector)).display !== 'none') {
           throw new Error(selector + ': the toolbar label did not collapse at 800px.');
         }
       }
-      if (getComputedStyle(document.querySelector('#fit .button__label')).display === 'none') {
-        throw new Error('The Fit label collapsed before the narrowest toolbar breakpoint.');
+      for (const selector of [
+        '#editor-layout .button__label',
+        '#refresh .button__label',
+        '#search-open .button__label',
+        '#theme-picker .button__label',
+      ]) {
+        if (getComputedStyle(document.querySelector(selector)).display === 'none') {
+          throw new Error(selector + ': the toolbar label collapsed too early at 800px.');
+        }
+      }
+      if (document.querySelector('#fit .button__label') ||
+          document.querySelector('#zoom-out .button__label') ||
+          document.querySelector('#zoom-in .button__label')) {
+        throw new Error('Fit and zoom must remain icon-only at every toolbar width.');
       }
       if (scheme.name !== 'high-contrast' && toolbarStyle.backdropFilter === 'none') {
         throw new Error(scheme.name + ': the toolbar glass backdrop filter is missing.');
@@ -220,6 +239,57 @@ const runner = `<script nonce="${nonce}">
         borderColor: toolbarStyle.borderColor,
         boxShadow: toolbarStyle.boxShadow,
       });
+
+      if (scheme.name === 'light') {
+        const postToolbarConfiguration = (toolbarConfiguration) => {
+          window.postMessage({
+            type: 'configuration',
+            configuration: {
+              diagramDensity: 'comfortable',
+              diagramFontFamily: 'noto-sans',
+              diagramSurface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
+              diagramTheme: 'adaptive',
+              largeFileThresholdBytes: 524288,
+              minimapEnabled: true,
+              navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
+              refreshDelay: 0,
+              refreshMode: 'automatic',
+              toolbar: toolbarConfiguration,
+            },
+          }, '*');
+        };
+        postToolbarConfiguration({
+          controls: ['layout', 'zoom', 'export'],
+          labelMode: 'icons',
+          visible: true,
+        });
+        await delay(20);
+        if (getComputedStyle(document.querySelector('#editor-layout .button__label')).display !== 'none' ||
+            !document.querySelector('#refresh').classList.contains('toolbar-control--hidden') ||
+            document.querySelectorAll('[data-toolbar-divider]:not([hidden])').length !== 2) {
+          throw new Error('Icon-only toolbar selection did not hide labels, controls, or empty separators.');
+        }
+        postToolbarConfiguration({
+          controls: ['layout', 'zoom', 'export'],
+          labelMode: 'icons',
+          visible: false,
+        });
+        await delay(20);
+        if (getComputedStyle(document.querySelector('.toolbar')).display !== 'none' ||
+            !document.body.classList.contains('toolbar-hidden')) {
+          throw new Error('The toolbar visibility setting did not hide and reclaim its surface.');
+        }
+        postToolbarConfiguration({
+          controls: ['layout', 'zoom', 'refresh', 'search', 'appearance', 'copySvg', 'saveSvg', 'export', 'newWindow'],
+          labelMode: 'responsive',
+          visible: true,
+        });
+        await delay(20);
+        if (getComputedStyle(document.querySelector('.toolbar')).display === 'none' ||
+            document.querySelector('#refresh').classList.contains('toolbar-control--hidden')) {
+          throw new Error('Restoring the complete responsive toolbar failed.');
+        }
+      }
 
       for (const example of captureExport ? examples.slice(0, 1) : examples) {
         version += 1;
@@ -276,7 +346,6 @@ const runner = `<script nonce="${nonce}">
       ['preview', 'Preview'],
       ['beside', 'Beside'],
       ['above', 'Above'],
-      ['source', 'Source'],
     ]) {
       window.postMessage({ type: 'editorMode', detached: false, mode }, '*');
       await waitFor(
@@ -296,6 +365,12 @@ const runner = `<script nonce="${nonce}">
            sourceBounds.bottom > previewBounds.top + 1)) {
         throw new Error('Above did not keep source and preview in one vertical editor.');
       }
+    }
+    const fullSourceStart = postedMessages.length;
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'e' }));
+    if (!postedMessages.slice(fullSourceStart)
+      .some((message) => message.type === 'openNativeSource')) {
+      throw new Error('Source only did not request VS Code’s full text editor.');
     }
     const sourceInput = document.querySelector('#source-editor');
     const sourceEditStart = postedMessages.length;
@@ -409,10 +484,16 @@ const runner = `<script nonce="${nonce}">
     );
     document.querySelector('#diagram-search-close').click();
     const sourceNode = document.querySelector('#diagram g.node');
+    const sourceNavigationStart = postedMessages.length;
     sourceNode.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: 1, clientY: 1 }));
     sourceNode.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 1, clientY: 1 }));
     await waitFor(
-      () => postedMessages.some((message) => message.type === 'revealSourceLine' && message.line === 1),
+      () => document.querySelector('#workspace')?.classList.contains('workspace--beside') &&
+        document.activeElement === sourceInput &&
+        sourceInput.value.slice(sourceInput.selectionStart, sourceInput.selectionEnd)
+          .includes('Échéance') &&
+        postedMessages.slice(sourceNavigationStart)
+          .some((message) => message.type === 'setEditorMode' && message.mode === 'beside'),
       'click to source',
     );
     document.querySelector('[data-surface="midnight"]').click();
@@ -443,6 +524,11 @@ const runner = `<script nonce="${nonce}">
           navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
           refreshDelay: 0,
           refreshMode: 'automatic',
+          toolbar: {
+            controls: ['layout', 'zoom', 'refresh', 'search', 'appearance', 'copySvg', 'saveSvg', 'export', 'newWindow'],
+            labelMode: 'responsive',
+            visible: true,
+          },
         },
       }, '*');
       await waitFor(
