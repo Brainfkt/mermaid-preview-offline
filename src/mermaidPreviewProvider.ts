@@ -620,26 +620,64 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     );
   }
 
-  private async revealSourceLine(
+  private async openNativeSource(
     document: vscode.TextDocument,
     panel: vscode.WebviewPanel,
-    requestedLine: number,
   ): Promise<void> {
-    await this.layoutController.applyMode(document.uri, 'beside', panel);
-    const line = Math.min(Math.max(Math.round(requestedLine), 0), Math.max(document.lineCount - 1, 0));
-    const position = new vscode.Position(line, 0);
-    const editor = await vscode.window.showTextDocument(document, {
+    await vscode.window.showTextDocument(document, {
       preserveFocus: false,
       preview: false,
-      selection: new vscode.Range(position, position),
-      viewColumn:
-        this.layoutController.sourceColumnFor(document.uri) ??
-        vscode.ViewColumn.Active,
+      viewColumn: panel.viewColumn ?? vscode.ViewColumn.Active,
     });
-    editor.revealRange(
-      new vscode.Range(position, position),
-      vscode.TextEditorRevealType.InCenterIfOutsideViewport,
-    );
+  }
+
+  private async replaceDocumentSource(
+    document: vscode.TextDocument,
+    webview: vscode.Webview,
+    message: Extract<WebviewToExtensionMessage, { type: 'replaceDocument' }>,
+  ): Promise<void> {
+    if (message.version !== document.version) {
+      await webview.postMessage({
+        applied: false,
+        documentSource: document.getText(),
+        requestId: message.requestId,
+        type: 'sourceEditResult',
+        version: document.version,
+      });
+      return;
+    }
+
+    try {
+      if (message.source !== document.getText()) {
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(
+          document.uri,
+          new vscode.Range(
+            document.positionAt(0),
+            document.positionAt(document.getText().length),
+          ),
+          message.source,
+        );
+        if (!await vscode.workspace.applyEdit(edit)) {
+          throw new Error('VS Code rejected the document edit.');
+        }
+      }
+      await webview.postMessage({
+        applied: true,
+        requestId: message.requestId,
+        type: 'sourceEditResult',
+        version: document.version,
+      });
+    } catch (error: unknown) {
+      await webview.postMessage({
+        applied: false,
+        documentSource: document.getText(),
+        error: errorMessageOf(error),
+        requestId: message.requestId,
+        type: 'sourceEditResult',
+        version: document.version,
+      });
+    }
   }
 
   private async recordEligibleReviewSession(): Promise<void> {
@@ -1297,6 +1335,8 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
     candidate.type === 'chooseEditorMode' ||
     candidate.type === 'cycleEditorMode' ||
     candidate.type === 'openInNewWindow' ||
+    candidate.type === 'openNativeSource' ||
+    candidate.type === 'saveDocument' ||
     candidate.type === 'openDiagramGallery'
   ) {
     return true;
@@ -1319,8 +1359,17 @@ function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
   if (candidate.type === 'setDiagramSurface') {
     return isDiagramSurfaceConfiguration(candidate.surface);
   }
-  if (candidate.type === 'revealSourceLine') {
-    return typeof candidate.line === 'number' && Number.isFinite(candidate.line);
+  if (candidate.type === 'replaceDocument') {
+    return (
+      typeof candidate.requestId === 'number' &&
+      Number.isSafeInteger(candidate.requestId) &&
+      candidate.requestId >= 0 &&
+      typeof candidate.version === 'number' &&
+      Number.isSafeInteger(candidate.version) &&
+      candidate.version >= 0 &&
+      typeof candidate.source === 'string' &&
+      candidate.source.length <= MAX_RENDER_SOURCE_BYTES * 2
+    );
   }
   if (candidate.type === 'clearDiagnostic') {
     return typeof candidate.version === 'number' && typeof candidate.rendered === 'boolean';
