@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+## 1.2.5
+
+- stopped rebuilding the complete VS Code editor grid for preview layout
+  changes; commands now move only the requested source or preview and preserve
+  unrelated groups, tabs, and user-defined sizes;
+- scoped editor modes to each Mermaid resource and kept every preview pinned to
+  its file instead of replacing previews when focus changes;
+- made detached previews explicit and prevented their layout controls from
+  changing the original window, with a bounded handshake for delayed copies;
+- released hidden file-preview renderers while restoring zoom and scroll from
+  lightweight webview state, avoiding retained Mermaid runtimes for background
+  tabs; in-progress folder exports pause and resume safely across reconstruction;
+- fixed export actions so an existing but not-yet-ready preview is revealed
+  instead of opening a duplicate custom editor;
+- changed documentation pop-out to move only the preview editor instead of its
+  entire editor group, and added a timeout to its webview readiness handshake.
+
 ## 1.2.4
 
 - fixed file navigation in **Beside** and **Above** so selecting another Mermaid

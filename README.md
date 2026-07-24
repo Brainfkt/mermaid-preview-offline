@@ -39,6 +39,16 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
+## What's new in 1.2.5
+
+Version 1.2.5 makes multi-window and multi-preview workflows substantially more
+predictable. Layout commands now move only the requested Mermaid source or
+preview, leaving unrelated editor groups, tabs, and custom sizes untouched.
+Each preview remains pinned to its file, detached windows are isolated from the
+main window, and hidden previews release their Mermaid runtime while preserving
+zoom and scroll state. The release also prevents duplicate previews during
+exports and moves only the documentation preview when it is popped out.
+
 ## Why use it?
 
 | | Capability | What it gives you |
@@ -58,16 +68,16 @@ Keep several Mermaid previews open in normal VS Code editor groups. Each view
 has its own zoom level and exposes file size, natural diagram dimensions,
 rendering time, and zoom percentage in the footer. Zoom and scroll position are
 restored per preview after VS Code restarts, while the selected diagram theme
-and editor layout stay synchronized across files. Choose **Preview only**,
+stays shared and each open file keeps its own editor layout. Choose **Preview only**,
 **Source only**, **Beside**, or **Above** from the preview toolbar. Beside and
 Above use VS Code's real text editor, so completion, formatting, snippets, quick
-fixes, and diagnostics remain available. Their native group ratio is restored
-per file. Selecting another Mermaid file from the Explorer or source tabs
-immediately updates both halves, while the extension keeps a single matching
-source/preview pair for the active document. Closing one half collapses the
-survivor to Preview only or Source only. A preview copied to a separate VS Code
-window remains independent and does not disturb the main Beside or Above
-layout. With the preview focused, press `P` repeatedly to cycle through Preview
+fixes, and diagnostics remain available. VS Code owns group sizes and the
+extension never resets the rest of your editor layout. Every preview stays
+pinned to its file, so focusing another source does not replace or close
+existing previews. Closing one half leaves the survivor in Preview only or
+Source only. A preview copied to a separate VS Code window is marked detached
+and cannot disturb the main Beside or Above layout. With the preview focused,
+press `P` repeatedly to cycle through Preview
 only, Beside, and Above. Use `Alt+P` from the Mermaid source editor (`Option+P`
 on macOS), so plain `P` remains available for typing. Clicking the canvas or
 minimap focuses the preview, and focus follows every layout transition.
@@ -173,7 +183,7 @@ SVG. Neither action opens the professional export dialog.
 - Keyword completion, contextual hover help, and 43 diagram-family snippets.
 - Formatting, node/link insertion, missing-ID generation, and rename support.
 - Four workspace-persistent native layouts: Preview, Source, Beside, and Above.
-- Per-file native split proportions with full completion and formatting support.
+- Per-file layout choices with native VS Code group resizing.
 - Beside and Above follow the active Mermaid source without duplicate previews.
 - Fit-to-window, incremental zoom, drag-to-pan, and an optional minimap.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
@@ -254,7 +264,7 @@ and current limitations.
 | `E` | Switch to Source-only mode |
 | **Editor layout** | Choose Preview, Source, Beside, or Above |
 | Explorer context menu | Open the selected Mermaid file in any of the four layouts |
-| Drag the native group separator | Resize source and preview; the ratio is stored per file |
+| Drag the native group separator | Resize source and preview using VS Code's native layout |
 | **Open in new window** | Copy the live preview into a separate VS Code window while keeping the original visible |
 | Minimap | Click or drag to navigate an overflowing diagram |
 | `R` | Refresh the diagram |
