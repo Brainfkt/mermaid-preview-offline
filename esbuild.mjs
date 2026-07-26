@@ -36,6 +36,7 @@ await Promise.all([
     entryPoints: {
       'cli-renderer': 'src/cliRenderer.ts',
       'documentation-webview': 'src/documentationWebview.ts',
+      'markdown-preview-resize': 'src/markdownPreviewResize.ts',
       'project-webview': 'src/projectWebview.ts',
       webview: 'src/webview.ts',
     },
