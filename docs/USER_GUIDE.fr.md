@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.6 — Guide utilisateur
+# Mermaid Preview Offline 1.2.7 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,27 +8,31 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.6. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.7. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
 
-## Nouveautés de la version 1.2.6
+## Nouveautés de la version 1.2.7
 
-La version 1.2.6 supprime la chorégraphie de groupes d’éditeurs derrière les
-aperçus divisés :
+La version 1.2.7 s’intègre au renderer **Mermaid Markdown Features** fourni avec
+VS Code 1.121 et les versions plus récentes, sans enregistrer un second renderer
+Mermaid dans l’aperçu Markdown :
 
-- Preview, Beside et Above résident désormais dans un seul onglet personnalisé ;
-- changer de disposition ne peut plus créer, redimensionner, déplacer ou fermer
-  les groupes d’éditeurs VS Code ;
-- Beside et Above utilisent un séparateur local déplaçable dont la proportion
-  est restaurée ;
-- Source only ouvre automatiquement l’éditeur texte Mermaid complet de VS Code ;
-- les modifications de la source du split sont sérialisées et vérifiées par
-  version ;
-- la barre gagne des intitulés larges, un collapse progressif, des réglages de
-  visibilité et d’intitulés, ainsi qu’une sélection fonction par fonction, avec
-  les icônes seules par défaut.
+- les blocs Mermaid de l’aperçu Markdown normal conservent la poignée de
+  redimensionnement verticale native ;
+- le quatrième bouton devient **Fit Diagram** ;
+- après un redimensionnement, Fit conserve exactement la hauteur choisie et
+  ajuste puis centre le diagramme à l’intérieur ;
+- les hauteurs redimensionnées sont restaurées par document Markdown et par
+  diagramme après un aller-retour, sauf si le nouveau réglage de mémorisation
+  est désactivé ;
+- les previews dédiées d’un bloc ou de tous les blocs retirent leurs headers et
+  la fonction Pop out, regroupent Zoom/Fit/source dans une seule barre et
+  ajoutent une présentation translucide avec le panneau Appearance complet
+  partagé, des flèches et un bouton Esc ;
+- les previews avancées MDX/AsciiDoc, l’export documentaire et les previews de
+  fichiers Mermaid autonomes restent fournis par l’extension.
 
 ## Démarrage rapide
 
@@ -588,6 +592,18 @@ ordinaire peut tout de même être prévisualisé sans sélectionner de révisio
 L’extension détecte les blocs Mermaid dans Markdown (`.md`, `.markdown`), MDX
 (`.mdx`) et AsciiDoc (`.adoc`, `.asciidoc`, `.asc`).
 
+Depuis VS Code 1.121, les fences `mermaid` de l’aperçu Markdown normal sont
+rendues par l’extension intégrée **Mermaid Markdown Features**. Mermaid Preview
+Offline n’effectue pas un second rendu. Il conserve la poignée de
+redimensionnement native et transforme le quatrième contrôle en **Fit
+Diagram** : le clic ne réinitialise plus la hauteur choisie, mais ajuste et
+centre le diagramme dans cette hauteur. La hauteur est mémorisée par document et
+par bloc Mermaid lorsque vous quittez le document puis y revenez. Réglez
+`mermaidPreviewOffline.markdown.rememberResizedHeight` sur `false` pour effacer
+les hauteurs enregistrées et désactiver leur restauration. Le redimensionnement
+natif respecte les réglages `markdown-mermaid.resizable` et
+`markdown-mermaid.maxHeight`.
+
 ![Les commandes de documentation pour prévisualiser un bloc, tous les blocs ou exporter les images](../media/screenshots/commands.png)
 
 ### Formes de blocs prises en charge
@@ -640,18 +656,25 @@ sequenceDiagram
 Placez le curseur dans un bloc et exécutez **Preview Block Under Cursor** pour
 le cibler. Exécutez **Preview All Blocks in Document** pour ouvrir une vue en
 direct du document. Elle se met à jour après les modifications de la source.
-Sélectionnez **Go to source**, ou double-cliquez sur le canevas d’un diagramme,
-pour afficher et sélectionner le bloc source correspondant. Chaque carte possède
-son zoom centré sur le pointeur, son pincement trackpad et son état restauré. Si
-le redimensionnement est actif, faites glisser la poignée inférieure
-ou utilisez les flèches lorsqu’elle a le focus ; `documentation.maxHeight` peut
-limiter sa hauteur.
-Sélectionnez **Present** pour afficher un diagramme par diapositive plein écran ;
-utilisez les flèches, Page précédente/suivante, Début/Fin ou Espace, puis Échap
-pour revenir. **Pop out** déplace l’aperçu documentaire dans une fenêtre VS Code
-distincte, sans déplacer les autres onglets de son groupe.
+Ces vues n’affichent volontairement aucun header de document ou de carte : les
+canevas apparaissent directement dans l’ordre de la source. La barre située en
+haut à droite de chaque diagramme regroupe Zoom arrière, Fit, Zoom avant et
+l’action Source only compacte `</>`. Sélectionnez `</>`, ou double-cliquez sur le
+canevas, pour afficher le bloc source correspondant.
 
-![La source Markdown à côté de l’aperçu en direct de plusieurs diagrammes Mermaid intégrés](../media/screenshots/preview-markdown.png)
+Chaque diagramme conserve son zoom centré sur le pointeur, son pincement
+trackpad et son état restauré. Si le redimensionnement est actif, faites glisser
+sa poignée inférieure ou utilisez les flèches lorsqu’elle a le focus ;
+`documentation.maxHeight` peut limiter sa hauteur.
+
+Le bouton **Present**, accompagné de son icône, reste fixé en bas à droite. La
+présentation hérite de toute l’apparence globale ; utilisez le bouton palette
+en bas à gauche pour modifier le thème, la densité, le motif ou le fond du
+canevas. Cette fenêtre reprend le panneau Appearance complet de la preview
+principale. Le compteur, les boutons fléchés précédent/suivant et **Esc**
+restent en bas à droite, alignés avec la barre translucide du diagramme en haut.
+Page précédente/suivante, Début/Fin, Espace, les flèches et Échap restent
+utilisables au clavier.
 
 ### Exporter une copie de la documentation
 
@@ -713,6 +736,7 @@ palette de commandes après l’activation de l’extension.
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Identifiants Markdown/MDX exacts reconnus comme Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Active le redimensionnement vertical des cartes documentaires. |
 | `mermaidPreviewOffline.documentation.maxHeight` | vide | Maximum validé facultatif, par exemple `720px` ou `80vh`. |
+| `mermaidPreviewOffline.markdown.rememberResizedHeight` | `true` | Restaure la hauteur de chaque bloc Mermaid Markdown natif après un aller-retour. Sa désactivation efface les hauteurs mémorisées. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Thème d’aperçu de l’espace de travail ou de la fenêtre. |
 | `mermaidPreviewOffline.diagramDensity` | `comfortable` | Espacement partagé `compact`, `comfortable` ou `spacious`. |
 | `mermaidPreviewOffline.canvas.background` | `editor` | Fond éditeur, prédéfini ou personnalisé, indépendant du thème VS Code. |

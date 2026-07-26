@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.6 — User guide
+# Mermaid Preview Offline 1.2.7 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,21 +7,29 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.6 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.7 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
-## New in version 1.2.6
+## New in version 1.2.7
 
-Version 1.2.6 removes the editor-group choreography behind split previews:
+Version 1.2.7 integrates with the **Mermaid Markdown Features** renderer bundled
+with VS Code 1.121 and newer, without registering a second Mermaid renderer in
+the Markdown preview:
 
-- Preview, Beside, and Above now live inside one custom-editor tab;
-- changing layout cannot create, resize, move, or close VS Code editor groups;
-- Beside and Above use a local draggable separator whose ratio is restored;
-- Source only opens VS Code's full Mermaid text editor automatically;
-- integrated split-source edits are serialized and version-checked;
-- the toolbar gains wide labels, progressive collapse, complete visibility and
-  label settings, and per-control selection, with icon-only as the default.
+- Mermaid blocks in the normal Markdown preview keep the native vertical resize
+  handle;
+- the fourth navigation action becomes **Fit Diagram**;
+- after resizing, Fit keeps the selected height and scales and centers the
+  diagram inside it;
+- resized heights are restored per Markdown document and diagram after
+  navigating away and back, unless the new memory setting is disabled;
+- dedicated one-block and all-block previews remove their document/card headers
+  and Pop out path, group Zoom/Fit/source in one toolbar, and provide
+  translucent presentation controls, the complete shared Appearance picker,
+  and explicit arrow and Esc buttons;
+- advanced MDX/AsciiDoc previews, documentation export, and standalone Mermaid
+  file previews remain provided by this extension.
 
 ## Quick start
 
@@ -551,6 +559,18 @@ without selecting revisions.
 The extension detects Mermaid blocks in Markdown (`.md`, `.markdown`), MDX
 (`.mdx`), and AsciiDoc (`.adoc`, `.asciidoc`, `.asc`).
 
+Starting with VS Code 1.121, `mermaid` fences in the normal Markdown preview are
+rendered by the built-in **Mermaid Markdown Features** extension. Mermaid
+Preview Offline does not render them a second time. It keeps the native resize
+handle and turns the fourth control into **Fit Diagram**: clicking it no longer
+resets the selected height, but fits and centers the diagram inside that
+height. The height is remembered per document and Mermaid block when navigating
+away and back. Set
+`mermaidPreviewOffline.markdown.rememberResizedHeight` to `false` to clear saved
+heights and disable restoration. Native resizing follows the
+`markdown-mermaid.resizable` and
+`markdown-mermaid.maxHeight` settings.
+
 ![The documentation commands for previewing one block, every block, or exporting diagram images](../media/screenshots/commands.png)
 
 ### Supported block forms
@@ -601,17 +621,22 @@ sequenceDiagram
 
 Place the cursor inside a block and run **Preview Block Under Cursor** to focus
 that block. Run **Preview All Blocks in Document** to open a live document view.
-It updates after source edits. Select **Go to source**, or double-click a diagram
-canvas, to reveal and select the matching source block. Each card has independent
-pointer-centered zoom, trackpad pinch, and restored viewport state.
-When resizing is enabled, drag the handle below a card or focus it and use the
-arrow keys; `documentation.maxHeight` can cap its height.
-Select **Present** to show one diagram per full-window slide; use the arrow,
-Page Up/Page Down, Home/End, or Space keys and press Escape to return. **Pop
-out** moves only the documentation preview editor to a separate VS Code window;
-other tabs in its former group stay where they are.
+It updates after source edits and deliberately has no document or card header:
+the diagram canvases appear directly in source order. Each top-right toolbar
+groups Zoom out, Fit, Zoom in, and the compact `</>` Source only action. Select
+`</>`, or double-click the canvas, to reveal the matching source block.
 
-![Markdown source beside a live document preview containing multiple Mermaid diagrams](../media/screenshots/preview-markdown.png)
+Each diagram keeps independent pointer-centered zoom, trackpad pinch, and
+restored viewport state. When resizing is enabled, drag its lower handle or
+focus it and use the arrow keys; `documentation.maxHeight` can cap its height.
+
+The icon-labelled **Present** button stays fixed at bottom right. Presentation
+inherits the complete workspace appearance; use the palette button at bottom
+left to change the shared theme, density, pattern, or canvas background. Its
+window matches the main preview Appearance picker. The counter, previous/next
+arrow buttons, and **Esc** action stay at bottom right, aligned with the
+top-right translucent diagram controls. Page Up/Page Down, Home/End, Space, the
+arrow keys, and Escape remain available from the keyboard.
 
 ### Export a documentation copy
 
@@ -672,6 +697,7 @@ but they remain searchable in the Command Palette after the extension activates.
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Exact Markdown/MDX identifiers recognized as Mermaid. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Enables vertical resizing for documentation diagram cards. |
 | `mermaidPreviewOffline.documentation.maxHeight` | empty | Optional validated maximum such as `720px` or `80vh`. |
+| `mermaidPreviewOffline.markdown.rememberResizedHeight` | `true` | Restore each native Markdown Mermaid block height after navigating away and back. Disabling it clears saved heights. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Workspace/window preview theme. |
 | `mermaidPreviewOffline.diagramDensity` | `comfortable` | Shared `compact`, `comfortable`, or `spacious` spacing. |
 | `mermaidPreviewOffline.canvas.background` | `editor` | Editor, preset, or custom canvas background independent from the VS Code theme. |
