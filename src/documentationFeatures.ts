@@ -3,6 +3,8 @@ import { Buffer } from 'node:buffer';
 import * as vscode from 'vscode';
 
 import {
+  isDiagramDensity,
+  isDiagramSurfaceConfiguration,
   normalizeDiagramDensity,
   normalizeDiagramSurface,
 } from './appearance';
@@ -39,7 +41,12 @@ import {
 } from './navigationSettings';
 import { readExportConfiguration } from './mermaidPreviewProvider';
 import { isDiagramTheme } from './previewState';
-import type { DiagramTheme, SerializedExportArtifact } from './protocol';
+import type {
+  DiagramDensity,
+  DiagramSurfaceConfiguration,
+  DiagramTheme,
+  SerializedExportArtifact,
+} from './protocol';
 import { loadWorkspaceImage } from './workspaceImages';
 
 interface PreviewContext {
@@ -304,9 +311,16 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       await this.revealSource(message.blockId);
       return;
     }
-    if (message.type === 'openInNewWindow') {
-      this.panel?.reveal(vscode.ViewColumn.Active, false);
-      await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+    if (message.type === 'setDiagramTheme') {
+      await updateDocumentationDiagramTheme(message.theme);
+      return;
+    }
+    if (message.type === 'setDiagramDensity') {
+      await updateDocumentationDiagramDensity(message.density);
+      return;
+    }
+    if (message.type === 'setDiagramSurface') {
+      await updateDocumentationDiagramSurface(message.surface);
       return;
     }
     const pending = this.pendingExports.get(message.requestId);
@@ -577,6 +591,36 @@ function configuredDiagramTheme(): DiagramTheme {
   return isDiagramTheme(theme) ? theme : 'adaptive';
 }
 
+async function updateDocumentationDiagramTheme(theme: DiagramTheme): Promise<void> {
+  await vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .update('diagramTheme', theme, documentationConfigurationTarget());
+}
+
+async function updateDocumentationDiagramDensity(
+  density: DiagramDensity,
+): Promise<void> {
+  await vscode.workspace
+    .getConfiguration('mermaidPreviewOffline')
+    .update('diagramDensity', density, documentationConfigurationTarget());
+}
+
+async function updateDocumentationDiagramSurface(
+  surface: DiagramSurfaceConfiguration,
+): Promise<void> {
+  const configuration = vscode.workspace.getConfiguration('mermaidPreviewOffline.canvas');
+  const target = documentationConfigurationTarget();
+  await configuration.update('background', surface.preset, target);
+  await configuration.update('customColor', surface.customColor, target);
+  await configuration.update('pattern', surface.pattern, target);
+}
+
+function documentationConfigurationTarget(): vscode.ConfigurationTarget {
+  return vscode.workspace.workspaceFile || vscode.workspace.workspaceFolders
+    ? vscode.ConfigurationTarget.Workspace
+    : vscode.ConfigurationTarget.Global;
+}
+
 function configuredDiagramDensity() {
   return normalizeDiagramDensity(
     vscode.workspace.getConfiguration('mermaidPreviewOffline').get('diagramDensity'),
@@ -690,11 +734,18 @@ function isDocumentationWebviewMessage(
     blockId?: unknown;
     message?: unknown;
     requestId?: unknown;
+    density?: unknown;
+    surface?: unknown;
+    theme?: unknown;
     type?: unknown;
   };
   if (candidate.type === 'ready') return true;
-  if (candidate.type === 'openInNewWindow') return true;
   if (candidate.type === 'revealSource') return typeof candidate.blockId === 'string';
+  if (candidate.type === 'setDiagramTheme') return isDiagramTheme(candidate.theme);
+  if (candidate.type === 'setDiagramDensity') return isDiagramDensity(candidate.density);
+  if (candidate.type === 'setDiagramSurface') {
+    return isDiagramSurfaceConfiguration(candidate.surface);
+  }
   if (candidate.type === 'documentationExportError') {
     return typeof candidate.requestId === 'string' && typeof candidate.message === 'string';
   }

@@ -1,4 +1,5 @@
 import type { DiagramNavigationConfiguration } from './navigationSettings';
+import { sourceOnlyIcon } from './controlIcons';
 
 export interface DocumentationDiagramState {
   autoFit: boolean;
@@ -12,6 +13,7 @@ export interface DocumentationDiagramState {
 export interface DocumentationDiagramControllerOptions {
   maxHeight: string;
   navigation: DiagramNavigationConfiguration;
+  onRevealSource(): void;
   resizable: boolean;
   source: string;
 }
@@ -106,9 +108,11 @@ export class DocumentationDiagramController {
     controls.className = 'documentation-navigation-controls';
     controls.setAttribute('aria-label', 'Diagram navigation controls');
     controls.innerHTML = [
-      '<button type="button" data-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>',
-      '<button type="button" data-action="fit" title="Fit diagram">Fit</button>',
-      '<button type="button" data-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>',
+      '<button class="documentation-navigation-action" type="button" data-action="zoom-out" title="Zoom out" aria-label="Zoom out">−</button>',
+      '<button class="documentation-navigation-action" type="button" data-action="fit" title="Fit diagram">Fit</button>',
+      '<button class="documentation-navigation-action" type="button" data-action="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>',
+      '<span class="documentation-navigation-divider" aria-hidden="true"></span>',
+      `<button class="documentation-source-button" type="button" data-action="source" title="Go to source" aria-label="Go to source">${sourceOnlyIcon('documentation-source-icon')}</button>`,
     ].join('');
     const signal = this.abortController.signal;
     controls.querySelector('[data-action="zoom-out"]')?.addEventListener(
@@ -126,12 +130,20 @@ export class DocumentationDiagramController {
       () => this.setZoom(this.zoom + 0.15),
       { signal },
     );
+    controls.querySelector('[data-action="source"]')?.addEventListener(
+      'click',
+      () => this.options.onRevealSource(),
+      { signal },
+    );
     return controls;
   }
 
   private configureControlsVisibility(): void {
     const visibility = this.options.navigation.controlsVisibility;
-    this.controls.hidden = visibility === 'never';
+    this.controls.classList.toggle(
+      'documentation-navigation-controls--navigation-hidden',
+      visibility === 'never',
+    );
     this.controls.classList.toggle(
       'documentation-navigation-controls--conditional',
       visibility === 'onHoverOrFocus',

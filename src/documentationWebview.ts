@@ -5,6 +5,7 @@ import {
   diagramSpacing,
   diagramSurfaceColor,
   isDarkHexColor,
+  isDiagramDensity,
   resolveDiagramAppearance,
 } from './appearance';
 
@@ -17,12 +18,19 @@ import type { DiagramFontFamily } from './diagramFont';
 import { artifactDataBase64, renderExportArtifact } from './exportRenderer';
 import { normalizeExportSettings } from './exportSettings';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { isDiagramTheme } from './previewState';
 import type {
   DocumentationPreviewBlock,
   DocumentationWebviewToExtensionMessage,
   ExtensionToDocumentationWebviewMessage,
 } from './documentationProtocol';
-import type { DiagramDensity, DiagramSurfaceConfiguration, DiagramTheme } from './protocol';
+import type {
+  DiagramDensity,
+  DiagramSurfaceConfiguration,
+  DiagramSurfacePattern,
+  DiagramSurfacePreset,
+  DiagramTheme,
+} from './protocol';
 
 interface VsCodeApi {
   postMessage(message: DocumentationWebviewToExtensionMessage): void;
@@ -34,8 +42,6 @@ interface DocumentationCard {
   controllerConfiguration: string;
   diagram: HTMLElement;
   error: HTMLElement;
-  index: HTMLElement;
-  location: HTMLElement;
   settled: boolean;
   source: string;
 }
@@ -46,12 +52,21 @@ registerOfflineIconPacks();
 const vscode = acquireVsCodeApi();
 const list = element<HTMLElement>('documentation-list');
 const empty = element<HTMLElement>('documentation-empty');
-const title = element<HTMLElement>('documentation-title');
-const summary = element<HTMLElement>('documentation-summary');
-const format = element<HTMLElement>('documentation-format');
 const presentButton = element<HTMLButtonElement>('documentation-present');
 const presentationControls = element<HTMLElement>('presentation-controls');
 const presentationCounter = element<HTMLElement>('presentation-counter');
+const presentationPrevious = element<HTMLButtonElement>('presentation-previous');
+const presentationNext = element<HTMLButtonElement>('presentation-next');
+const presentationThemeControl = element<HTMLElement>('presentation-theme-control');
+const presentationThemeButton = element<HTMLButtonElement>('presentation-theme');
+const presentationThemeMenu = element<HTMLElement>('presentation-theme-menu');
+const presentationThemeGrid = element<HTMLElement>('presentation-theme-grid');
+const presentationDensityPicker = element<HTMLElement>('presentation-density-picker');
+const presentationPatternPicker = element<HTMLElement>('presentation-pattern-picker');
+const presentationSurfacePicker = element<HTMLElement>('presentation-surface-picker');
+const presentationSurfaceCustomColor = element<HTMLInputElement>(
+  'presentation-surface-custom-color',
+);
 let renderSequence = 0;
 let renderGeneration = 0;
 let renderQueue = Promise.resolve();
@@ -59,6 +74,9 @@ let activeTheme: DiagramTheme = 'adaptive';
 let activeFontFamily: DiagramFontFamily = 'vscode';
 let activeDensity: DiagramDensity = 'comfortable';
 let activeSurface: DiagramSurfaceConfiguration = DEFAULT_DIAGRAM_SURFACE;
+let selectedTheme: DiagramTheme = activeTheme;
+let selectedDensity: DiagramDensity = activeDensity;
+let selectedSurface: DiagramSurfaceConfiguration = activeSurface;
 let presentationMode = false;
 let presentationIndex = 0;
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
@@ -68,11 +86,21 @@ const documentationCards = new Map<string, DocumentationCard>();
 
 initializeMermaid(activeTheme, activeFontFamily);
 
-element<HTMLButtonElement>('documentation-popout').addEventListener('click', () => {
-  vscode.postMessage({ type: 'openInNewWindow' });
-});
 presentButton.addEventListener('click', enterPresentation);
+presentationPrevious.addEventListener('click', () => movePresentation(-1));
+presentationNext.addEventListener('click', () => movePresentation(1));
 element<HTMLButtonElement>('presentation-exit').addEventListener('click', exitPresentation);
+presentationThemeButton.addEventListener('click', togglePresentationThemeMenu);
+presentationThemeGrid.addEventListener('click', handlePresentationThemeClick);
+presentationDensityPicker.addEventListener('click', handlePresentationDensityClick);
+presentationPatternPicker.addEventListener('click', handlePresentationPatternClick);
+presentationSurfacePicker.addEventListener('click', handlePresentationSurfaceClick);
+presentationSurfaceCustomColor.addEventListener('input', handlePresentationCustomColor);
+element<HTMLButtonElement>('presentation-appearance-close').addEventListener(
+  'click',
+  closePresentationThemeMenu,
+);
+document.addEventListener('click', handleDocumentClick);
 window.addEventListener('keydown', handlePresentationKey);
 
 window.addEventListener(
@@ -92,21 +120,29 @@ async function showDocumentation(
   data: Extract<ExtensionToDocumentationWebviewMessage, { type: 'documentationData' }>,
 ): Promise<void> {
   const generation = ++renderGeneration;
+  const surfaceAffectsRender =
+    !diagramSurfacesEqual(activeSurface, data.surface) &&
+    (activeTheme === 'adaptive' ||
+      activeTheme === 'sketch' ||
+      data.theme === 'adaptive' ||
+      data.theme === 'sketch');
   const renderConfigurationChanged = activeTheme !== data.theme ||
-    activeFontFamily !== data.fontFamily || activeDensity !== data.density;
+    activeFontFamily !== data.fontFamily ||
+    activeDensity !== data.density ||
+    surfaceAffectsRender;
   activeTheme = data.theme;
   activeFontFamily = data.fontFamily;
   activeDensity = data.density;
   activeSurface = data.surface;
+  selectedTheme = data.theme;
+  selectedDensity = data.density;
+  selectedSurface = data.surface;
   applyDocumentationSurface();
   initializeMermaid(activeTheme, activeFontFamily);
-  title.textContent = data.fileName;
-  format.textContent = formatLabel(data.kind);
-  summary.textContent = data.mode === 'cursor'
-    ? `Diagram under the cursor · ${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} in this document`
-    : `${data.totalBlocks} Mermaid block${data.totalBlocks === 1 ? '' : 's'} rendered locally`;
+  updatePresentationAppearance(activeTheme, activeDensity, activeSurface);
   empty.hidden = data.blocks.length > 0;
   list.hidden = data.blocks.length === 0;
+  presentButton.hidden = data.blocks.length === 0 || presentationMode;
   const controllerConfiguration = documentationControllerConfiguration(data);
   const nextCards = new Map<string, DocumentationCard>();
   const cardsToRender: Array<{ block: DocumentationPreviewBlock; card: DocumentationCard }> = [];
@@ -192,24 +228,6 @@ function createDiagramCard(
   article.className = 'documentation-card';
   article.dataset.blockId = block.id;
 
-  const header = document.createElement('header');
-  header.className = 'documentation-card__header';
-  const identity = document.createElement('div');
-  const index = document.createElement('strong');
-  index.textContent = `Diagram ${block.index + 1}`;
-  const location = document.createElement('span');
-  location.textContent = lineLabel(block.startLine, block.endLine);
-  identity.append(index, location);
-
-  const reveal = document.createElement('button');
-  reveal.className = 'source-button';
-  reveal.type = 'button';
-  reveal.textContent = 'Go to source';
-  reveal.addEventListener('click', () => {
-    vscode.postMessage({ blockId: block.id, type: 'revealSource' });
-  });
-  header.append(identity, reveal);
-
   const canvas = document.createElement('div');
   canvas.className = 'documentation-canvas';
   canvas.classList.toggle('pattern-dots', activeSurface.pattern === 'dots');
@@ -226,15 +244,13 @@ function createDiagramCard(
   error.className = 'documentation-error';
   error.hidden = true;
   canvas.append(diagram, error);
-  article.append(header, canvas);
+  article.append(canvas);
   return {
     article,
     canvas,
     controllerConfiguration,
     diagram,
     error,
-    index,
-    location,
     settled: false,
     source: block.source,
   };
@@ -242,8 +258,6 @@ function createDiagramCard(
 
 function updateDiagramCard(card: DocumentationCard, block: DocumentationPreviewBlock): void {
   card.article.dataset.blockId = block.id;
-  card.index.textContent = `Diagram ${block.index + 1}`;
-  card.location.textContent = lineLabel(block.startLine, block.endLine);
 }
 
 function documentationControllerConfiguration(
@@ -272,6 +286,9 @@ function createDiagramController(
     {
       maxHeight: data.maxHeight,
       navigation: data.navigation,
+      onRevealSource: () => {
+        vscode.postMessage({ blockId: block.id, type: 'revealSource' });
+      },
       resizable: data.resizable,
       source: block.source,
     },
@@ -459,7 +476,9 @@ function enterPresentation(): void {
   presentationMode = true;
   presentationIndex = 0;
   document.body.classList.add('presentation');
+  presentButton.hidden = true;
   presentationControls.hidden = false;
+  presentationThemeControl.hidden = false;
   updatePresentation();
 }
 
@@ -468,6 +487,9 @@ function exitPresentation(): void {
   presentationMode = false;
   document.body.classList.remove('presentation');
   presentationControls.hidden = true;
+  presentationThemeControl.hidden = true;
+  closePresentationThemeMenu();
+  presentButton.hidden = documentationCards.size === 0;
   for (const card of documentationCards.values()) card.article.hidden = false;
 }
 
@@ -477,13 +499,26 @@ function updatePresentation(): void {
   presentationIndex = Math.min(Math.max(presentationIndex, 0), cards.length - 1);
   cards.forEach((card, index) => { card.article.hidden = index !== presentationIndex; });
   presentationCounter.textContent = `${presentationIndex + 1} / ${cards.length}`;
+  presentationPrevious.disabled = presentationIndex === 0;
+  presentationNext.disabled = presentationIndex === cards.length - 1;
   cards[presentationIndex]?.canvas.focus({ preventScroll: true });
+}
+
+function movePresentation(direction: -1 | 1): void {
+  if (!presentationMode) return;
+  presentationIndex += direction;
+  updatePresentation();
 }
 
 function handlePresentationKey(event: KeyboardEvent): void {
   if (!presentationMode) return;
   if (event.key === 'Escape') {
     event.preventDefault();
+    if (!presentationThemeMenu.hidden) {
+      closePresentationThemeMenu();
+      presentationThemeButton.focus();
+      return;
+    }
     exitPresentation();
     return;
   }
@@ -498,15 +533,147 @@ function handlePresentationKey(event: KeyboardEvent): void {
   updatePresentation();
 }
 
-function lineLabel(startLine: number, endLine: number): string {
-  return startLine === endLine
-    ? `line ${startLine + 1}`
-    : `lines ${startLine + 1}–${endLine + 1}`;
+function togglePresentationThemeMenu(): void {
+  presentationThemeMenu.hidden = !presentationThemeMenu.hidden;
+  presentationThemeButton.setAttribute(
+    'aria-expanded',
+    String(!presentationThemeMenu.hidden),
+  );
 }
 
-function formatLabel(kind: 'asciidoc' | 'markdown' | 'mdx'): string {
-  if (kind === 'asciidoc') return 'AsciiDoc';
-  return kind === 'mdx' ? 'MDX' : 'Markdown';
+function closePresentationThemeMenu(): void {
+  presentationThemeMenu.hidden = true;
+  presentationThemeButton.setAttribute('aria-expanded', 'false');
+}
+
+function handlePresentationThemeClick(event: MouseEvent): void {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-theme]');
+  if (!button || !isDiagramTheme(button.dataset.theme)) return;
+  selectedTheme = button.dataset.theme;
+  updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  vscode.postMessage({ theme: button.dataset.theme, type: 'setDiagramTheme' });
+}
+
+function handlePresentationDensityClick(event: MouseEvent): void {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-density]');
+  if (!button || !isDiagramDensity(button.dataset.density)) return;
+  selectedDensity = button.dataset.density;
+  updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  vscode.postMessage({ density: button.dataset.density, type: 'setDiagramDensity' });
+}
+
+function handlePresentationPatternClick(event: MouseEvent): void {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-pattern]');
+  const pattern = button?.dataset.pattern;
+  if (!isDiagramSurfacePattern(pattern)) return;
+  selectedSurface = { ...selectedSurface, pattern };
+  updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  vscode.postMessage({ surface: selectedSurface, type: 'setDiagramSurface' });
+}
+
+function handlePresentationSurfaceClick(event: MouseEvent): void {
+  const button = (event.target as Element | null)?.closest<HTMLButtonElement>('[data-surface]');
+  const preset = button?.dataset.surface;
+  if (!isDiagramSurfacePreset(preset)) return;
+  selectedSurface = { ...selectedSurface, preset };
+  updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  vscode.postMessage({ surface: selectedSurface, type: 'setDiagramSurface' });
+}
+
+function handlePresentationCustomColor(): void {
+  selectedSurface = {
+    ...selectedSurface,
+    customColor: presentationSurfaceCustomColor.value,
+    preset: 'custom',
+  };
+  updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  vscode.postMessage({ surface: selectedSurface, type: 'setDiagramSurface' });
+}
+
+function handleDocumentClick(event: MouseEvent): void {
+  if (
+    presentationThemeMenu.hidden ||
+    presentationThemeControl.contains(event.target as Node)
+  ) {
+    return;
+  }
+  closePresentationThemeMenu();
+}
+
+function updatePresentationAppearance(
+  theme: DiagramTheme,
+  density: DiagramDensity,
+  surface: DiagramSurfaceConfiguration,
+): void {
+  const label = diagramThemeLabel(theme);
+  presentationThemeButton.title = `Diagram appearance: ${label}`;
+  presentationThemeButton.setAttribute('aria-label', `Diagram appearance: ${label}`);
+  for (const button of Array.from(
+    presentationThemeGrid.querySelectorAll<HTMLButtonElement>('[data-theme]'),
+  )) {
+    button.setAttribute('aria-pressed', String(button.dataset.theme === theme));
+  }
+  for (const button of Array.from(
+    presentationDensityPicker.querySelectorAll<HTMLButtonElement>('[data-density]'),
+  )) {
+    button.classList.toggle('is-active', button.dataset.density === density);
+  }
+  for (const button of Array.from(
+    presentationPatternPicker.querySelectorAll<HTMLButtonElement>('[data-pattern]'),
+  )) {
+    button.classList.toggle('is-active', button.dataset.pattern === surface.pattern);
+  }
+  for (const button of Array.from(
+    presentationSurfacePicker.querySelectorAll<HTMLButtonElement>('[data-surface]'),
+  )) {
+    button.classList.toggle('is-active', button.dataset.surface === surface.preset);
+  }
+  presentationSurfaceCustomColor.value = surface.customColor;
+  presentationSurfaceCustomColor.closest('.surface-swatch')?.classList.toggle(
+    'is-active',
+    surface.preset === 'custom',
+  );
+}
+
+function diagramThemeLabel(theme: DiagramTheme): string {
+  const labels: Record<DiagramTheme, string> = {
+    adaptive: 'Adaptive',
+    base: 'Base',
+    dark: 'Dark',
+    default: 'Default',
+    forest: 'Forest',
+    neo: 'Neo',
+    'neo-dark': 'Neo Dark',
+    neutral: 'Neutral',
+    'redux-color': 'Vibrant',
+    'redux-dark-color': 'Vibrant Dark',
+    sketch: 'Sketch',
+  };
+  return labels[theme];
+}
+
+function isDiagramSurfacePattern(value: unknown): value is DiagramSurfacePattern {
+  return value === 'none' || value === 'dots' || value === 'grid';
+}
+
+function isDiagramSurfacePreset(value: unknown): value is DiagramSurfacePreset {
+  return value === 'editor' ||
+    value === 'white' ||
+    value === 'paper' ||
+    value === 'soft-gray' ||
+    value === 'soft-blue' ||
+    value === 'soft-rose' ||
+    value === 'slate' ||
+    value === 'midnight';
+}
+
+function diagramSurfacesEqual(
+  left: DiagramSurfaceConfiguration,
+  right: DiagramSurfaceConfiguration,
+): boolean {
+  return left.preset === right.preset &&
+    left.pattern === right.pattern &&
+    left.customColor === right.customColor;
 }
 
 function removeTemporaryRenderNodes(): void {

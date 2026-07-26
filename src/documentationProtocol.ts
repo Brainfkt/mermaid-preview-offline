@@ -46,8 +46,10 @@ export type ExtensionToDocumentationWebviewMessage =
 
 export type DocumentationWebviewToExtensionMessage =
   | { type: 'ready' }
-  | { type: 'openInNewWindow' }
   | { blockId: string; type: 'revealSource' }
+  | { density: DiagramDensity; type: 'setDiagramDensity' }
+  | { surface: DiagramSurfaceConfiguration; type: 'setDiagramSurface' }
+  | { theme: DiagramTheme; type: 'setDiagramTheme' }
   | {
       artifacts: Array<{ artifact: SerializedExportArtifact; blockId: string }>;
       requestId: string;

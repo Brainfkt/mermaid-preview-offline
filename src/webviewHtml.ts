@@ -358,11 +358,11 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
 </html>`;
 }
 
-function themeCard(value: string, label: string, variant: string): string {
+export function themeCard(value: string, label: string, variant: string): string {
   return `<button class="theme-card theme-card--${variant}" type="button" data-theme="${value}" aria-pressed="false"><span class="theme-card__preview"><i></i><i></i><i></i></span><span>${label}</span></button>`;
 }
 
-function surfaceSwatch(value: string, color: string, label: string): string {
+export function surfaceSwatch(value: string, color: string, label: string): string {
   const style = color ? ` style="--swatch-color:${color}"` : '';
   return `<button class="surface-swatch surface-swatch--${value}" type="button" data-surface="${value}" title="${label}"${style}><i></i><span>${label}</span></button>`;
 }

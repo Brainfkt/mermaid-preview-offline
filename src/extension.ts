@@ -13,6 +13,10 @@ import {
 } from './diagramGenerationFeatures';
 import { MERMAID_EXPORT_TASK_TYPE, MermaidExportTaskProvider } from './exportTaskProvider';
 import { registerMermaidLanguageFeatures } from './languageFeatures';
+import {
+  createMarkdownItExtension,
+  type MarkdownItExtension,
+} from './markdownPreviewConfiguration';
 import { MermaidProjectFeatures } from './projectFeatures';
 import type { MermaidEditorMode } from './protocol';
 
@@ -40,7 +44,7 @@ const MODE_COMMANDS: ReadonlyArray<[string, MermaidEditorMode]> = [
   ['mermaidPreviewOffline.openAbove', 'above'],
 ];
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): MarkdownItExtension {
   const diagnostics = registerMermaidLanguageFeatures(context);
   const layoutController = new MermaidEditorLayoutController(
     context,
@@ -154,8 +158,22 @@ export function activate(context: vscode.ExtensionContext): void {
         await configureDefaultEditor(resource);
       },
     ),
+    vscode.workspace.onDidChangeConfiguration((event) => {
+      if (
+        event.affectsConfiguration(
+          'mermaidPreviewOffline.markdown.rememberResizedHeight',
+        )
+      ) {
+        void vscode.commands.executeCommand('markdown.preview.refresh');
+      }
+    }),
   );
 
+  return createMarkdownItExtension(() =>
+    vscode.workspace
+      .getConfiguration('mermaidPreviewOffline.markdown')
+      .get<boolean>('rememberResizedHeight', true),
+  );
 }
 
 export function deactivate(): void {}
