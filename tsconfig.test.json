@@ -19,6 +19,8 @@
     "src/documentationBlocks.ts",
     "src/documentationTracking.ts",
     "src/documentationWebviewHtml.ts",
+    "src/markdownPreviewResize.ts",
+    "src/markdownPreviewConfiguration.ts",
     "src/mermaidError.ts",
     "src/mermaidLanguage.ts",
     "src/previewState.ts",
