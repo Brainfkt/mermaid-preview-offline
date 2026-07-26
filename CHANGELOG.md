@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.2.7
+
+- integrated with the built-in `Mermaid Markdown Features` renderer in VS Code
+  1.121 and newer without registering a competing Mermaid renderer;
+- kept native Markdown Mermaid blocks vertically resizable through VS Code's
+  existing resize handle;
+- changed the native fourth navigation action from a destructive zoom reset
+  into **Fit Diagram**: it preserves the user-selected block height and fits
+  and centers the diagram inside that resized viewport;
+- remembered resized native Mermaid block heights per Markdown document and
+  diagram when navigating away and back, with
+  `markdown.rememberResizedHeight` to disable and clear that memory;
+- simplified single-block and all-block documentation previews to ordered
+  diagram canvases without document/card headers, format badges, or the
+  documentation Pop out path; grouped Zoom, Fit, and the compact `</>` source
+  action in one top-right toolbar per diagram;
+- anchored an icon-labelled **Present** action at bottom right and rebuilt
+  presentation controls with the complete shared Appearance picker at bottom
+  left, button-based pagination and **Esc** at bottom right, plus diagram
+  controls aligned to the same viewport margin;
+- matched every floating documentation control to the translucent main preview
+  toolbar and synchronized presentation theme, density, pattern, and canvas
+  background with the rest of the workspace;
+- added focused calculation, manifest, and Chromium interaction regressions for
+  resized Markdown blocks, documentation/presentation controls, cross-document
+  restoration, the opt-out setting, and the native Fit control.
+
 ## 1.2.6
 
 - moved Preview, Beside, and Above into one custom-editor tab, removing the
