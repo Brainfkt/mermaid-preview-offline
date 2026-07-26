@@ -34,6 +34,8 @@ interface ExtensionManifest {
       type: string;
     }>;
     menus: Record<string, Array<{ command: string; when: string }>>;
+    'markdown.markdownItPlugins': boolean;
+    'markdown.previewScripts': Array<{ path: string; type: string }>;
   };
   dependencies: Record<string, string>;
   extensionKind: string[];
@@ -61,6 +63,31 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies['@iconify-json/mdi'], '1.2.3');
   assert.equal(manifest.dependencies['@mermaid-js/layout-tidy-tree'], '0.2.2');
   assert.equal(manifest.dependencies.katex, undefined);
+});
+
+void test('the native Markdown Mermaid preview receives only the resize-fit enhancement', () => {
+  assert.equal(manifest.contributes['markdown.markdownItPlugins'], true);
+  assert.deepEqual(manifest.contributes['markdown.previewScripts'], [
+    {
+      path: './dist/markdown-preview-resize.js',
+      type: 'module',
+    },
+  ]);
+  const script = readFileSync(
+    resolve(__dirname, '../../src/markdownPreviewResize.ts'),
+    'utf8',
+  );
+  assert.match(script, /\.mermaid-wrapper \.zoom-reset-btn/u);
+  assert.match(script, /stopImmediatePropagation/u);
+  assert.match(script, /wrapper\.clientHeight/u);
+  assert.match(script, /markdownResizeMemoryKey/u);
+  assert.doesNotMatch(script, /mermaid\\.render/u);
+  const setting =
+    manifest.contributes.configuration.properties[
+      'mermaidPreviewOffline.markdown.rememberResizedHeight'
+    ];
+  assert.equal(setting?.default, true);
+  assert.equal(setting?.scope, 'window');
 });
 
 void test('preview commands expose the three internal layouts and full Source editor', () => {
@@ -430,8 +457,11 @@ void test('preview layouts stay internal and share state across workspace resour
   assert.match(webview, /workspace--beside/u);
   assert.match(webview, /workspace--above/u);
   assert.match(webview, /installSplitResize\(\)/u);
-  assert.match(documentation, /workbench\.action\.moveEditorToNewWindow/u);
-  assert.doesNotMatch(documentation, /workbench\.action\.moveEditorGroupToNewWindow/u);
+  assert.doesNotMatch(documentation, /openInNewWindow/u);
+  assert.doesNotMatch(documentation, /moveEditorToNewWindow/u);
+  assert.match(documentation, /setDiagramTheme/u);
+  assert.match(documentation, /setDiagramDensity/u);
+  assert.match(documentation, /setDiagramSurface/u);
 });
 
 void test('Mermaid rendering stays out of the DOM-less extension host', () => {

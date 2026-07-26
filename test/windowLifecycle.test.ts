@@ -82,11 +82,11 @@ void test('Source only opens the full VS Code text editor instead of the interna
   assert.doesNotMatch(openSourceOnly, /editorMode = 'source'/u);
 });
 
-void test('documentation preview readiness is bounded and pop-out moves only its editor', () => {
+void test('documentation preview readiness is bounded without a pop-out path', () => {
   const documentation = source('documentationFeatures.ts');
 
   assert.match(documentation, /DOCUMENTATION_READY_TIMEOUT_MS/u);
   assert.match(documentation, /settlePanelReady/u);
-  assert.match(documentation, /workbench\.action\.moveEditorToNewWindow/u);
-  assert.doesNotMatch(documentation, /workbench\.action\.moveEditorGroupToNewWindow/u);
+  assert.doesNotMatch(documentation, /openInNewWindow/u);
+  assert.doesNotMatch(documentation, /moveEditorToNewWindow/u);
 });
