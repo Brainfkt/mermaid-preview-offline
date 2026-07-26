@@ -1,5 +1,6 @@
+import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -11,6 +12,7 @@ export async function runBrowserHarness({
   harnessPath,
   label,
   resultElementId,
+  screenshotPath,
   timeoutMilliseconds = 120_000,
   windowSize = '800,600',
 }) {
@@ -40,7 +42,13 @@ export async function runBrowserHarness({
   try {
     client = CdpClient.connect(browser);
     return await withTimeout(
-      readHarnessResult(client, harnessPath, resultElementId, windowSize),
+      readHarnessResult(
+        client,
+        harnessPath,
+        resultElementId,
+        windowSize,
+        screenshotPath,
+      ),
       timeoutMilliseconds,
       `${label} timed out after ${Math.round(timeoutMilliseconds / 1_000)} seconds.`,
     );
@@ -56,7 +64,13 @@ export async function runBrowserHarness({
   }
 }
 
-async function readHarnessResult(client, harnessPath, resultElementId, windowSize) {
+async function readHarnessResult(
+  client,
+  harnessPath,
+  resultElementId,
+  windowSize,
+  screenshotPath,
+) {
   const target = await client.send('Target.createTarget', { url: 'about:blank' });
   const targetId = stringProperty(target, 'targetId');
   const attached = await client.send('Target.attachToTarget', { flatten: true, targetId });
@@ -101,6 +115,18 @@ async function readHarnessResult(client, harnessPath, resultElementId, windowSiz
   const value = isRecord(remoteObject) ? remoteObject.value : undefined;
   if (typeof value !== 'string' || !value) {
     throw new Error(`The ${resultElementId} harness did not produce results.`);
+  }
+  if (screenshotPath) {
+    const screenshot = await client.send(
+      'Page.captureScreenshot',
+      { captureBeyondViewport: false, format: 'png', fromSurface: true },
+      sessionId,
+    );
+    const data = isRecord(screenshot) ? screenshot.data : undefined;
+    if (typeof data !== 'string') {
+      throw new Error(`Chromium did not capture ${screenshotPath}.`);
+    }
+    writeFileSync(screenshotPath, Buffer.from(data, 'base64'));
   }
   return JSON.parse(value);
 }
