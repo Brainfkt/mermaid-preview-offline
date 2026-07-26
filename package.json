@@ -2,7 +2,7 @@
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
   "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -129,6 +129,13 @@
         "path": "./snippets/mermaid.json"
       }
     ],
+    "markdown.previewScripts": [
+      {
+        "path": "./dist/markdown-preview-resize.js",
+        "type": "module"
+      }
+    ],
+    "markdown.markdownItPlugins": true,
     "customEditors": [
       {
         "viewType": "brainfkt.mermaidPreviewOffline",
@@ -657,6 +664,12 @@
           "scope": "window",
           "description": "Optional maximum documentation diagram height, for example 400, 400px, or 80vh."
         },
+        "mermaidPreviewOffline.markdown.rememberResizedHeight": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "Remembers the resized height of each native Mermaid block when navigating away from and back to a Markdown document."
+        },
         "mermaidPreviewOffline.diagramTheme": {
           "type": "string",
           "enum": [
@@ -833,7 +846,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:compile": "tsc -p tsconfig.test.json",
     "test": "npm run test:compile && node --test .test-dist/test/*.test.js",
-    "test:visual": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs && node scripts/project-visual-regression.mjs",
+    "test:visual": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs && node scripts/project-visual-regression.mjs && node scripts/documentation-visual-regression.mjs && node scripts/markdown-preview-resize-regression.mjs",
     "test:visual:update": "npm run build:production && npm run test:compile && node scripts/visual-regression.mjs --update && node scripts/project-visual-regression.mjs",
     "build": "node esbuild.mjs",
     "build:production": "node esbuild.mjs --production",
