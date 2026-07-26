@@ -39,20 +39,27 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
-## What's new in 1.2.6
+## What's new in 1.2.7
 
-Version 1.2.6 keeps **Preview**, **Beside**, and **Above** inside one
-custom-editor tab. Above and Beside no longer create or rearrange VS Code editor
-groups; their separator is local, draggable, and restored per file. **Source
-only** now opens VS Code's full Mermaid text editor automatically. The source
-surface embedded in Beside and Above still synchronizes versioned edits safely.
+Version 1.2.7 works with the `Mermaid Markdown Features` renderer built into VS
+Code 1.121 and newer instead of adding a competing Markdown renderer. Mermaid
+blocks in the normal Markdown preview keep VS Code's native resize handle.
+After resizing a block, the fourth navigation action is now **Fit Diagram**:
+the selected height remains unchanged while the diagram is scaled and centered
+inside it. Resized heights are remembered per Markdown document and diagram
+when navigating away and back.
 
-The toolbar now follows a stable five-group order and adapts naturally to its
-viewport. The default is icon-only, and **Fit**, Zoom in, and Zoom out never
-receive text labels. In responsive mode, the other labels collapse in this
-order: new window, Export, Copy/Save SVG, Search, then Appearance. Settings can
-enable responsive labels, keep every supported label, hide the toolbar, or
-select its exact controls.
+The dedicated one-block and all-block document views now show only ordered
+diagram canvases with a unified Zoom/Fit/source toolbar. Their presentation mode
+adds the complete inherited workspace Appearance picker, explicit pagination
+buttons, and an **Esc** exit action without the former documentation Pop out
+control. Floating controls use the same translucent treatment as the main
+preview toolbar.
+
+Standalone Mermaid previews retain the stable single-tab Preview, Beside, and
+Above layouts introduced in 1.2.6, including the icon-only toolbar default,
+responsive labels, synchronized workspace layout, and full-editor Source only
+mode.
 
 ## Why use it?
 
@@ -202,7 +209,8 @@ SVG. Neither action opens the professional export dialog.
 - Independent canvas colors, custom backgrounds, dots/grid patterns, and three
   diagram densities shared by preview, Studio, diffs, documentation, and export.
 - In-diagram search and click-to-source navigation for rendered elements.
-- Documentation presentation mode and preview pop-out to a new VS Code window.
+- Header-free documentation previews with grouped Zoom, Fit, and source actions,
+  plus a presentation mode with shared themes and compact pagination.
 - VS Code-native diagram typography by default, with offline Noto Sans and
   Inter presets for portable exports and complete Latin accents.
 - A modern glass interface that remains native to VS Code themes.
@@ -306,6 +314,7 @@ and current limitations.
 | `mermaidPreviewOffline.documentation.languages` | `["mermaid"]` | Recognize additional exact Markdown/MDX block language identifiers. |
 | `mermaidPreviewOffline.documentation.resizable` | `true` | Allow vertical resizing of documentation diagram cards. |
 | `mermaidPreviewOffline.documentation.maxHeight` | empty | Cap documentation cards with a validated CSS length such as `720px` or `80vh`. |
+| `mermaidPreviewOffline.markdown.rememberResizedHeight` | `true` | Restore each native Markdown Mermaid block height after navigating away and back. Disabling it clears saved heights. |
 | `mermaidPreviewOffline.diagramTheme` | `adaptive` | Choose a theme shared by every preview in the workspace. |
 | `mermaidPreviewOffline.diagramFontFamily` | `vscode` | Follow VS Code's font, or use bundled Noto Sans/Inter for portable output. |
 | `mermaidPreviewOffline.export.format` | `png` | Choose the default professional export format. |
@@ -395,14 +404,30 @@ the existing before and after sides without choosing the revisions again.
 
 ## Markdown, MDX, and AsciiDoc
 
+In VS Code 1.121 and newer, normal Markdown previews render `mermaid` fences
+through the built-in **Mermaid Markdown Features** extension. Mermaid Preview
+Offline does not render those blocks a second time. It keeps the native vertical
+resize handle and changes the fourth navigation control to **Fit Diagram**:
+clicking it preserves the current block height and fits and centers the diagram
+inside the resized viewport. The extension remembers that height per Markdown
+document and Mermaid block when navigating away and back; disable
+`mermaidPreviewOffline.markdown.rememberResizedHeight` to clear and stop this
+restoration. Native resizing follows the built-in
+`markdown-mermaid.resizable` and `markdown-mermaid.maxHeight` settings.
+
 Place the cursor inside a Mermaid block and run **Mermaid Preview: Preview Block
 Under Cursor**. To render every diagram in the active document, use **Mermaid
 Preview: Preview All Blocks in Document**. Both commands are available from the
-editor title and context menus. The document view updates after source edits;
-select **Go to source** on any diagram (or double-click its canvas) to reveal and
-select the corresponding block in a native text editor.
+editor title and context menus. These focused views show only the diagram
+canvases in source order. Each top-right toolbar groups Zoom out, Fit, Zoom in,
+and the compact `</>` Source only action. The icon-labelled **Present** button stays
+fixed at bottom right.
 
-![A Markdown source document beside the live preview of all embedded Mermaid blocks](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/preview-markdown.png)
+Presentation inherits the complete workspace appearance. Use the palette button
+at bottom left to change the shared theme, density, pattern, or canvas
+background. The arrow buttons and counter at bottom right navigate, while
+**Esc** leaves presentation. The top and bottom control bars share the same
+right viewport margin and translucent surface.
 
 Markdown and MDX support backtick or tilde fences, including attribute-style
 MDX fences, and Azure DevOps-style containers:
