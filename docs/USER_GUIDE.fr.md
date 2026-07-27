@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.7 — Guide utilisateur
+# Mermaid Preview Offline 1.2.8 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,12 +8,23 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.7. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.2.8. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
 
-## Nouveautés de la version 1.2.7
+## Nouveautés de la version 1.2.8
+
+La version 1.2.8 améliore le bouton de fond de canevas **Custom** dans tous les
+panneaux Appearance :
+
+- lorsque Custom est inactif, son cercle affiche un damier gris clair et gris
+  foncé à la place du sélecteur carré imposé par le navigateur ;
+- après le choix d’une couleur personnalisée, ce même cercle affiche exactement
+  cette couleur et devient le fond de canevas actif ;
+- le déplacement dans le nuancier met à jour le fond en direct sans recalculer
+  Mermaid pour chaque couleur intermédiaire. Le diagramme n’est recalculé
+  qu’une fois, lorsque le geste de sélection est validé.
 
 La version 1.2.7 s’intègre au renderer **Mermaid Markdown Features** fourni avec
 VS Code 1.121 et les versions plus récentes, sans enregistrer un second renderer
@@ -335,11 +346,26 @@ pendant l’exécution. Consultez `examples/41-zenuml.mmd`.
 ### Icônes Iconify
 
 Les packs Iconify `logos`, `mdi` et `material-icon-theme` sont intégrés et
-enregistrés localement. Utilisez la syntaxe d’icône Mermaid habituelle, par
-exemple `icon: "logos:react"` ou `icon: "mdi:account-edit"`. Les autres packs ne sont
-pas téléchargés automatiquement. Consultez `examples/42-icon-packs.mmd`.
+enregistrés localement. Ils fournissent ensemble 10 903 icônes hors ligne :
+2 091 logos de marques et de technologies, 1 174 icônes de fichiers et de
+dossiers, et 7 638 icônes Material Design généralistes. Utilisez la syntaxe
+d’icône Mermaid habituelle, par exemple `icon: "logos:react"` ou
+`icon: "mdi:account-edit"`. Les autres packs ne sont ni inclus ni téléchargés
+automatiquement.
 
-![Un pipeline de livraison hors ligne rendu avec les packs Iconify intégrés](../media/screenshots/icon-packs-2.png)
+La galerie de 60 icônes dans `examples/42-icon-packs.mmd` explique chaque
+préfixe intégré et présente des catégories concrètes, les formes carrée,
+arrondie et circulaire, les couleurs de fond et de contour personnalisées,
+ainsi que la conservation des couleurs des marques.
+
+![Une galerie expliquée de 60 icônes Iconify intégrées, classées par pack et par usage](../media/screenshots/icon-demo.png)
+
+![Le code source de la galerie Iconify édité à côté de sa preview hors ligne synchronisée](../media/screenshots/icon-demo-2.png)
+
+La première vue donne une vision d’ensemble de la galerie et de sa légende
+visuelle. La seconde montre le même exemple dans le mode Beside, où le code
+source et le rendu restent réunis dans un même onglet d’éditeur personnalisé
+synchronisé.
 
 ### Images locales
 

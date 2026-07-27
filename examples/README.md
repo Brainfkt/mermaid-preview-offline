@@ -54,7 +54,7 @@ extensions, and intentional offline limitations.
 | 39 | PEG railroad | [`39-railroad-peg.mmd`](39-railroad-peg.mmd) | `railroad-peg-beta` | Ordered choices and reusable parsing rules in PEG notation |
 | 40 | Engine information | [`40-info.mmd`](40-info.mmd) | `info` | The version reported by the bundled Mermaid engine |
 | 41 | ZenUML | [`41-zenuml.mmd`](41-zenuml.mmd) | `zenuml` | Typed participants, nested calls, parallel work, branching and recovery |
-| 42 | Offline icon packs | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon: "logos:react"` | Bundled product and file-type icons with no network dependency |
+| 42 | Offline icon packs | [`42-icon-packs.mmd`](42-icon-packs.mmd) | `icon: "logos:react"` | Explained 60-icon gallery with bundled pack prefixes, categories, shapes, and custom colors |
 | 43 | Embedded local image | [`43-local-image.mmd`](43-local-image.mmd) | `img: "..."` | A workspace-relative asset safely embedded in the rendered SVG |
 | 44 | Tidy-tree mindmap | [`44-mindmap-tidy-tree.mmd`](44-mindmap-tidy-tree.mmd) | `layout: tidy-tree` | A balanced bidirectional mindmap rendered by the bundled tidy-tree layout |
 

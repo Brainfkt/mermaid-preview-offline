@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.7 — User guide
+# Mermaid Preview Offline 1.2.8 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,11 +7,22 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.7 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.2.8 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
-## New in version 1.2.7
+## New in version 1.2.8
+
+Version 1.2.8 improves the **Custom** canvas background swatch in every
+Appearance panel:
+
+- while Custom is inactive, its circle displays a light/dark gray checkerboard
+  instead of the browser’s square color input;
+- after choosing a custom color, the same circle displays that exact color and
+  becomes the active canvas background;
+- dragging inside the color picker updates the canvas background live without
+  recalculating Mermaid for every intermediate color. The diagram rerenders
+  once when the color gesture is committed.
 
 Version 1.2.7 integrates with the **Mermaid Markdown Features** renderer bundled
 with VS Code 1.121 and newer, without registering a second Mermaid renderer in
@@ -310,12 +321,23 @@ a diagram with `zenuml`; no runtime download is needed. See
 ### Iconify icons
 
 The `logos`, `mdi`, and `material-icon-theme` Iconify packs are bundled and
-registered locally. Use normal Mermaid icon syntax such as `icon: "logos:react"`
-or `icon: "mdi:account-edit"`. Other Iconify packs are not included and are not
-downloaded automatically. See
-`examples/42-icon-packs.mmd`.
+registered locally. Together they provide 10,903 offline icons: 2,091 brand and
+technology logos, 1,174 file and folder icons, and 7,638 general-purpose
+Material Design icons. Use normal Mermaid icon syntax such as
+`icon: "logos:react"` or `icon: "mdi:account-edit"`. Other Iconify packs are
+not included and are not downloaded automatically.
 
-![An offline delivery pipeline rendered with the bundled Iconify packs](../media/screenshots/icon-packs-2.png)
+The 60-icon gallery in `examples/42-icon-packs.mmd` explains each bundled
+prefix and demonstrates practical categories, square, rounded, and circular
+forms, custom fill and stroke colors, and preserved brand colors.
+
+![An explained gallery of 60 bundled Iconify icons organized by pack and use case](../media/screenshots/icon-demo.png)
+
+![The Iconify gallery source edited beside its synchronized offline preview](../media/screenshots/icon-demo-2.png)
+
+The first view gives an overview of the complete gallery and its visual legend.
+The second shows the same example in the Beside layout, where source and
+rendered result remain in one synchronized custom-editor tab.
 
 ### Local images
 
