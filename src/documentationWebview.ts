@@ -95,7 +95,8 @@ presentationThemeGrid.addEventListener('click', handlePresentationThemeClick);
 presentationDensityPicker.addEventListener('click', handlePresentationDensityClick);
 presentationPatternPicker.addEventListener('click', handlePresentationPatternClick);
 presentationSurfacePicker.addEventListener('click', handlePresentationSurfaceClick);
-presentationSurfaceCustomColor.addEventListener('input', handlePresentationCustomColor);
+presentationSurfaceCustomColor.addEventListener('input', previewPresentationCustomColor);
+presentationSurfaceCustomColor.addEventListener('change', commitPresentationCustomColor);
 element<HTMLButtonElement>('presentation-appearance-close').addEventListener(
   'click',
   closePresentationThemeMenu,
@@ -456,18 +457,20 @@ function initializeMermaid(theme: DiagramTheme, fontFamily: DiagramFontFamily): 
   });
 }
 
-function applyDocumentationSurface(): void {
+function applyDocumentationSurface(
+  surface: DiagramSurfaceConfiguration = activeSurface,
+): void {
   const editorColor = getComputedStyle(document.documentElement)
     .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
-  const color = diagramSurfaceColor(activeSurface, editorColor) ?? editorColor;
+  const color = diagramSurfaceColor(surface, editorColor) ?? editorColor;
   document.documentElement.style.setProperty('--diagram-canvas-background', color);
   document.documentElement.style.setProperty(
     '--diagram-pattern-ink',
     isDarkHexColor(color) ? '#ffffff18' : '#0f172a17',
   );
   for (const card of documentationCards.values()) {
-    card.canvas.classList.toggle('pattern-dots', activeSurface.pattern === 'dots');
-    card.canvas.classList.toggle('pattern-grid', activeSurface.pattern === 'grid');
+    card.canvas.classList.toggle('pattern-dots', surface.pattern === 'dots');
+    card.canvas.classList.toggle('pattern-grid', surface.pattern === 'grid');
   }
 }
 
@@ -580,13 +583,18 @@ function handlePresentationSurfaceClick(event: MouseEvent): void {
   vscode.postMessage({ surface: selectedSurface, type: 'setDiagramSurface' });
 }
 
-function handlePresentationCustomColor(): void {
+function previewPresentationCustomColor(): void {
   selectedSurface = {
     ...selectedSurface,
     customColor: presentationSurfaceCustomColor.value,
     preset: 'custom',
   };
   updatePresentationAppearance(selectedTheme, selectedDensity, selectedSurface);
+  applyDocumentationSurface(selectedSurface);
+}
+
+function commitPresentationCustomColor(): void {
+  previewPresentationCustomColor();
   vscode.postMessage({ surface: selectedSurface, type: 'setDiagramSurface' });
 }
 
@@ -629,7 +637,10 @@ function updatePresentationAppearance(
     button.classList.toggle('is-active', button.dataset.surface === surface.preset);
   }
   presentationSurfaceCustomColor.value = surface.customColor;
-  presentationSurfaceCustomColor.closest('.surface-swatch')?.classList.toggle(
+  const customSurfaceSwatch =
+    presentationSurfaceCustomColor.closest<HTMLElement>('.surface-swatch');
+  customSurfaceSwatch?.style.setProperty('--custom-swatch-color', surface.customColor);
+  customSurfaceSwatch?.classList.toggle(
     'is-active',
     surface.preset === 'custom',
   );

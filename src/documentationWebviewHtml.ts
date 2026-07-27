@@ -1,5 +1,6 @@
 import {
   createNonce,
+  customSurfaceSwatch,
   surfaceSwatch,
   themeCard,
 } from './webviewHtml';
@@ -98,10 +99,7 @@ export function createDocumentationWebviewHtml(
           ${surfaceSwatch('soft-rose', '#fdf2f8', 'Soft rose')}
           ${surfaceSwatch('slate', '#1e293b', 'Slate')}
           ${surfaceSwatch('midnight', '#0f172a', 'Midnight')}
-          <label class="surface-swatch surface-swatch--custom" title="Custom color">
-            <input id="presentation-surface-custom-color" type="color" value="#ffffff" aria-label="Custom canvas color">
-            <span>Custom</span>
-          </label>
+          ${customSurfaceSwatch('presentation-surface-custom-color')}
         </div>
       </section>
     </div>

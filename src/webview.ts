@@ -390,6 +390,9 @@ surfacePicker.addEventListener('click', (event) => {
   if (button?.dataset.surface) setDiagramSurfacePreset(button.dataset.surface as DiagramSurfacePreset);
 });
 surfaceCustomColor.addEventListener('input', () => {
+  previewCustomSurfaceColor(surfaceCustomColor.value);
+});
+surfaceCustomColor.addEventListener('change', () => {
   setDiagramSurface({
     ...configuration.diagramSurface,
     customColor: surfaceCustomColor.value,
@@ -1041,6 +1044,18 @@ function setDiagramSurface(surface: DiagramSurfaceConfiguration): void {
   }
 }
 
+function previewCustomSurfaceColor(color: string): void {
+  configuration = {
+    ...configuration,
+    diagramSurface: {
+      ...configuration.diagramSurface,
+      customColor: color,
+      preset: 'custom',
+    },
+  };
+  applyCanvasAppearance();
+}
+
 function applyCanvasAppearance(): void {
   const editorColor = getComputedStyle(document.documentElement)
     .getPropertyValue('--vscode-editor-background').trim() || '#ffffff';
@@ -1064,7 +1079,12 @@ function applyCanvasAppearance(): void {
     button.classList.toggle('is-active', button.dataset.surface === configuration.diagramSurface.preset);
   }
   surfaceCustomColor.value = configuration.diagramSurface.customColor;
-  surfaceCustomColor.closest('.surface-swatch')?.classList.toggle(
+  const customSurfaceSwatch = surfaceCustomColor.closest<HTMLElement>('.surface-swatch');
+  customSurfaceSwatch?.style.setProperty(
+    '--custom-swatch-color',
+    configuration.diagramSurface.customColor,
+  );
+  customSurfaceSwatch?.classList.toggle(
     'is-active', configuration.diagramSurface.preset === 'custom',
   );
 }

@@ -141,10 +141,7 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       ${surfaceSwatch('soft-rose', '#fdf2f8', 'Soft rose')}
       ${surfaceSwatch('slate', '#1e293b', 'Slate')}
       ${surfaceSwatch('midnight', '#0f172a', 'Midnight')}
-      <label class="surface-swatch surface-swatch--custom" title="Custom color">
-        <input id="surface-custom-color" type="color" value="#ffffff" aria-label="Custom canvas color">
-        <span>Custom</span>
-      </label>
+      ${customSurfaceSwatch('surface-custom-color')}
     </div>
   </section>
 
@@ -365,6 +362,10 @@ export function themeCard(value: string, label: string, variant: string): string
 export function surfaceSwatch(value: string, color: string, label: string): string {
   const style = color ? ` style="--swatch-color:${color}"` : '';
   return `<button class="surface-swatch surface-swatch--${value}" type="button" data-surface="${value}" title="${label}"${style}><i></i><span>${label}</span></button>`;
+}
+
+export function customSurfaceSwatch(inputId: string): string {
+  return `<label class="surface-swatch surface-swatch--custom" title="Custom color"><span class="surface-swatch__custom-control"><i class="surface-swatch__custom-preview" aria-hidden="true"></i><input id="${inputId}" type="color" value="#ffffff" aria-label="Custom canvas color"></span><span>Custom</span></label>`;
 }
 
 function icon(
