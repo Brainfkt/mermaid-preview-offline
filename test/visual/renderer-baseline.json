@@ -372,11 +372,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "light",
-      "elementCount": 320,
-      "paletteHash": "1549028b",
-      "ratio": 3.6118,
-      "structureHash": "01c7dd73",
-      "textHash": "00947ff7"
+      "elementCount": 1864,
+      "paletteHash": "f3031729",
+      "ratio": 1.1082,
+      "structureHash": "b0bdeb62",
+      "textHash": "415df680"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -768,11 +768,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "dark",
-      "elementCount": 323,
-      "paletteHash": "744d5fca",
-      "ratio": 3.6118,
-      "structureHash": "04873090",
-      "textHash": "00947ff7"
+      "elementCount": 1867,
+      "paletteHash": "3e39e063",
+      "ratio": 1.1082,
+      "structureHash": "a78104ed",
+      "textHash": "415df680"
     },
     {
       "fileName": "43-local-image.mmd",
@@ -1164,11 +1164,11 @@
     {
       "fileName": "42-icon-packs.mmd",
       "scheme": "high-contrast",
-      "elementCount": 323,
-      "paletteHash": "3b04c581",
-      "ratio": 3.6118,
-      "structureHash": "04873090",
-      "textHash": "00947ff7"
+      "elementCount": 1867,
+      "paletteHash": "dd0fbebf",
+      "ratio": 1.1082,
+      "structureHash": "a78104ed",
+      "textHash": "415df680"
     },
     {
       "fileName": "43-local-image.mmd",
