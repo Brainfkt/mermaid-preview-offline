@@ -39,7 +39,15 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
-## What's new in 1.2.7
+## What's new in 1.2.8
+
+Version 1.2.8 refines the **Custom** canvas background control. Its circle now
+shows a light/dark gray checkerboard while Custom is inactive, then fills with
+the exact color selected in the color picker when Custom becomes active. The
+canvas background follows color-picker dragging live without rerendering the
+diagram for every intermediate color; Mermaid is recalculated only after the
+gesture is committed. The same behavior is used in the main preview and
+presentation Appearance panels.
 
 Version 1.2.7 works with the `Mermaid Markdown Features` renderer built into VS
 Code 1.121 and newer instead of adding a competing Markdown renderer. Mermaid
@@ -123,14 +131,24 @@ keeping the original visible.
 
 The official ZenUML and tidy-tree layout plug-ins and the Iconify `logos`,
 `mdi`, and `material-icon-theme` collections are bundled locally and loaded
-only when a diagram uses them. Relative images inside the workspace are
-converted to `data:` URIs, so exported SVGs stay portable and do not depend on
-local file paths.
+only when a diagram uses them. Together, the three packs provide 10,903 offline
+icons: 2,091 brand and technology logos, 1,174 file and folder icons, and 7,638
+general-purpose Material Design icons.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icon-packs-2.png" alt="Bundled Iconify packs used in a complete offline Mermaid delivery pipeline" width="49%">
-  <img src="https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/local-image.png" alt="A workspace-relative image embedded in an offline Mermaid diagram" width="49%">
-</p>
+The bundled gallery demonstrates the `icon: "pack:name"` syntax, square,
+rounded, and circular forms, custom fill and stroke colors, and preserved brand
+colors across 60 examples organized into six practical categories.
+
+![An explained gallery of 60 locally bundled Iconify icons with pack prefixes, categories, forms, and colors](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icon-demo.png)
+
+![Editing the Iconify gallery source beside a synchronized rendered preview in VS Code](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/icon-demo-2.png)
+
+<p align="center"><em>Explore the complete gallery, then edit its Mermaid source beside the synchronized offline preview.</em></p>
+
+Relative images inside the workspace are converted to `data:` URIs, so exported
+SVGs stay portable and do not depend on local file paths.
+
+![A workspace-relative image embedded in an offline Mermaid diagram](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/local-image.png)
 
 <p align="center"><em>Bundled Iconify packs and workspace-relative images render without a network request.</em></p>
 
