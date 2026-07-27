@@ -1,34 +1,150 @@
 ---
-title: Offline preview delivery pipeline
+title: 10,903 offline icons using Iconify pack prefixes
 ---
-flowchart LR
-  accTitle: Offline preview delivery pipeline using bundled icon packs
-  accDescr: Mermaid source moves from VS Code through a TypeScript and Node.js runtime, automated tests, continuous integration, and local packaging.
+flowchart TB
+  accTitle: Three complete Iconify packs bundled for offline Mermaid diagrams
+  accDescr: A visual gallery explains the logos, material icon theme, and Material Design Icons collections and demonstrates their offline icon prefixes.
 
-  subgraph authoring [Authoring]
-    vscode@{ icon: "logos:visual-studio-code", form: "square", label: "VS Code", pos: "b", h: 88 }
-    source@{ icon: "material-icon-theme:markdown", form: "rounded", label: "Mermaid source", pos: "b", h: 88 }
-    author@{ icon: "mdi:account-edit", form: "circle", label: "Diagram author", pos: "b", h: 88 }
+  subgraph explanation ["How to read this gallery"]
+    direction LR
+    offline["Bundled offline"]
+    lazy["Loaded on demand"]
+    syntax["Use icon: pack:name"]
+    forms["Forms: square · rounded · circle"]
+    palette["Custom fill and stroke"]
+    artwork["Brand colors are preserved"]
   end
 
-  subgraph runtime [Offline runtime]
-    typescript@{ icon: "logos:typescript-icon", form: "square", label: "TypeScript", pos: "b", h: 88 }
-    node@{ icon: "logos:nodejs-icon", form: "circle", label: "Node.js", pos: "b", h: 88 }
-    renderer@{ icon: "logos:react", form: "rounded", label: "Interactive preview", pos: "b", h: 88 }
+  subgraph brands ["logos · 2,091 brand and technology logos · prefix logos:"]
+    direction TB
+    subgraph logoLanguages ["Languages"]
+      direction LR
+      logoPython@{ icon: "logos:python", form: "square", label: "Python", pos: "b", h: 64 }
+      logoTypeScript@{ icon: "logos:typescript-icon", form: "square", label: "TypeScript", pos: "b", h: 64 }
+      logoJavaScript@{ icon: "logos:javascript", form: "square", label: "JavaScript", pos: "b", h: 64 }
+      logoRust@{ icon: "logos:rust", form: "square", label: "Rust", pos: "b", h: 64 }
+      logoGo@{ icon: "logos:go", form: "square", label: "Go", pos: "b", h: 64 }
+      logoJava@{ icon: "logos:java", form: "square", label: "Java", pos: "b", h: 64 }
+      logoPhp@{ icon: "logos:php", form: "square", label: "PHP", pos: "b", h: 64 }
+      logoRuby@{ icon: "logos:ruby", form: "square", label: "Ruby", pos: "b", h: 64 }
+      logoKotlin@{ icon: "logos:kotlin-icon", form: "square", label: "Kotlin", pos: "b", h: 64 }
+      logoSwift@{ icon: "logos:swift", form: "square", label: "Swift", pos: "b", h: 64 }
+    end
+    subgraph logoPlatforms ["Frameworks, platforms, and delivery"]
+      direction LR
+      logoReact@{ icon: "logos:react", form: "square", label: "React", pos: "b", h: 64 }
+      logoVue@{ icon: "logos:vue", form: "square", label: "Vue", pos: "b", h: 64 }
+      logoAngular@{ icon: "logos:angular-icon", form: "square", label: "Angular", pos: "b", h: 64 }
+      logoSvelte@{ icon: "logos:svelte-icon", form: "square", label: "Svelte", pos: "b", h: 64 }
+      logoNode@{ icon: "logos:nodejs-icon", form: "square", label: "Node.js", pos: "b", h: 64 }
+      logoDeno@{ icon: "logos:deno", form: "square", label: "Deno", pos: "b", h: 64 }
+      logoDocker@{ icon: "logos:docker-icon", form: "square", label: "Docker", pos: "b", h: 64 }
+      logoKubernetes@{ icon: "logos:kubernetes", form: "square", label: "Kubernetes", pos: "b", h: 64 }
+      logoPostgres@{ icon: "logos:postgresql", form: "square", label: "PostgreSQL", pos: "b", h: 64 }
+      logoActions@{ icon: "logos:github-actions", form: "square", label: "GitHub Actions", pos: "b", h: 64 }
+    end
   end
 
-  subgraph quality [Quality gates]
-    tests@{ icon: "material-icon-theme:test-ts", form: "square", label: "Renderer tests", pos: "b", h: 88 }
-    ci@{ icon: "logos:github-actions", form: "square", label: "CI validation", pos: "b", h: 88 }
+  subgraph files ["material-icon-theme · 1,174 file and folder icons · prefix material-icon-theme:"]
+    direction TB
+    subgraph fileSources ["Source and documentation files"]
+      direction LR
+      fileMarkdown@{ icon: "material-icon-theme:markdown", form: "rounded", label: "Markdown", pos: "b", h: 64 }
+      fileJson@{ icon: "material-icon-theme:json", form: "rounded", label: "JSON", pos: "b", h: 64 }
+      fileYaml@{ icon: "material-icon-theme:yaml", form: "rounded", label: "YAML", pos: "b", h: 64 }
+      fileHtml@{ icon: "material-icon-theme:html", form: "rounded", label: "HTML", pos: "b", h: 64 }
+      fileCss@{ icon: "material-icon-theme:css", form: "rounded", label: "CSS", pos: "b", h: 64 }
+      fileJavaScript@{ icon: "material-icon-theme:javascript", form: "rounded", label: "JavaScript", pos: "b", h: 64 }
+      fileTypeScript@{ icon: "material-icon-theme:typescript", form: "rounded", label: "TypeScript", pos: "b", h: 64 }
+      filePython@{ icon: "material-icon-theme:python", form: "rounded", label: "Python", pos: "b", h: 64 }
+      fileJava@{ icon: "material-icon-theme:java", form: "rounded", label: "Java", pos: "b", h: 64 }
+      fileRust@{ icon: "material-icon-theme:rust", form: "rounded", label: "Rust", pos: "b", h: 64 }
+    end
+    subgraph fileTooling ["Tooling and project configuration"]
+      direction LR
+      fileDocker@{ icon: "material-icon-theme:docker", form: "rounded", label: "Docker", pos: "b", h: 64 }
+      fileTest@{ icon: "material-icon-theme:test-ts", form: "rounded", label: "Test", pos: "b", h: 64 }
+      fileEslint@{ icon: "material-icon-theme:eslint", form: "rounded", label: "ESLint", pos: "b", h: 64 }
+      filePrettier@{ icon: "material-icon-theme:prettier", form: "rounded", label: "Prettier", pos: "b", h: 64 }
+      fileGit@{ icon: "material-icon-theme:git", form: "rounded", label: "Git", pos: "b", h: 64 }
+      fileWorkflow@{ icon: "material-icon-theme:github-actions-workflow", form: "rounded", label: "Workflow", pos: "b", h: 64 }
+      fileNpm@{ icon: "material-icon-theme:npm", form: "rounded", label: "npm", pos: "b", h: 64 }
+      fileVite@{ icon: "material-icon-theme:vite", form: "rounded", label: "Vite", pos: "b", h: 64 }
+      fileWebpack@{ icon: "material-icon-theme:webpack", form: "rounded", label: "Webpack", pos: "b", h: 64 }
+      fileFolder@{ icon: "material-icon-theme:folder-src", form: "rounded", label: "Source folder", pos: "b", h: 64 }
+    end
   end
 
-  subgraph delivery [Local delivery]
-    manifest@{ icon: "material-icon-theme:json", form: "square", label: "Extension manifest", pos: "b", h: 88 }
-    package@{ icon: "material-icon-theme:nodejs", form: "rounded", label: "VSIX package", pos: "b", h: 88 }
+  subgraph concepts ["mdi · 7,638 interface and concept symbols · prefix mdi:"]
+    direction TB
+    subgraph mdiEditor ["Editor and workflow actions"]
+      direction LR
+      mdiVsCode@{ icon: "mdi:microsoft-visual-studio-code", form: "circle", label: "VS Code", pos: "b", h: 64 }
+      mdiAuthor@{ icon: "mdi:account-edit", form: "circle", label: "Author", pos: "b", h: 64 }
+      mdiBranch@{ icon: "mdi:source-branch", form: "circle", label: "Branch", pos: "b", h: 64 }
+      mdiSearch@{ icon: "mdi:magnify", form: "circle", label: "Search", pos: "b", h: 64 }
+      mdiAppearance@{ icon: "mdi:palette", form: "circle", label: "Appearance", pos: "b", h: 64 }
+      mdiExport@{ icon: "mdi:download", form: "circle", label: "Export", pos: "b", h: 64 }
+      mdiCopy@{ icon: "mdi:content-copy", form: "circle", label: "Copy", pos: "b", h: 64 }
+      mdiSave@{ icon: "mdi:content-save", form: "circle", label: "Save", pos: "b", h: 64 }
+      mdiRefresh@{ icon: "mdi:refresh", form: "circle", label: "Refresh", pos: "b", h: 64 }
+      mdiFit@{ icon: "mdi:fit-to-screen", form: "circle", label: "Fit", pos: "b", h: 64 }
+    end
+    subgraph mdiArchitecture ["Architecture, quality, and delivery"]
+      direction LR
+      mdiDatabase@{ icon: "mdi:database", form: "circle", label: "Database", pos: "b", h: 64 }
+      mdiCloud@{ icon: "mdi:cloud-sync", form: "circle", label: "Cloud sync", pos: "b", h: 64 }
+      mdiSecure@{ icon: "mdi:shield-check", form: "circle", label: "Secure", pos: "b", h: 64 }
+      mdiApi@{ icon: "mdi:api", form: "circle", label: "API", pos: "b", h: 64 }
+      mdiServer@{ icon: "mdi:server", form: "circle", label: "Server", pos: "b", h: 64 }
+      mdiPackage@{ icon: "mdi:package-variant-closed-check", form: "circle", label: "Package", pos: "b", h: 64 }
+      mdiLaunch@{ icon: "mdi:rocket-launch", form: "circle", label: "Launch", pos: "b", h: 64 }
+      mdiBug@{ icon: "mdi:bug-check", form: "circle", label: "Bug check", pos: "b", h: 64 }
+      mdiTest@{ icon: "mdi:test-tube", form: "circle", label: "Test", pos: "b", h: 64 }
+      mdiChart@{ icon: "mdi:chart-box", form: "circle", label: "Metrics", pos: "b", h: 64 }
+    end
   end
 
-  author -->|"Edit"| source
-  vscode --> source --> typescript --> node --> renderer
-  typescript --> tests --> ci
-  renderer --> tests
-  ci --> manifest --> package
+  offline ~~~ lazy ~~~ syntax ~~~ forms ~~~ palette ~~~ artwork
+
+  logoPython ~~~ logoTypeScript ~~~ logoJavaScript ~~~ logoRust ~~~ logoGo ~~~ logoJava ~~~ logoPhp ~~~ logoRuby ~~~ logoKotlin ~~~ logoSwift
+  logoReact ~~~ logoVue ~~~ logoAngular ~~~ logoSvelte ~~~ logoNode ~~~ logoDeno ~~~ logoDocker ~~~ logoKubernetes ~~~ logoPostgres ~~~ logoActions
+  logoLanguages ~~~ logoPlatforms
+
+  fileMarkdown ~~~ fileJson ~~~ fileYaml ~~~ fileHtml ~~~ fileCss ~~~ fileJavaScript ~~~ fileTypeScript ~~~ filePython ~~~ fileJava ~~~ fileRust
+  fileDocker ~~~ fileTest ~~~ fileEslint ~~~ filePrettier ~~~ fileGit ~~~ fileWorkflow ~~~ fileNpm ~~~ fileVite ~~~ fileWebpack ~~~ fileFolder
+  fileSources ~~~ fileTooling
+
+  mdiVsCode ~~~ mdiAuthor ~~~ mdiBranch ~~~ mdiSearch ~~~ mdiAppearance ~~~ mdiExport ~~~ mdiCopy ~~~ mdiSave ~~~ mdiRefresh ~~~ mdiFit
+  mdiDatabase ~~~ mdiCloud ~~~ mdiSecure ~~~ mdiApi ~~~ mdiServer ~~~ mdiPackage ~~~ mdiLaunch ~~~ mdiBug ~~~ mdiTest ~~~ mdiChart
+  mdiEditor ~~~ mdiArchitecture
+
+  explanation ~~~ brands
+  brands ~~~ files ~~~ concepts
+
+  classDef note fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px
+  classDef logoLanguageIcon fill:#dbeafe,stroke:#2563eb,color:#1e3a8a,stroke-width:2px
+  classDef logoPlatformIcon fill:#cffafe,stroke:#0891b2,color:#164e63,stroke-width:2px
+  classDef sourceFileIcon fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:2px
+  classDef toolingFileIcon fill:#ffe4e6,stroke:#e11d48,color:#881337,stroke-width:2px
+  classDef editorIcon fill:#ede9fe,stroke:#7c3aed,color:#4c1d95,stroke-width:2px
+  classDef deliveryIcon fill:#d1fae5,stroke:#059669,color:#064e3b,stroke-width:2px
+
+  class offline,lazy,syntax,forms,palette,artwork note
+  class logoPython,logoTypeScript,logoJavaScript,logoRust,logoGo,logoJava,logoPhp,logoRuby,logoKotlin,logoSwift logoLanguageIcon
+  class logoReact,logoVue,logoAngular,logoSvelte,logoNode,logoDeno,logoDocker,logoKubernetes,logoPostgres,logoActions logoPlatformIcon
+  class fileMarkdown,fileJson,fileYaml,fileHtml,fileCss,fileJavaScript,fileTypeScript,filePython,fileJava,fileRust sourceFileIcon
+  class fileDocker,fileTest,fileEslint,filePrettier,fileGit,fileWorkflow,fileNpm,fileVite,fileWebpack,fileFolder toolingFileIcon
+  class mdiVsCode,mdiAuthor,mdiBranch,mdiSearch,mdiAppearance,mdiExport,mdiCopy,mdiSave,mdiRefresh,mdiFit editorIcon
+  class mdiDatabase,mdiCloud,mdiSecure,mdiApi,mdiServer,mdiPackage,mdiLaunch,mdiBug,mdiTest,mdiChart deliveryIcon
+
+  style explanation fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#0f172a
+  style brands fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
+  style logoLanguages fill:#f8fbff,stroke:#93c5fd,color:#1e40af
+  style logoPlatforms fill:#ecfeff,stroke:#67e8f9,color:#155e75
+  style files fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12
+  style fileSources fill:#fffbeb,stroke:#fbbf24,color:#78350f
+  style fileTooling fill:#fff1f2,stroke:#fb7185,color:#881337
+  style concepts fill:#faf5ff,stroke:#8b5cf6,stroke-width:2px,color:#4c1d95
+  style mdiEditor fill:#f5f3ff,stroke:#a78bfa,color:#4c1d95
+  style mdiArchitecture fill:#ecfdf5,stroke:#34d399,color:#064e3b
