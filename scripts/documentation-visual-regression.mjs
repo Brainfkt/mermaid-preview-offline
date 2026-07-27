@@ -103,14 +103,15 @@ if (
 if (
   presentationResult.themeMessage?.theme !== 'dark' ||
   presentationResult.densityMessage?.density !== 'compact' ||
-  presentationResult.surfaceMessage?.surface?.preset !== 'soft-blue' ||
+  presentationResult.surfaceMessage?.surface?.preset !== 'custom' ||
+  presentationResult.surfaceMessage?.surface?.customColor !== '#4f46e5' ||
   presentationResult.surfaceMessage?.surface?.pattern !== 'grid' ||
   presentationResult.counter !== `1 / ${blocks.length}`
 ) {
   throw new Error('Documentation presentation did not complete appearance and navigation interactions.');
 }
 console.log(
-  `Documentation visual regression passed: ${blocks.length} ordered diagrams, translucent controls, shared appearance, aligned presentation controls, pagination, and Esc exit.`,
+  `Documentation visual regression passed: ${blocks.length} ordered diagrams, translucent controls, shared appearance, circular custom swatch, aligned presentation controls, pagination, and Esc exit.`,
 );
 
 function createHarness(fileName, assertions, requiredRenderedDiagrams) {
@@ -320,6 +321,15 @@ function presentationAssertions() {
     ) {
       throw new Error('Presentation did not inherit the complete shared appearance.');
     }
+    const customSwatch = themeMenu.querySelector('.surface-swatch--custom');
+    const customPreview = customSwatch.querySelector('.surface-swatch__custom-preview');
+    if (
+      customSwatch.classList.contains('is-active') ||
+      !getComputedStyle(customPreview).backgroundImage.includes('conic-gradient') ||
+      getComputedStyle(customPreview).borderRadius !== '50%'
+    ) {
+      throw new Error('Presentation does not show an inactive circular Custom checkerboard.');
+    }
     themeMenu.querySelector('[data-theme="dark"]').click();
     await waitFor(
       () => postedMessages.some((message) => message.type === 'setDiagramTheme' && message.theme === 'dark'),
@@ -351,6 +361,53 @@ function presentationAssertions() {
         message.surface.pattern === 'grid'
       ),
       'shared canvas background update',
+    );
+    await waitFor(
+      () => getComputedStyle(document.documentElement)
+        .getPropertyValue('--diagram-canvas-background').trim().toLowerCase() === '#eff6ff' &&
+        document.querySelector('.documentation-card:not([hidden]) svg'),
+      'settled Soft blue canvas background',
+    );
+    const customInput = themeMenu.querySelector('#presentation-surface-custom-color');
+    const customMessageStart = postedMessages.length;
+    const customSvgBeforeDrag = document.querySelector(
+      '.documentation-card:not([hidden]) svg',
+    );
+    for (const color of ['#7c3aed', '#2563eb', '#4f46e5']) {
+      customInput.value = color;
+      customInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    await delay(80);
+    if (
+      postedMessages.slice(customMessageStart)
+        .some((message) => message.type === 'setDiagramSurface') ||
+      document.querySelector('.documentation-card:not([hidden]) svg') !== customSvgBeforeDrag ||
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--diagram-canvas-background').trim().toLowerCase() !== '#4f46e5'
+    ) {
+      throw new Error('Presentation Custom dragging did not stay a CSS-only canvas preview.');
+    }
+    customInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(
+      () => postedMessages.slice(customMessageStart).some((message) =>
+        message.type === 'setDiagramSurface' &&
+        message.surface.preset === 'custom' &&
+        message.surface.customColor === '#4f46e5' &&
+        message.surface.pattern === 'grid'
+      ),
+      'shared custom canvas color update',
+    );
+    if (
+      postedMessages.slice(customMessageStart)
+        .filter((message) => message.type === 'setDiagramSurface').length !== 1
+    ) {
+      throw new Error('Presentation emitted more than one surface update for one color gesture.');
+    }
+    await waitFor(
+      () => customSwatch.classList.contains('is-active') &&
+        getComputedStyle(customPreview).backgroundColor === 'rgb(79, 70, 229)' &&
+        getComputedStyle(customPreview).backgroundImage === 'none',
+      'selected Custom swatch color',
     );
     if (themeMenu.getBoundingClientRect().top < 0 || themeMenu.getBoundingClientRect().right > innerWidth) {
       throw new Error('The complete Appearance panel overflows the presentation viewport.');

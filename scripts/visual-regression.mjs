@@ -496,11 +496,70 @@ const runner = `<script nonce="${nonce}">
           .some((message) => message.type === 'setEditorMode' && message.mode === 'beside'),
       'click to source',
     );
+    const customSurfaceSwatch = document.querySelector('.surface-swatch--custom');
+    const customSurfacePreview = customSurfaceSwatch.querySelector(
+      '.surface-swatch__custom-preview',
+    );
+    const customSurfaceInput = document.querySelector('#surface-custom-color');
+    const inactiveCustomStyle = getComputedStyle(customSurfacePreview);
+    if (
+      customSurfaceSwatch.classList.contains('is-active') ||
+      !inactiveCustomStyle.backgroundImage.includes('conic-gradient') ||
+      inactiveCustomStyle.borderRadius !== '50%'
+    ) {
+      throw new Error('The inactive Custom canvas swatch is not a circular checkerboard.');
+    }
+    const customSurfaceMessageStart = postedMessages.length;
+    const customSurfaceSvgBeforeDrag = document.querySelector('#diagram svg');
+    for (const color of ['#6d28d9', '#2563eb', '#336699']) {
+      customSurfaceInput.value = color;
+      customSurfaceInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    await delay(80);
+    if (
+      postedMessages.slice(customSurfaceMessageStart)
+        .some((message) => message.type === 'setDiagramSurface') ||
+      document.querySelector('#diagram svg') !== customSurfaceSvgBeforeDrag ||
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--diagram-canvas-background').trim().toLowerCase() !== '#336699'
+    ) {
+      throw new Error('Dragging the Custom picker did not stay a CSS-only canvas preview.');
+    }
+    customSurfaceInput.dispatchEvent(new Event('change', { bubbles: true }));
+    await waitFor(
+      () => postedMessages.slice(customSurfaceMessageStart).some((message) =>
+        message.type === 'setDiagramSurface' &&
+        message.surface.preset === 'custom' &&
+        message.surface.customColor === '#336699'),
+      'custom canvas color selection',
+    );
+    await waitFor(
+      () => document.querySelector('#diagram svg') !== customSurfaceSvgBeforeDrag,
+      'committed custom color rerender',
+    );
+    if (
+      postedMessages.slice(customSurfaceMessageStart)
+        .filter((message) => message.type === 'setDiagramSurface').length !== 1
+    ) {
+      throw new Error('One Custom color gesture emitted more than one surface update.');
+    }
+    await waitFor(
+      () => customSurfaceSwatch.classList.contains('is-active') &&
+        getComputedStyle(customSurfacePreview).backgroundColor === 'rgb(51, 102, 153)' &&
+        getComputedStyle(customSurfacePreview).backgroundImage === 'none',
+      'selected custom canvas swatch color',
+    );
     document.querySelector('[data-surface="midnight"]').click();
     await waitFor(
       () => postedMessages.some((message) => message.type === 'setDiagramSurface' && message.surface.preset === 'midnight'),
       'canvas surface selection',
     );
+    if (
+      customSurfaceSwatch.classList.contains('is-active') ||
+      !getComputedStyle(customSurfacePreview).backgroundImage.includes('conic-gradient')
+    ) {
+      throw new Error('The Custom swatch did not return to its checkerboard when inactive.');
+    }
     document.querySelector('[data-density="compact"]').click();
     await waitFor(
       () => postedMessages.some((message) => message.type === 'setDiagramDensity' && message.density === 'compact'),
