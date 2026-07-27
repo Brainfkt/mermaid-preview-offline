@@ -349,7 +349,20 @@ select:focus-visible {
 .surface-swatch--editor i { background: linear-gradient(135deg, var(--vscode-editor-background) 50%, var(--vscode-editor-foreground) 50%); }
 .surface-swatch.is-active { border-color: var(--vscode-focusBorder); color: var(--vscode-foreground); }
 .surface-swatch--custom { cursor: default; }
-.surface-swatch--custom input { overflow: hidden; cursor: pointer; }
+.surface-swatch__custom-control { position: relative; display: grid; width: 25px; height: 25px; place-items: center; }
+.surface-swatch__custom-control input { position: absolute; inset: 0; width: 25px; height: 25px; border: 0; opacity: 0; cursor: pointer; }
+.surface-swatch--custom .surface-swatch__custom-preview {
+  background-color: #d1d5db;
+  background-image: conic-gradient(#d1d5db 25%, #6b7280 0 50%, #d1d5db 0 75%, #6b7280 0);
+  background-size: 10px 10px;
+}
+.surface-swatch--custom.is-active .surface-swatch__custom-preview {
+  background: var(--custom-swatch-color, #ffffff);
+}
+.surface-swatch__custom-control:focus-within .surface-swatch__custom-preview {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 2px;
+}
 
 .diagram-search {
   z-index: 8;
