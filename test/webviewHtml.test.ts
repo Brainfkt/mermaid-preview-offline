@@ -32,6 +32,38 @@ void test('la webview ne charge que ses ressources locales et échappe le titre'
   assert.doesNotMatch(html, /<title>Preview <unsafe><\/title>/u);
 });
 
+void test('the custom canvas swatch uses a circular checkerboard before showing its color', () => {
+  assert.match(
+    html,
+    /class="surface-swatch__custom-preview" aria-hidden="true"/u,
+  );
+  assert.match(
+    html,
+    /class="surface-swatch__custom-control"[\s\S]*?id="surface-custom-color"/u,
+  );
+  assert.match(previewCss, /\.surface-swatch__custom-preview[\s\S]*?conic-gradient/u);
+  assert.match(
+    previewCss,
+    /\.surface-swatch--custom\.is-active \.surface-swatch__custom-preview[\s\S]*?--custom-swatch-color/u,
+  );
+});
+
+void test('custom color dragging previews the canvas without rerendering until commit', () => {
+  const webview = readFileSync(resolve(__dirname, '../../src/webview.ts'), 'utf8');
+  assert.match(
+    webview,
+    /surfaceCustomColor\.addEventListener\('input',[\s\S]*?previewCustomSurfaceColor/u,
+  );
+  assert.match(
+    webview,
+    /surfaceCustomColor\.addEventListener\('change',[\s\S]*?setDiagramSurface/u,
+  );
+  assert.doesNotMatch(
+    webview,
+    /surfaceCustomColor\.addEventListener\('input', \(\) => \{\s*setDiagramSurface/u,
+  );
+});
+
 void test('the compact toolbar exposes controls in the requested order', () => {
   assert.match(html, /id="refresh"/u);
   assert.match(html, /id="error-retry"/u);

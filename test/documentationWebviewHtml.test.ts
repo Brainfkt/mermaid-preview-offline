@@ -31,6 +31,7 @@ void test('documentation preview exposes compact diagram and presentation contro
   assert.doesNotMatch(html, />Markdown</u);
   assert.equal((html.match(/class="theme-card /gu) ?? []).length, 11);
   assert.match(html, /Shared by previews in this workspace/u);
+  assert.match(html, /class="surface-swatch__custom-preview" aria-hidden="true"/u);
   assert.match(html, />Esc</u);
   assert.match(html, /Guide &lt;unsafe&gt;/u);
   assert.match(
