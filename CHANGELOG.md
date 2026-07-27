@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.2.8
+
+- replaced the native square color input inside the circular **Custom** canvas
+  background swatch with a light/dark gray checkerboard;
+- kept the checkerboard visible while another canvas background is active, then
+  filled the same circle with the selected custom color as soon as **Custom**
+  becomes active;
+- previewed color-picker dragging live on the canvas with CSS only, postponing
+  Mermaid rerendering and workspace-setting synchronization until the color
+  gesture is committed;
+- applied the same accessible color-picker behavior to the main preview and
+  documentation presentation Appearance panels;
+- rebuilt the offline icon-pack example as an explained 60-icon gallery with
+  six categories, distinct background and icon palettes, the prefixes for the
+  bundled `logos`, `material-icon-theme`, and `mdi` collections, plus a visible
+  VS Code fallback that does not depend on the masked logo asset.
+
 ## 1.2.7
 
 - integrated with the built-in `Mermaid Markdown Features` renderer in VS Code
