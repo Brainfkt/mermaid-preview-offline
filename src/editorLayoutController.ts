@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import { nextPreviewMode } from './editorLayout';
+import { isEditorMode, nextPreviewMode } from './editorLayout';
 import type { MermaidEditorMode } from './protocol';
 
 const MODE_STATE_KEY = 'mermaidPreviewOffline.editorMode';
@@ -315,6 +315,4 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
   }
 }
 
-export function isEditorMode(value: unknown): value is MermaidEditorMode {
-  return value === 'preview' || value === 'source' || value === 'beside' || value === 'above';
-}
+export { isEditorMode } from './editorLayout';

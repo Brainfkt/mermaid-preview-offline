@@ -8,7 +8,6 @@ import {
   normalizeDiagramDensity,
   normalizeDiagramSurface,
 } from './appearance';
-import { isEditorMode } from './editorLayoutController';
 import type { MermaidEditorLayoutController } from './editorLayoutController';
 import { normalizeDiagramFontFamily } from './diagramFont';
 import {
@@ -44,6 +43,7 @@ import {
 import { recordEligibleReviewSession } from './reviewPrompt';
 import { createNonce, createWebviewHtml } from './webviewHtml';
 import { loadWorkspaceImage } from './workspaceImages';
+import { isPreviewWebviewMessage } from './webviewMessageValidation';
 
 export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
 
@@ -421,7 +421,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     });
 
     const messageSubscription = webview.onDidReceiveMessage(async (message: unknown) => {
-      if (!isWebviewMessage(message)) {
+      if (!isPreviewWebviewMessage(message)) {
         return;
       }
 
@@ -1317,133 +1317,4 @@ async function nonConflictingUri(directory: vscode.Uri, fileName: string): Promi
     }
   }
   throw new Error(`Could not find an available output name for ${fileName}.`);
-}
-
-function isWebviewMessage(value: unknown): value is WebviewToExtensionMessage {
-  if (!value || typeof value !== 'object' || !('type' in value)) {
-    return false;
-  }
-
-  const candidate = value as {
-    artifact?: unknown;
-    batchId?: unknown;
-    fileId?: unknown;
-    hasPersistedState?: unknown;
-    column?: unknown;
-    line?: unknown;
-    message?: unknown;
-    mode?: unknown;
-    profiles?: unknown;
-    requestId?: unknown;
-    relativeDirectory?: unknown;
-    rendered?: unknown;
-    settings?: unknown;
-    source?: unknown;
-    state?: unknown;
-    surface?: unknown;
-    density?: unknown;
-    svg?: unknown;
-    theme?: unknown;
-    type?: unknown;
-    version?: unknown;
-  };
-  if (
-    candidate.type === 'requestDocument' ||
-    candidate.type === 'chooseEditorMode' ||
-    candidate.type === 'cycleEditorMode' ||
-    candidate.type === 'openInNewWindow' ||
-    candidate.type === 'openNativeSource' ||
-    candidate.type === 'saveDocument' ||
-    candidate.type === 'openDiagramGallery'
-  ) {
-    return true;
-  }
-  if (candidate.type === 'ready') {
-    return typeof candidate.hasPersistedState === 'boolean';
-  }
-  if (candidate.type === 'setEditorMode') {
-    return isEditorMode(candidate.mode);
-  }
-  if (candidate.type === 'viewState') {
-    return typeof candidate.state === 'object' && candidate.state !== null;
-  }
-  if (candidate.type === 'setDiagramTheme') {
-    return isDiagramTheme(candidate.theme);
-  }
-  if (candidate.type === 'setDiagramDensity') {
-    return isDiagramDensity(candidate.density);
-  }
-  if (candidate.type === 'setDiagramSurface') {
-    return isDiagramSurfaceConfiguration(candidate.surface);
-  }
-  if (candidate.type === 'replaceDocument') {
-    return (
-      typeof candidate.requestId === 'number' &&
-      Number.isSafeInteger(candidate.requestId) &&
-      candidate.requestId >= 0 &&
-      typeof candidate.version === 'number' &&
-      Number.isSafeInteger(candidate.version) &&
-      candidate.version >= 0 &&
-      typeof candidate.source === 'string' &&
-      candidate.source.length <= MAX_RENDER_SOURCE_BYTES * 2
-    );
-  }
-  if (candidate.type === 'clearDiagnostic') {
-    return typeof candidate.version === 'number' && typeof candidate.rendered === 'boolean';
-  }
-  if (candidate.type === 'diagnostic') {
-    return (
-      typeof candidate.version === 'number' &&
-      typeof candidate.message === 'string' &&
-      (candidate.line === undefined || typeof candidate.line === 'number') &&
-      (candidate.column === undefined || typeof candidate.column === 'number')
-    );
-  }
-  if (candidate.type === 'copySvg' || candidate.type === 'saveSvg') {
-    return typeof candidate.svg === 'string';
-  }
-  if (candidate.type === 'saveExportProfiles') {
-    return Array.isArray(candidate.profiles);
-  }
-  if (candidate.type === 'exportFolder') {
-    return typeof candidate.settings === 'object' && candidate.settings !== null;
-  }
-  if (candidate.type === 'saveExport') {
-    return isSerializedExportArtifact(candidate.artifact);
-  }
-  if (candidate.type === 'batchExportResult') {
-    return (
-      typeof candidate.batchId === 'string' &&
-      typeof candidate.fileId === 'string' &&
-      typeof candidate.relativeDirectory === 'string' &&
-      isSerializedExportArtifact(candidate.artifact)
-    );
-  }
-  return (
-    candidate.type === 'batchExportError' &&
-    typeof candidate.batchId === 'string' &&
-    typeof candidate.fileId === 'string' &&
-    typeof candidate.message === 'string'
-  );
-}
-
-function isSerializedExportArtifact(value: unknown): value is SerializedExportArtifact {
-  if (!value || typeof value !== 'object') {
-    return false;
-  }
-  const artifact = value as Partial<Record<keyof SerializedExportArtifact, unknown>>;
-  return (
-    typeof artifact.dataBase64 === 'string' &&
-    artifact.dataBase64.length <= 192_000_000 &&
-    typeof artifact.fileName === 'string' &&
-    (artifact.format === 'svg' ||
-      artifact.format === 'png' ||
-      artifact.format === 'webp' ||
-      artifact.format === 'pdf') &&
-    typeof artifact.height === 'number' &&
-    Number.isFinite(artifact.height) &&
-    typeof artifact.mimeType === 'string' &&
-    typeof artifact.width === 'number' &&
-    Number.isFinite(artifact.width)
-  );
 }

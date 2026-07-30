@@ -3,8 +3,6 @@ import { Buffer } from 'node:buffer';
 import * as vscode from 'vscode';
 
 import {
-  isDiagramDensity,
-  isDiagramSurfaceConfiguration,
   normalizeDiagramDensity,
   normalizeDiagramSurface,
 } from './appearance';
@@ -24,7 +22,6 @@ import {
 } from './diagramFont';
 import type {
   DocumentationPreviewMode,
-  DocumentationWebviewToExtensionMessage,
 } from './documentationProtocol';
 import { createDocumentationWebviewHtml } from './documentationWebviewHtml';
 import {
@@ -48,6 +45,7 @@ import type {
   SerializedExportArtifact,
 } from './protocol';
 import { loadWorkspaceImage } from './workspaceImages';
+import { isDocumentationWebviewMessage } from './webviewMessageValidation';
 
 interface PreviewContext {
   kind: DocumentationKind;
@@ -65,7 +63,6 @@ interface PendingDocumentationExport {
 }
 
 type DocumentationExportFormat = Extract<ExportFormat, 'png' | 'svg'>;
-const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 const DOCUMENTATION_READY_TIMEOUT_MS = 15_000;
 
 export class MermaidDocumentationFeatures implements vscode.Disposable {
@@ -723,63 +720,4 @@ async function mapWithConcurrency<Value, Result>(
     Array.from({ length: Math.min(maximumConcurrency, values.length) }, worker),
   );
   return results;
-}
-
-function isDocumentationWebviewMessage(
-  value: unknown,
-): value is DocumentationWebviewToExtensionMessage {
-  if (!value || typeof value !== 'object' || !('type' in value)) return false;
-  const candidate = value as {
-    artifacts?: unknown;
-    blockId?: unknown;
-    message?: unknown;
-    requestId?: unknown;
-    density?: unknown;
-    surface?: unknown;
-    theme?: unknown;
-    type?: unknown;
-  };
-  if (candidate.type === 'ready') return true;
-  if (candidate.type === 'revealSource') return typeof candidate.blockId === 'string';
-  if (candidate.type === 'setDiagramTheme') return isDiagramTheme(candidate.theme);
-  if (candidate.type === 'setDiagramDensity') return isDiagramDensity(candidate.density);
-  if (candidate.type === 'setDiagramSurface') {
-    return isDiagramSurfaceConfiguration(candidate.surface);
-  }
-  if (candidate.type === 'documentationExportError') {
-    return typeof candidate.requestId === 'string' && typeof candidate.message === 'string';
-  }
-  if (
-    candidate.type !== 'documentationExportResult' ||
-    typeof candidate.requestId !== 'string' ||
-    !Array.isArray(candidate.artifacts)
-  ) {
-    return false;
-  }
-  let totalBase64Bytes = 0;
-  return candidate.artifacts.every((entry: unknown) => {
-    if (!entry || typeof entry !== 'object') return false;
-    const artifactEntry = entry as { artifact?: unknown; blockId?: unknown };
-    if (typeof artifactEntry.blockId !== 'string' || !isSerializedArtifact(artifactEntry.artifact)) {
-      return false;
-    }
-    totalBase64Bytes += artifactEntry.artifact.dataBase64.length;
-    return totalBase64Bytes <= MAX_DOCUMENTATION_EXPORT_BASE64_BYTES;
-  });
-}
-
-function isSerializedArtifact(value: unknown): value is SerializedExportArtifact {
-  if (!value || typeof value !== 'object') return false;
-  const artifact = value as Partial<Record<keyof SerializedExportArtifact, unknown>>;
-  return (
-    typeof artifact.dataBase64 === 'string' &&
-    artifact.dataBase64.length <= MAX_DOCUMENTATION_EXPORT_BASE64_BYTES &&
-    typeof artifact.fileName === 'string' &&
-    (artifact.format === 'svg' || artifact.format === 'png') &&
-    typeof artifact.height === 'number' &&
-    Number.isFinite(artifact.height) &&
-    typeof artifact.mimeType === 'string' &&
-    typeof artifact.width === 'number' &&
-    Number.isFinite(artifact.width)
-  );
 }

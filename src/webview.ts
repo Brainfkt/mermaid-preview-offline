@@ -1,20 +1,21 @@
 import mermaid from 'mermaid';
 
 import {
-  DEFAULT_EXPORT_SETTINGS,
-  normalizeExportProfiles,
   normalizeExportSettings,
-  type ExportProfile,
   type ExportSettings,
   type ExportSourceMetadata,
 } from './exportSettings';
 import {
-  artifactDataBase64,
   prepareSvg,
   renderExportArtifact,
   renderExportPreview,
   type ExportArtifact,
 } from './exportRenderer';
+import { ExportProfileStore } from './exportProfileStore';
+import {
+  ExportWorkflow,
+  serializeExportArtifact,
+} from './exportWorkflow';
 import { describeMermaidError } from './mermaidError';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
 import { resolvedDiagramFontStack } from './diagramFontAssets';
@@ -38,7 +39,6 @@ import type {
   MermaidEditorMode,
   PersistedPreviewState,
   PreviewConfiguration,
-  SerializedExportArtifact,
   WebviewToExtensionMessage,
 } from './protocol';
 import { formatByteLength } from './renderPolicy';
@@ -49,6 +49,12 @@ import {
   type ToolbarControl,
 } from './toolbarSettings';
 import { writePngToClipboard } from './pngClipboard';
+import {
+  PreviewNavigationState,
+  calculateZoomScrollDelta,
+  canPanWithPointer as pointerPanningAllowed,
+} from './previewNavigation';
+import { SourceSynchronizer } from './sourceSynchronization';
 
 interface VsCodeApi {
   getState(): unknown;
@@ -77,6 +83,7 @@ const vscode = acquireVsCodeApi();
 const rawPreviousState = vscode.getState();
 const hadPersistedState = rawPreviousState !== undefined;
 const initialState = normalizePreviewState(rawPreviousState);
+const navigation = new PreviewNavigationState(initialState);
 const workspace = element<HTMLElement>('workspace');
 const sourcePane = element<HTMLElement>('source-pane');
 const previewPane = element<HTMLElement>('preview-pane');
@@ -150,16 +157,10 @@ const exportMetadata = element<HTMLInputElement>('export-metadata');
 const exportSvgOriginal = element<HTMLInputElement>('export-svg-original');
 
 let configuration = DEFAULT_CONFIGURATION;
-let zoom = initialState.zoom;
-let autoFit = initialState.autoFit;
-let savedScrollLeft = initialState.scrollLeft;
-let savedScrollTop = initialState.scrollTop;
 let splitRatio = initialState.splitRatio;
 let editorMode: MermaidEditorMode = 'preview';
 let detachedPreview = false;
 let diagramTheme: DiagramTheme = DEFAULT_CONFIGURATION.diagramTheme;
-let naturalWidth = 800;
-let naturalHeight = 600;
 let lastSvg = '';
 let lastSvgFontFamily = DEFAULT_CONFIGURATION.diagramFontFamily;
 let lastSvgAppearance = '';
@@ -179,25 +180,18 @@ let minimapOffsetX = 0;
 let minimapOffsetY = 0;
 let minimapObjectUrl: string | undefined;
 let minimapViewportFrame: number | undefined;
-let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
-let exportProfiles: ExportProfile[] = [];
 let exportPreviewTimer: number | undefined;
-let exportPreviewGeneration = 0;
-let exportJob = Promise.resolve();
-let exportDialogRequested = false;
+const exportProfiles = new ExportProfileStore();
+const exportWorkflow = new ExportWorkflow();
 let searchMatches: Element[] = [];
 let searchIndex = -1;
 let diagramPointerStart: { x: number; y: number } | undefined;
-let sourceDocumentVersion = -1;
-let lastAcknowledgedSource = '';
-let sourceEditSequence = 0;
 let sourceEditTimer: number | undefined;
-let sourceEditInFlight: { requestId: number; source: string } | undefined;
-let conflictingDocument: { source: string; version: number } | undefined;
+const sourceSynchronizer = new SourceSynchronizer();
 
 updateThemePicker();
 applyCanvasAppearance();
-zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
+zoomStatus.textContent = `${Math.round(navigation.zoom * 100)} %`;
 updateEditorMode();
 
 window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessage>) => {
@@ -272,18 +266,18 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       requestAnimationFrame(focusActiveSurface);
       break;
     case 'exportConfiguration':
-      exportSettings = normalizeExportSettings(message.settings);
-      exportProfiles = normalizeExportProfiles(message.profiles);
+      exportWorkflow.configure(message.settings);
+      exportProfiles.replace(message.profiles);
       renderExportProfileOptions();
       if (!exportDialog.open) {
-        writeExportForm(exportSettings);
+        writeExportForm(exportWorkflow.settings);
       }
       break;
     case 'showExportDialog':
       openExportDialog();
       break;
     case 'batchExportFile':
-      queueExportJob(async () => {
+      void exportWorkflow.enqueue(async () => {
         try {
           const artifact = await createArtifact(
             message.source,
@@ -293,7 +287,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
           );
           vscode.postMessage({
             type: 'batchExportResult',
-            artifact: serializeArtifact(artifact),
+            artifact: serializeExportArtifact(artifact),
             batchId: message.batchId,
             fileId: message.fileId,
             relativeDirectory: message.relativeDirectory,
@@ -331,8 +325,8 @@ bindButton('search-open', openDiagramSearch);
 bindButton('diagram-search-close', closeDiagramSearch);
 bindButton('diagram-search-previous', () => selectSearchMatch(-1));
 bindButton('diagram-search-next', () => selectSearchMatch(1));
-bindButton('zoom-out', () => setZoom(zoom - 0.15, false));
-bindButton('zoom-in', () => setZoom(zoom + 0.15, false));
+bindButton('zoom-out', () => setZoom(navigation.zoom - 0.15, false));
+bindButton('zoom-in', () => setZoom(navigation.zoom + 0.15, false));
 bindButton('fit', fitDiagram);
 bindButton('copy-svg', () => {
   if (lastSvg) {
@@ -465,10 +459,10 @@ window.addEventListener('keydown', (event) => {
   }
   if (event.key === '+' || event.key === '=') {
     event.preventDefault();
-    setZoom(zoom + 0.15, false);
+    setZoom(navigation.zoom + 0.15, false);
   } else if (event.key === '-' || event.key === '_') {
     event.preventDefault();
-    setZoom(zoom - 0.15, false);
+    setZoom(navigation.zoom - 0.15, false);
   }
 });
 
@@ -480,7 +474,7 @@ viewport.addEventListener(
     }
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.012 : 0.002));
-    setZoomAtPoint(zoom * factor, event.clientX, event.clientY);
+    setZoomAtPoint(navigation.zoom * factor, event.clientX, event.clientY);
   },
   { passive: false },
 );
@@ -501,8 +495,7 @@ window.addEventListener('keyup', (event) => {
 window.addEventListener('blur', () => updatePanAffordance(false));
 
 viewport.addEventListener('scroll', () => {
-  savedScrollLeft = viewport.scrollLeft;
-  savedScrollTop = viewport.scrollTop;
+  navigation.recordScroll(viewport.scrollLeft, viewport.scrollTop);
   schedulePersistState();
   scheduleMinimapViewportUpdate();
 });
@@ -515,7 +508,7 @@ installSplitResize();
 updateNavigationConfiguration();
 
 new ResizeObserver(() => {
-  if (editorMode !== 'source' && autoFit && !diagram.hidden) {
+  if (editorMode !== 'source' && navigation.autoFit && !diagram.hidden) {
     fitDiagram();
   } else {
     updateMinimap();
@@ -618,11 +611,10 @@ async function renderLatest(): Promise<void> {
     copyButton.disabled = false;
     saveSvgButton.disabled = false;
     exportOpenButton.disabled = false;
-    if (exportDialogRequested) {
-      exportDialogRequested = false;
+    if (exportWorkflow.consumeDialogRequest(true)) {
       openExportDialog();
     }
-    if (autoFit && editorMode !== 'source') {
+    if (navigation.autoFit && editorMode !== 'source') {
       fitDiagram();
     } else {
       applyZoom();
@@ -663,26 +655,24 @@ async function renderLatest(): Promise<void> {
 function readNaturalSize(svg: SVGSVGElement): void {
   const viewBox = svg.viewBox.baseVal;
   const box = svg.getBoundingClientRect();
-  naturalWidth = viewBox.width > 0 ? viewBox.width : Math.max(box.width, 1);
-  naturalHeight = viewBox.height > 0 ? viewBox.height : Math.max(box.height, 1);
+  const dimensions = navigation.setNaturalSize(
+    viewBox.width > 0 ? viewBox.width : box.width,
+    viewBox.height > 0 ? viewBox.height : box.height,
+  );
   svg.style.maxWidth = 'none';
-  diagramSize.textContent = `${formatDimension(naturalWidth)} × ${formatDimension(naturalHeight)} px`;
+  diagramSize.textContent =
+    `${formatDimension(dimensions.width)} × ${formatDimension(dimensions.height)} px`;
 }
 
 function fitDiagram(): void {
-  const horizontalRoom = Math.max(viewport.clientWidth - 72, 120);
-  const verticalRoom = Math.max(viewport.clientHeight - 88, 120);
-  const fittedZoom = Math.min(horizontalRoom / naturalWidth, verticalRoom / naturalHeight, 1.5);
-  setZoom(fittedZoom, true);
-  savedScrollLeft = 0;
-  savedScrollTop = 0;
+  navigation.fit(viewport.clientWidth, viewport.clientHeight);
+  applyZoom();
   viewport.scrollTo({ left: 0, top: 0 });
   schedulePersistState();
 }
 
 function setZoom(value: number, shouldAutoFit: boolean): void {
-  zoom = clamp(value, 0.15, 4);
-  autoFit = shouldAutoFit;
+  navigation.setZoom(value, shouldAutoFit);
   applyZoom();
   persistState();
 }
@@ -693,36 +683,39 @@ function setZoomAtPoint(value: number, clientX: number, clientY: number): void {
     setZoom(value, false);
     return;
   }
-  const oldZoom = zoom;
+  const oldZoom = navigation.zoom;
   const oldBounds = svg.getBoundingClientRect();
   const diagramX = (clientX - oldBounds.left) / oldZoom;
   const diagramY = (clientY - oldBounds.top) / oldZoom;
-  zoom = clamp(value, 0.15, 4);
-  autoFit = false;
+  navigation.setZoom(value);
   applyZoom();
   const newBounds = svg.getBoundingClientRect();
-  viewport.scrollBy({
-    left: newBounds.left + diagramX * zoom - clientX,
-    top: newBounds.top + diagramY * zoom - clientY,
-  });
-  savedScrollLeft = viewport.scrollLeft;
-  savedScrollTop = viewport.scrollTop;
+  viewport.scrollBy(calculateZoomScrollDelta(
+    navigation.zoom,
+    diagramX,
+    diagramY,
+    newBounds.left,
+    newBounds.top,
+    clientX,
+    clientY,
+  ));
+  navigation.recordScroll(viewport.scrollLeft, viewport.scrollTop);
   persistState();
 }
 
 function applyZoom(): void {
   const svg = diagram.querySelector('svg');
   if (svg) {
-    svg.style.width = `${Math.round(naturalWidth * zoom)}px`;
-    svg.style.height = `${Math.round(naturalHeight * zoom)}px`;
+    svg.style.width = `${Math.round(navigation.naturalWidth * navigation.zoom)}px`;
+    svg.style.height = `${Math.round(navigation.naturalHeight * navigation.zoom)}px`;
   }
-  zoomStatus.textContent = `${Math.round(zoom * 100)} %`;
+  zoomStatus.textContent = `${Math.round(navigation.zoom * 100)} %`;
   updateMinimap();
 }
 
 function restoreScrollPosition(): void {
-  const left = savedScrollLeft;
-  const top = savedScrollTop;
+  const left = navigation.savedScrollLeft;
+  const top = navigation.savedScrollTop;
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => viewport.scrollTo({ left, top }));
   });
@@ -730,10 +723,7 @@ function restoreScrollPosition(): void {
 
 function restoreViewState(value: PersistedPreviewState): void {
   const state = normalizePreviewState(value);
-  zoom = state.zoom;
-  autoFit = state.autoFit;
-  savedScrollLeft = state.scrollLeft;
-  savedScrollTop = state.scrollTop;
+  navigation.restore(state);
   splitRatio = state.splitRatio;
   applySplitRatio();
   applyZoom();
@@ -745,13 +735,7 @@ function persistState(): void {
     window.clearTimeout(persistTimer);
     persistTimer = undefined;
   }
-  const state: PersistedPreviewState = {
-    autoFit,
-    scrollLeft: savedScrollLeft,
-    scrollTop: savedScrollTop,
-    splitRatio,
-    zoom,
-  };
+  const state = navigation.snapshot(splitRatio);
   vscode.setState(state);
   vscode.postMessage({ type: 'viewState', state });
 }
@@ -879,7 +863,7 @@ function updateEditorMode(): void {
   );
   applySplitRatio();
   window.requestAnimationFrame(() => {
-    if (previewVisible && autoFit && !diagram.hidden) {
+    if (previewVisible && navigation.autoFit && !diagram.hidden) {
       fitDiagram();
     } else {
       updateMinimap();
@@ -1090,12 +1074,9 @@ function applyCanvasAppearance(): void {
 }
 
 function openExportDialog(): void {
-  if (!lastSvg || !latestSource) {
-    exportDialogRequested = true;
-    return;
-  }
+  if (!exportWorkflow.requestDialog(Boolean(lastSvg && latestSource))) return;
   renderExportProfileOptions();
-  writeExportForm(exportSettings);
+  writeExportForm(exportWorkflow.settings);
   if (!exportDialog.open) {
     exportDialog.showModal();
   }
@@ -1107,7 +1088,7 @@ function closeExportDialog(): void {
     window.clearTimeout(exportPreviewTimer);
     exportPreviewTimer = undefined;
   }
-  exportPreviewGeneration += 1;
+  exportWorkflow.invalidatePreview();
   if (exportDialog.open) {
     exportDialog.close();
   }
@@ -1151,7 +1132,7 @@ function readExportForm(): ExportSettings {
 }
 
 function handleExportSettingsChanged(): void {
-  exportSettings = readExportForm();
+  exportWorkflow.setSettings(readExportForm());
   exportProfileSelect.value = '';
   exportProfileDelete.disabled = true;
   updateExportFieldAvailability();
@@ -1173,44 +1154,36 @@ function updateExportFieldAvailability(): void {
 function renderExportProfileOptions(): void {
   const selected = exportProfileSelect.value;
   exportProfileSelect.replaceChildren(new Option('Custom settings', ''));
-  for (const profile of exportProfiles) {
+  for (const profile of exportProfiles.profiles) {
     exportProfileSelect.add(new Option(profile.name, profile.id));
   }
-  exportProfileSelect.value = exportProfiles.some((profile) => profile.id === selected)
+  exportProfileSelect.value = exportProfiles.profiles.some((profile) => profile.id === selected)
     ? selected
     : '';
   exportProfileDelete.disabled = !exportProfileSelect.value;
 }
 
 function applySelectedExportProfile(): void {
-  const profile = exportProfiles.find((entry) => entry.id === exportProfileSelect.value);
+  const profile = exportProfiles.find(exportProfileSelect.value);
   exportProfileDelete.disabled = !profile;
   if (!profile) {
     exportProfileName.value = '';
     return;
   }
   exportProfileName.value = profile.name;
-  exportSettings = normalizeExportSettings(profile.settings);
-  writeExportForm(exportSettings);
+  exportWorkflow.setSettings(profile.settings);
+  writeExportForm(exportWorkflow.settings);
   scheduleExportPreview();
 }
 
 function saveExportProfile(): void {
   const selectedId = exportProfileSelect.value;
-  const name = exportProfileName.value.trim() || `Export profile ${exportProfiles.length + 1}`;
-  const profile: ExportProfile = {
-    id: selectedId || crypto.randomUUID(),
-    name,
+  const profile = exportProfiles.save({
+    ...(selectedId ? { id: selectedId } : {}),
+    name: exportProfileName.value,
     settings: readExportForm(),
-  };
-  const index = exportProfiles.findIndex((entry) => entry.id === profile.id);
-  if (index >= 0) {
-    exportProfiles[index] = profile;
-  } else {
-    exportProfiles.push(profile);
-  }
-  exportProfiles = normalizeExportProfiles(exportProfiles);
-  vscode.postMessage({ type: 'saveExportProfiles', profiles: exportProfiles });
+  }, () => crypto.randomUUID());
+  vscode.postMessage({ type: 'saveExportProfiles', profiles: [...exportProfiles.profiles] });
   renderExportProfileOptions();
   exportProfileSelect.value = profile.id;
   exportProfileDelete.disabled = false;
@@ -1222,15 +1195,15 @@ function deleteExportProfile(): void {
   if (!selectedId) {
     return;
   }
-  exportProfiles = exportProfiles.filter((entry) => entry.id !== selectedId);
-  vscode.postMessage({ type: 'saveExportProfiles', profiles: exportProfiles });
+  exportProfiles.delete(selectedId);
+  vscode.postMessage({ type: 'saveExportProfiles', profiles: [...exportProfiles.profiles] });
   exportProfileName.value = '';
   renderExportProfileOptions();
   renderStatus.textContent = 'Export profile deleted';
 }
 
 function scheduleExportPreview(): void {
-  exportPreviewGeneration += 1;
+  const generation = exportWorkflow.startPreview();
   if (exportPreviewTimer !== undefined) {
     window.clearTimeout(exportPreviewTimer);
   }
@@ -1238,9 +1211,8 @@ function scheduleExportPreview(): void {
   exportPreviewError.hidden = true;
   exportPreviewTimer = window.setTimeout(() => {
     exportPreviewTimer = undefined;
-    const generation = exportPreviewGeneration;
-    queueExportJob(async () => {
-      if (!exportDialog.open || generation !== exportPreviewGeneration) {
+    void exportWorkflow.enqueue(async () => {
+      if (!exportDialog.open || !exportWorkflow.isCurrentPreview(generation)) {
         return;
       }
       try {
@@ -1254,7 +1226,7 @@ function scheduleExportPreview(): void {
           settings,
           svg,
         });
-        if (generation !== exportPreviewGeneration) {
+        if (!exportWorkflow.isCurrentPreview(generation)) {
           return;
         }
         exportPreviewImage.src = preview.dataUrl;
@@ -1263,7 +1235,7 @@ function scheduleExportPreview(): void {
           `${settings.dpi} DPI · ${settings.format.toUpperCase()}`;
         exportPreviewSpinner.hidden = true;
       } catch (error: unknown) {
-        if (generation === exportPreviewGeneration) {
+        if (exportWorkflow.isCurrentPreview(generation)) {
           showExportError(error);
         }
       }
@@ -1272,7 +1244,7 @@ function scheduleExportPreview(): void {
 }
 
 function saveExport(): void {
-  queueExportJob(async () => {
+  void exportWorkflow.enqueue(async () => {
     setExportBusy(true);
     try {
       const artifact = await createArtifact(
@@ -1281,7 +1253,7 @@ function saveExport(): void {
         fileName.textContent || 'diagram.mmd',
         readExportForm(),
       );
-      vscode.postMessage({ type: 'saveExport', artifact: serializeArtifact(artifact) });
+      vscode.postMessage({ type: 'saveExport', artifact: serializeExportArtifact(artifact) });
       renderStatus.textContent = `${artifact.format.toUpperCase()} ready to save`;
     } catch (error: unknown) {
       showExportError(error);
@@ -1292,8 +1264,8 @@ function saveExport(): void {
 }
 
 function exportFolder(): void {
-  exportSettings = readExportForm();
-  vscode.postMessage({ type: 'exportFolder', settings: exportSettings });
+  exportWorkflow.setSettings(readExportForm());
+  vscode.postMessage({ type: 'exportFolder', settings: exportWorkflow.settings });
 }
 
 function copyOriginalSvg(): void {
@@ -1303,7 +1275,7 @@ function copyOriginalSvg(): void {
 }
 
 function copyOptimizedSvg(): void {
-  queueExportJob(async () => {
+  void exportWorkflow.enqueue(async () => {
     try {
       const settings = normalizeExportSettings({
         ...readExportForm(),
@@ -1340,7 +1312,7 @@ function copyPng(): void {
       (items) => navigator.clipboard.write(items),
       (data) => new ClipboardItem(data),
       () => new Promise<Blob>((resolvePromise, rejectPromise) => {
-        queueExportJob(async () => {
+        void exportWorkflow.enqueue(async () => {
           try {
             const artifact = await createArtifact(
               latestSource,
@@ -1429,17 +1401,6 @@ function currentExportMetadata(): ExportSourceMetadata {
   };
 }
 
-function serializeArtifact(artifact: ExportArtifact): SerializedExportArtifact {
-  return {
-    dataBase64: artifactDataBase64(artifact),
-    fileName: artifact.fileName,
-    format: artifact.format,
-    height: artifact.height,
-    mimeType: artifact.mimeType,
-    width: artifact.width,
-  };
-}
-
 function setExportBusy(busy: boolean): void {
   for (const id of [
     'export-save',
@@ -1462,10 +1423,6 @@ function showExportError(error: unknown): void {
 
 function errorMessageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function queueExportJob(task: () => Promise<void>): void {
-  exportJob = exportJob.then(task, task);
 }
 
 function initializeMermaid(
@@ -1516,34 +1473,15 @@ function openSourceOnly(): void {
 }
 
 function receiveDocumentSource(source: string, version: number): void {
-  if (sourceDocumentVersion < 0) {
-    setSourceDocument(source, version);
-    return;
+  const result = sourceSynchronizer.receive(source, version, sourceEditor.value);
+  if (result.document) {
+    applySourceDocument(result.document.source);
   }
-  if (sourceEditInFlight?.source === source) {
-    sourceDocumentVersion = version;
-    lastAcknowledgedSource = source;
-    updateSourceEditStatus();
-    return;
-  }
-  if (!sourceEditInFlight && sourceEditor.value === lastAcknowledgedSource) {
-    setSourceDocument(source, version);
-    return;
-  }
-  if (source === lastAcknowledgedSource) {
-    sourceDocumentVersion = version;
-    return;
-  }
-  conflictingDocument = { source, version };
-  sourceReloadButton.hidden = false;
-  sourceEditStatus.textContent = 'File changed elsewhere';
+  sourceReloadButton.hidden = !sourceSynchronizer.hasConflict;
+  sourceEditStatus.textContent = result.status;
 }
 
-function setSourceDocument(source: string, version: number): void {
-  sourceDocumentVersion = version;
-  lastAcknowledgedSource = source;
-  conflictingDocument = undefined;
-  sourceReloadButton.hidden = true;
+function applySourceDocument(source: string): void {
   if (sourceEditor.value !== source) {
     const selectionStart = Math.min(sourceEditor.selectionStart, source.length);
     const selectionEnd = Math.min(sourceEditor.selectionEnd, source.length);
@@ -1571,71 +1509,33 @@ function flushSourceEdit(): void {
     window.clearTimeout(sourceEditTimer);
     sourceEditTimer = undefined;
   }
-  if (sourceEditInFlight || sourceDocumentVersion < 0) {
-    return;
-  }
-  const source = sourceEditor.value;
-  if (source === lastAcknowledgedSource) {
+  const message = sourceSynchronizer.beginEdit(sourceEditor.value);
+  if (!message) {
     updateSourceEditStatus();
     return;
   }
-  sourceEditSequence += 1;
-  sourceEditInFlight = { requestId: sourceEditSequence, source };
   sourceEditStatus.textContent = 'Saving…';
-  vscode.postMessage({
-    type: 'replaceDocument',
-    requestId: sourceEditSequence,
-    source,
-    version: sourceDocumentVersion,
-  });
+  vscode.postMessage(message);
 }
 
 function handleSourceEditResult(
   message: Extract<ExtensionToWebviewMessage, { type: 'sourceEditResult' }>,
 ): void {
-  const pending = sourceEditInFlight;
-  if (!pending || pending.requestId !== message.requestId) {
-    return;
-  }
-  sourceEditInFlight = undefined;
-  sourceDocumentVersion = message.version;
-  if (message.applied) {
-    lastAcknowledgedSource = pending.source;
-    conflictingDocument = undefined;
-    sourceReloadButton.hidden = true;
-    updateSourceEditStatus();
-    if (sourceEditor.value !== lastAcknowledgedSource) {
-      flushSourceEdit();
-    }
-    return;
-  }
-  if (message.documentSource !== undefined) {
-    conflictingDocument = {
-      source: message.documentSource,
-      version: message.version,
-    };
-    sourceReloadButton.hidden = false;
-  }
-  sourceEditStatus.textContent = message.error
-    ? `Save failed: ${message.error}`
-    : 'File changed elsewhere';
+  const result = sourceSynchronizer.handleResult(message, sourceEditor.value);
+  sourceReloadButton.hidden = !sourceSynchronizer.hasConflict;
+  sourceEditStatus.textContent = result.status;
+  if (result.shouldFlush) flushSourceEdit();
 }
 
 function updateSourceEditStatus(): void {
-  if (conflictingDocument) {
-    sourceEditStatus.textContent = 'File changed elsewhere';
-  } else if (sourceEditInFlight) {
-    sourceEditStatus.textContent = 'Saving…';
-  } else if (sourceEditor.value !== lastAcknowledgedSource) {
-    sourceEditStatus.textContent = 'Unsaved';
-  } else {
-    sourceEditStatus.textContent = 'Saved';
-  }
+  sourceEditStatus.textContent = sourceSynchronizer.status(sourceEditor.value);
 }
 
 function reloadConflictingSource(): void {
-  if (!conflictingDocument) return;
-  setSourceDocument(conflictingDocument.source, conflictingDocument.version);
+  const documentState = sourceSynchronizer.reloadConflict();
+  if (!documentState) return;
+  sourceReloadButton.hidden = true;
+  applySourceDocument(documentState.source);
 }
 
 function updateSourceLineNumbers(): void {
@@ -2005,13 +1905,16 @@ function installDragToPan(): void {
     }
     if (!event.altKey || diagram.hidden) return;
     event.preventDefault();
-    setZoomAtPoint(zoom * (event.shiftKey ? 0.8 : 1.25), event.clientX, event.clientY);
+    setZoomAtPoint(
+      navigation.zoom * (event.shiftKey ? 0.8 : 1.25),
+      event.clientX,
+      event.clientY,
+    );
   });
 }
 
 function canPanWithPointer(altKey: boolean): boolean {
-  return configuration.navigation.mouseNavigation === 'always' ||
-    (configuration.navigation.mouseNavigation === 'alt' && altKey);
+  return pointerPanningAllowed(configuration.navigation.mouseNavigation, altKey);
 }
 
 function updatePanAffordance(altKey: boolean): void {

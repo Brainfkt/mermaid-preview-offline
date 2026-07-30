@@ -22,6 +22,7 @@ import {
 } from './projectWebviewHtml';
 import { summarizeLineDiff, isMermaidPath, type LineDiffSummary } from './visualDiff';
 import { isUriWithin } from './workspacePaths';
+import { isProjectWebviewMessage } from './webviewMessageValidation';
 
 export type GalleryInitialTab = 'examples' | 'templates';
 
@@ -64,10 +65,6 @@ interface VisualComparison {
   summary: LineDiffSummary;
   title: string;
 }
-
-type ProjectWebviewMessage =
-  | { type: 'ready' }
-  | { fileName: string; source: string; type: 'createDiagram' };
 
 export class MermaidProjectFeatures implements vscode.Disposable {
   private readonly configurationSubscription: vscode.Disposable;
@@ -464,13 +461,4 @@ function fileNameOf(uri: vscode.Uri): string {
 
 function errorMessageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function isProjectWebviewMessage(value: unknown): value is ProjectWebviewMessage {
-  if (!value || typeof value !== 'object' || !('type' in value)) return false;
-  const candidate = value as { fileName?: unknown; source?: unknown; type?: unknown };
-  if (candidate.type === 'ready') return true;
-  return candidate.type === 'createDiagram' &&
-    typeof candidate.fileName === 'string' &&
-    typeof candidate.source === 'string';
 }
