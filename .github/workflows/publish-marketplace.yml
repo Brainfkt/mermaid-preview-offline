@@ -77,7 +77,10 @@ jobs:
         shell: bash
         run: |
           expected="v$(node -p "require('./package.json').version")"
-          test "$GITHUB_REF_NAME" = "$expected"
+          if [[ "$GITHUB_REF_NAME" != "$expected" ]]; then
+            echo "::error title=Version mismatch::Tag '$GITHUB_REF_NAME' does not match package version '$expected'."
+            exit 1
+          fi
 
       - name: Verify Marketplace credentials
         if: env.PUBLISH_MODE == 'VERIFY' || env.PUBLISH_MODE == 'PUBLISH'
