@@ -52,6 +52,7 @@ void test('managed previews share their selected layout across Mermaid files', (
 void test('internal source edits are versioned, serialized, and conflict-safe', () => {
   const provider = source('mermaidPreviewProvider.ts');
   const protocol = source('protocol.ts');
+  const synchronization = source('sourceSynchronization.ts');
   const webview = source('webview.ts');
 
   assert.match(protocol, /type: 'replaceDocument'/u);
@@ -59,10 +60,11 @@ void test('internal source edits are versioned, serialized, and conflict-safe', 
   assert.match(provider, /message\.version !== document\.version/u);
   assert.match(provider, /vscode\.workspace\.applyEdit\(edit\)/u);
   assert.match(provider, /sourceEditQueue\.then\(replace, replace\)/u);
-  assert.match(webview, /sourceEditInFlight/u);
-  assert.match(webview, /conflictingDocument/u);
-  assert.match(webview, /sourceReloadButton\.hidden = false/u);
-  assert.match(webview, /vscode\.postMessage\(\{\s*type: 'replaceDocument'/u);
+  assert.match(webview, /new SourceSynchronizer\(\)/u);
+  assert.match(synchronization, /pendingEdit/u);
+  assert.match(synchronization, /conflictValue/u);
+  assert.match(webview, /sourceReloadButton\.hidden = !sourceSynchronizer\.hasConflict/u);
+  assert.match(webview, /vscode\.postMessage\(message\)/u);
   assert.match(webview, /vscode\.postMessage\(\{ type: 'saveDocument' \}\)/u);
 });
 
