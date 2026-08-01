@@ -95,6 +95,9 @@ the current preview mode.
 Preview, Beside, and Above are surfaces of the same custom-editor tab, so
 changing among them cannot create, resize, move, or close unrelated editor
 groups. Source only opens VS Code's full text editor in the preview column.
+The layout picker also shows the existing cycle shortcuts: `P` in the preview
+and `Alt+P` (`Option+P` on macOS) in the source editor. The source-editor
+binding can be changed in VS Code's Keyboard Shortcuts settings.
 Drag the internal separator in Beside or Above; the split ratio is restored per
 file.
 

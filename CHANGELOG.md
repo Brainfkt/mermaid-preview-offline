@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.10
+
+- displayed the existing `P` preview and `Alt+P` source-editor cycle shortcuts
+  in the native layout picker without registering duplicate keybindings.
+
 ## 1.2.8
 
 - replaced the native square color input inside the circular **Custom** canvas
