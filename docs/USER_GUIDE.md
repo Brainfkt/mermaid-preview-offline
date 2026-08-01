@@ -85,6 +85,10 @@ editor visible and opens the preview in another group.
 
 ![The editor-layout picker offering Preview only, Source only, Beside, and Above](../media/screenshots/editor-layout.png)
 
+The picker displays the existing layout-cycle shortcuts: `P` in the preview and
+`Alt+P` (`Option+P` on macOS) in the source editor. The source-editor binding
+can be changed in VS Code's Keyboard Shortcuts settings.
+
 Preview, Beside, and Above stay inside the same custom-editor tab. Beside and
 Above use a local split, so selecting either layout does not create a second
 editor group or alter unrelated tabs. Drag the internal separator to resize the

@@ -90,6 +90,11 @@ ouvre l’aperçu dans un autre groupe.
 
 ![Le sélecteur de disposition proposant Preview only, Source only, Beside et Above](../media/screenshots/editor-layout.png)
 
+Le sélecteur affiche les raccourcis existants du cycle des dispositions : `P`
+dans l’aperçu et `Alt+P` (`Option+P` sous macOS) dans l’éditeur source. Le
+raccourci de l’éditeur source peut être modifié dans les paramètres Raccourcis
+clavier de VS Code.
+
 Preview, Beside et Above restent dans le même onglet personnalisé. Beside et
 Above utilisent un split local : les sélectionner ne crée pas un second groupe
 d’éditeurs et ne modifie pas les autres onglets. Faites glisser le séparateur
