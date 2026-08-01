@@ -151,7 +151,7 @@ export class MermaidEditorLayoutController implements vscode.Disposable {
     const selection = await vscode.window.showQuickPick(
       MODE_ITEMS.map((item) => ({ ...item, picked: item.mode === currentMode })),
       {
-        placeHolder: 'Choose the layout inside this Mermaid editor',
+        placeHolder: 'Choose a layout · Cycle: P in preview / Alt+P in source',
         title: 'Mermaid Preview: Editor Layout',
       },
     );
