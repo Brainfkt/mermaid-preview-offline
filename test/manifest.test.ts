@@ -207,6 +207,16 @@ void test('the Mermaid source editor exposes a safe shortcut for cycling preview
   assert.match(webview, /requestAnimationFrame\(focusActiveSurface\)/u);
 });
 
+void test('the editor layout picker displays the existing cycle shortcuts without duplicates', () => {
+  const controller = readFileSync(
+    resolve(__dirname, '../../src/editorLayoutController.ts'),
+    'utf8',
+  );
+  assert.match(controller, /Cycle: P in preview \/ Alt\+P in source/u);
+  assert.doesNotMatch(controller, /shortcut: ['"][1-4]['"]/u);
+  assert.doesNotMatch(controller, /onDidChangeValue/u);
+});
+
 void test('v0.6 project workflows expose Diagram Studio and visual Git diff commands', () => {
   const commands = manifest.contributes.commands.map((entry) => entry.command);
   const projectCommands = [
