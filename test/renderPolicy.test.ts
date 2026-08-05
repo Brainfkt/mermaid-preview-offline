@@ -16,6 +16,7 @@ import {
     diagramSurface: { customColor: '#ffffff', pattern: 'dots', preset: 'editor' },
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
+  maxRasterPixels: 32_000_000,
   minimapEnabled: true,
   navigation: { controlsVisibility: 'always', mouseNavigation: 'always' },
   refreshDelay: 140,

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import {
   assertOfflineImageReferences,
   imageMimeType,
+  inlineImageReferences,
   inlineLocalImages,
   isRelativeLocalImage,
 } from '../src/localImages';
@@ -35,6 +36,19 @@ void test('les ressources distantes et les data URI ne sont jamais relues', asyn
     assert.equal(result, source);
     assert.equal(called, false);
   }
+});
+
+void test('an explicit resolver can inline an allowlisted HTTPS image', async () => {
+  const source = 'flowchart LR\n  logo@{ img: "https://static.example.com/logo.png" }';
+  const result = await inlineImageReferences(
+    source,
+    (reference) => {
+      assert.equal(reference, 'https://static.example.com/logo.png');
+      return Promise.resolve({ bytes: new Uint8Array([1, 2, 3]), mimeType: 'image/png' });
+    },
+    (reference) => reference.startsWith('https://static.example.com/'),
+  );
+  assert.match(result, /data:image\/png;base64,AQID/u);
 });
 
 void test('les formats locaux courants sont reconnus', () => {

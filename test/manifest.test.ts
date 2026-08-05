@@ -6,6 +6,12 @@ import { test } from 'node:test';
 interface ExtensionManifest {
   activationEvents: string[];
   bin: Record<string, string>;
+  capabilities: {
+    untrustedWorkspaces: {
+      restrictedConfigurations: string[];
+      supported: string;
+    };
+  };
   contributes: {
     commands: Array<{ command: string; title: string }>;
     configuration: {
@@ -63,6 +69,38 @@ void test('Mermaid est une dépendance locale épinglée', () => {
   assert.equal(manifest.dependencies['@iconify-json/mdi'], '1.2.3');
   assert.equal(manifest.dependencies['@mermaid-js/layout-tidy-tree'], '0.2.2');
   assert.equal(manifest.dependencies.katex, undefined);
+});
+
+void test('external resource permissions are explicit, machine-scoped, and trust-gated', () => {
+  const properties = manifest.contributes.configuration.properties;
+  for (const key of [
+    'mermaidPreviewOffline.resources.allowAdditionalLocalRoots',
+    'mermaidPreviewOffline.resources.additionalLocalRoots',
+    'mermaidPreviewOffline.resources.allowRemoteImages',
+    'mermaidPreviewOffline.resources.allowedRemoteBases',
+    'mermaidPreviewOffline.resources.allowPrivateNetwork',
+    'mermaidPreviewOffline.resourceLimits.useCustom',
+    'mermaidPreviewOffline.resourceLimits.maxSourceMiB',
+    'mermaidPreviewOffline.resourceLimits.maxImages',
+    'mermaidPreviewOffline.resourceLimits.maxImageMiB',
+    'mermaidPreviewOffline.resourceLimits.maxTotalImageMiB',
+    'mermaidPreviewOffline.resourceLimits.maxRasterMegapixels',
+  ]) {
+    assert.equal(properties[key]?.scope, 'machine', key);
+  }
+  assert.equal(
+    properties['mermaidPreviewOffline.resources.allowAdditionalLocalRoots']?.default,
+    false,
+  );
+  assert.equal(properties['mermaidPreviewOffline.resources.allowRemoteImages']?.default, false);
+  assert.equal(properties['mermaidPreviewOffline.resources.allowPrivateNetwork']?.default, false);
+  assert.equal(properties['mermaidPreviewOffline.resourceLimits.useCustom']?.default, false);
+  assert.equal(manifest.capabilities.untrustedWorkspaces.supported, 'limited');
+  assert.ok(
+    manifest.capabilities.untrustedWorkspaces.restrictedConfigurations.includes(
+      'mermaidPreviewOffline.resources.allowRemoteImages',
+    ),
+  );
 });
 
 void test('the native Markdown Mermaid preview receives only the resize-fit enhancement', () => {
