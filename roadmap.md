@@ -1,4 +1,15 @@
-# Roadmap — Mermaid Preview Offline 1.0
+# Roadmap — Mermaid Preview Offline
+
+## v1.3 — Ressources externes explicites et bornées
+
+- [x] Conserver un parcours complet sans compte ni connexion obligatoire.
+- [x] Autoriser des racines locales supplémentaires dans les réglages machine.
+- [x] Autoriser des bases HTTPS exactes et intégrer les images avant rendu.
+- [x] Bloquer par défaut les réseaux privés, redirections hors allowlist et SVG distants.
+- [x] Maintenir `connect-src 'none'` et `securityLevel: strict` dans les moteurs.
+- [x] Proposer des limites personnalisées sans supprimer les plafonds internes.
+- [x] Désactiver les permissions externes dans les espaces de travail non approuvés.
+- [x] Aligner aperçu, documentation, exports, tâches VS Code et CLI.
 
 ## v0.2.1 — Finition et stabilité
 

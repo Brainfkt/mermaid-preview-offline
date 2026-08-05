@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.3.0
+
+- kept diagram creation, editing, preview, and export account-free and fully
+  usable without a network connection while clarifying that “100% Offline”
+  describes the required workflow rather than forbidding explicit image URLs;
+- added machine-scoped, trusted-workspace settings for absolute image paths and
+  additional local roots, with final canonical containment checks that continue
+  to reject unconfigured paths and symlink escapes;
+- added opt-in HTTPS raster images below exact configured base URLs; downloads
+  validate every redirect, block credentials and private/local addresses by
+  default, enforce time, byte, dimension, image-count, and aggregate budgets,
+  use a bounded memory cache, and are embedded as `data:` before rendering;
+- kept preview and CLI renderer CSPs at `connect-src 'none'` and Mermaid at
+  `securityLevel: strict`; remote SVG and AVIF remain disabled, while private
+  networks require a separate explicit setting or CLI flag;
+- added standard and bounded custom resource profiles for Mermaid source size,
+  image count, per-image bytes, aggregate image bytes, and raster megapixels;
+  hard ceilings and transport/concurrency safeguards remain non-configurable;
+- applied the same resource policy to file and documentation previews,
+  documentation and folder exports, VS Code export tasks, and the standalone
+  CLI, with repeatable local-root and HTTPS-base flags for automation;
+- declared limited Workspace Trust support so ordinary offline previews remain
+  available in Restricted Mode while external permissions and raised limits are
+  forced off;
+- expanded unit and manifest coverage for URL boundaries, private IPv4/IPv6
+  detection, raster signature inspection, custom-limit normalization, explicit
+  external-image inlining, setting scope, and trust gating;
+- updated the README, English and French user guides, performance and security
+  documentation, compatibility notes, contributor guidance, and CLI reference.
+
 ## 1.2.10
 
 - displayed the existing `P` preview and `Alt+P` source-editor cycle shortcuts

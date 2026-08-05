@@ -6,7 +6,7 @@
 
 <p align="center">
   A fast, private Mermaid preview built into VS Code.<br>
-  No account. No cloud. No telemetry.
+  No account. No required connection. No telemetry.
 </p>
 
 <p align="center">
@@ -39,7 +39,27 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
-## What's new in 1.2.8
+## What's new in 1.3.0
+
+Version 1.3.0 keeps rendering local and offline by default while adding explicit
+opt-ins for images stored outside the workspace or below allowlisted HTTPS base
+URLs. Remote bytes are downloaded by the extension, validated, bounded, cached,
+and converted to `data:` before Mermaid sees them; preview webviews and the CLI
+renderer still have no direct network access. Private-network destinations need
+a separate opt-in, and remote SVG is deliberately excluded.
+
+Resource budgets can now use a bounded custom profile. The standard 10 MiB
+source, 64-image, 8 MiB per-image, 24 MiB aggregate-image, and 32-megapixel
+limits remain the defaults. Custom values can raise those budgets only up to
+internal ceilings, and all external-resource permissions are machine-scoped and
+disabled in untrusted workspaces. The same policy is used by file previews,
+documentation previews, folder exports, VS Code tasks, and the CLI.
+
+The “100% Offline” name means that creating, editing, previewing, and exporting
+diagrams requires no account, cloud renderer, or network connection. Network
+image loading is an optional capability that is off by default.
+
+### Earlier 1.2 improvements
 
 Version 1.2.8 refines the **Custom** canvas background control. Its circle now
 shows a light/dark gray checkerboard while Custom is inactive, then fills with
@@ -76,7 +96,7 @@ mode.
 | ⚡ | **Instant preview** | Mermaid files open directly in a polished live preview. |
 | ✎ | **Advanced editing** | Problems, quick fixes, completion, snippets, formatting, and safe refactors. |
 | 🔒 | **Private by design** | Diagram source never leaves your machine. |
-| 📴 | **Truly offline** | No CDN, API, account, sign-in, or network dependency. |
+| 📴 | **Offline by default** | No account, sign-in, cloud renderer, or required network connection; allowlisted HTTPS images are optional. |
 | 🔍 | **Comfortable navigation** | Fit, zoom, and drag across large diagrams. |
 | ⇩ | **Professional export** | Preview and export PNG, WebP, PDF, or portable SVG files. |
 | ▤ | **Documentation workflows** | Render embedded Mermaid blocks and export documents with local images. |
@@ -150,6 +170,11 @@ colors across 60 examples organized into six practical categories.
 
 Relative images inside the workspace are converted to `data:` URIs, so exported
 SVGs stay portable and do not depend on local file paths.
+
+In 1.3.0, trusted workspaces can opt into absolute paths under configured local
+roots and raster images below exact HTTPS base URLs. These resources use the
+same `data:` embedding path; the Mermaid renderer never receives filesystem or
+network authority.
 
 ![A workspace-relative image embedded in an offline Mermaid diagram](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/local-image.png)
 
@@ -259,9 +284,11 @@ SVG. Neither action opens the professional export dialog.
 - Tidy-tree mindmap layout bundled locally.
 - Relative SVG, PNG, JPEG, GIF, WebP, AVIF, BMP, and ICO images embedded as
   data URIs.
-- No telemetry, analytics, remote fonts, or runtime downloads.
-- Fixed memory guardrails for very large sources, local-image sets, and raster
-  exports, with actionable messages instead of unbounded work.
+- No telemetry, analytics, remote fonts, account, or required runtime download.
+- Offline-by-default external image permissions with machine-scoped local-root
+  and HTTPS allowlists.
+- Standard or bounded custom memory guardrails for very large sources, image
+  sets, and raster exports, with actionable messages instead of unbounded work.
 - A single, optional Marketplace review prompt only after five successful
   preview sessions—never after every edit or render.
 - Adaptive handling for large files and cancellation of obsolete renders.
@@ -323,6 +350,17 @@ and current limitations.
 
 | Setting | Default | Purpose |
 |---|---|---|
+| `mermaidPreviewOffline.resources.allowAdditionalLocalRoots` | `false` | Enable absolute paths and paths outside the workspace only below explicitly configured roots. |
+| `mermaidPreviewOffline.resources.additionalLocalRoots` | `[]` | Machine-local absolute directories or VS Code filesystem URIs allowed for images. |
+| `mermaidPreviewOffline.resources.allowRemoteImages` | `false` | Download, validate, and embed images below the configured HTTPS bases. |
+| `mermaidPreviewOffline.resources.allowedRemoteBases` | `[]` | Exact HTTPS base URLs; wildcards and credential-bearing URLs are rejected. |
+| `mermaidPreviewOffline.resources.allowPrivateNetwork` | `false` | Permit allowlisted hosts that resolve to loopback, link-local, or private addresses. |
+| `mermaidPreviewOffline.resourceLimits.useCustom` | `false` | Use the bounded custom resource values below. |
+| `mermaidPreviewOffline.resourceLimits.maxSourceMiB` | `10` | Source budget, capped at 64 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxImages` | `64` | Unique resolved-image budget, capped at 256. |
+| `mermaidPreviewOffline.resourceLimits.maxImageMiB` | `8` | Per-image budget, capped at 32 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxTotalImageMiB` | `24` | Aggregate image budget, capped at 128 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxRasterMegapixels` | `32` | Raster and remote-image decode budget, capped at 64 megapixels. |
 | `mermaidPreviewOffline.refreshMode` | `automatic` | Switch between live and manual rendering. |
 | `mermaidPreviewOffline.refreshDelay` | `140` | Set the automatic refresh delay in milliseconds. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Apply the large-file render policy above this size. |
@@ -356,17 +394,18 @@ In a Mermaid text editor, use **Mermaid: Insert Node or Link**, **Mermaid:
 Generate Missing Identifiers**, **Mermaid: Rename Identifier**, or **Mermaid:
 Format Document** from the Command Palette or editor context menu.
 
-## Built-in resource safeguards
+## Resource safeguards
 
 | Resource | Limit | What happens at the limit |
 |---|---:|---|
 | Mermaid source | 10 MiB of UTF-8 source | Preview rendering pauses with the measured size and limit; CLI and batch rendering reject that file. The source remains editable. |
-| Local images in one diagram | 64 unique images, 8 MiB each, 24 MiB combined | Rendering stops with a message identifying the image-count, per-image, or aggregate limit. |
+| Resolved images in one diagram | 64 unique images, 8 MiB each, 24 MiB combined | Rendering stops with a message identifying the image-count, per-image, or aggregate limit. |
 | PNG, WebP, and PDF rasterization | 32,000,000 pixels | Export stops before allocating the oversized canvas and asks you to reduce scale or DPI. SVG remains available. |
 
-These fixed limits keep memory use predictable. Optimize or split large images,
-split unusually large diagrams, or reduce export scale/DPI rather than retrying
-the same oversized operation.
+These standard limits keep memory use predictable. Trusted users can enable the
+bounded custom profile in machine settings, up to 64 MiB of source, 256 images,
+32 MiB per image, 128 MiB combined, and 64 megapixels. Transport, concurrency,
+dimension, timeout, and serialized-message ceilings remain internal safeguards.
 
 ## Command reference
 
@@ -502,8 +541,8 @@ never overwritten.
 ## Offline CLI and VS Code tasks
 
 The repository includes a Node.js 22 CLI that uses Chrome, Chromium, or Edge
-120 or newer as its local rendering engine. It never contacts a
-remote service.
+120 or newer as its local rendering engine. It requires no remote service. It
+contacts an image host only when `--allow-remote-base` is supplied explicitly.
 
 ```bash
 npm ci
@@ -518,12 +557,18 @@ mpo examples \
   --output exported --format pdf --theme neutral
 ```
 
-`npm link` exposes the local executable as the short `mpo` command. Use
+`npm link` exposes the local executable as the short `mpo` command.
 `--profile profile.json` loads saved settings, `--font` selects `vscode`,
 `noto-sans`, or `inter`, `--name-template` controls output names, `--browser`
 handles a non-standard browser location, and `--json` emits machine-readable
 output. `--help` lists every option. In CLI mode, `vscode` resolves to the
 system UI font stack because VS Code's CSS variable is unavailable.
+
+Use repeatable `--allow-local-root <path>` and `--allow-remote-base <https-url>`
+flags for external images. `--allow-private-network` separately enables private
+destinations. The `--max-source-mib`, `--max-images`, `--max-image-mib`,
+`--max-total-image-mib`, and `--max-raster-megapixels` flags select the same
+bounded custom budgets as VS Code settings.
 
 The extension also contributes a `mermaid-export` task type:
 
@@ -559,7 +604,10 @@ Rendering happens inside a restricted VS Code webview. The extension:
 - runs Mermaid with `securityLevel: strict`;
 - contains no telemetry or analytics;
 - reads Git revisions only through the built-in local VS Code Git extension;
-- rejects absolute image paths and paths outside the workspace;
+- rejects absolute, outside-workspace, and network images by default;
+- resolves enabled external images only through machine-scoped allowlists in a
+  trusted workspace, then embeds their validated bytes before rendering;
+- blocks private and local network destinations unless separately enabled;
 - writes outside the current document only after an explicit save, folder export,
   task, or CLI invocation.
 

@@ -68,6 +68,8 @@ extensions, and intentional offline limitations.
 - ZenUML, the tidy-tree layout, and the `logos`, `mdi`, and `material-icon-theme` Iconify packs are bundled in
   the extension and work without a network connection.
 - Workspace-relative images are read locally and converted to `data:` URLs in
-  the SVG. Paths outside the workspace are rejected.
+  the SVG. Paths outside the workspace and HTTPS raster images remain disabled
+  by default; version 1.3.0 can enable them only below machine-scoped allowlists
+  in a trusted workspace.
 - Diagram keywords ending in `-beta` are experimental and may change in a
   future Mermaid release.

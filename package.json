@@ -1,8 +1,8 @@
 {
   "name": "mermaid-preview-offline",
   "displayName": "Mermaid Preview — 100% Offline",
-  "description": "Instant Mermaid diagram preview for Markdown, MDX, and AsciiDoc—with professional export, 100% offline in VS Code.",
-  "version": "1.2.10",
+  "description": "Offline-first Mermaid diagram preview for VS Code—with professional export, no account, and no required network connection.",
+  "version": "1.3.0",
   "publisher": "brainfkt",
   "author": {
     "name": "Brainfkt"
@@ -33,6 +33,20 @@
     "workspace",
     "ui"
   ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Offline previews remain available. Additional local roots, remote images, private-network access, and raised resource limits stay disabled until the workspace is trusted.",
+      "restrictedConfigurations": [
+        "mermaidPreviewOffline.resources.allowAdditionalLocalRoots",
+        "mermaidPreviewOffline.resources.additionalLocalRoots",
+        "mermaidPreviewOffline.resources.allowRemoteImages",
+        "mermaidPreviewOffline.resources.allowedRemoteBases",
+        "mermaidPreviewOffline.resources.allowPrivateNetwork",
+        "mermaidPreviewOffline.resourceLimits.useCustom"
+      ]
+    }
+  },
   "categories": [
     "Visualization",
     "Programming Languages"
@@ -505,6 +519,98 @@
     "configuration": {
       "title": "Mermaid Preview Offline",
       "properties": {
+        "mermaidPreviewOffline.resources.allowAdditionalLocalRoots": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Allows absolute image paths and relative paths outside the workspace only when their final location is inside the workspace or one of the configured additional local roots. Disabled in untrusted workspaces."
+        },
+        "mermaidPreviewOffline.resources.additionalLocalRoots": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "maxItems": 64,
+          "uniqueItems": true,
+          "default": [],
+          "scope": "machine",
+          "description": "Absolute directories or VS Code filesystem URIs from which images may be read when additional local roots are enabled. Filesystem roots are ignored."
+        },
+        "mermaidPreviewOffline.resources.allowRemoteImages": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "tags": [
+            "usesOnlineServices"
+          ],
+          "description": "Downloads and embeds HTTPS images whose complete URL is below a configured remote base. The renderer itself remains offline. Disabled in untrusted workspaces."
+        },
+        "mermaidPreviewOffline.resources.allowedRemoteBases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^https://",
+            "minLength": 9
+          },
+          "maxItems": 64,
+          "uniqueItems": true,
+          "default": [],
+          "scope": "machine",
+          "description": "HTTPS base URLs allowed for remote images, for example https://static.example.com/diagrams/. Wildcards, credentials, query strings, and fragments are not accepted."
+        },
+        "mermaidPreviewOffline.resources.allowPrivateNetwork": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Allows explicitly allowlisted HTTPS image hosts to resolve to loopback, link-local, or private network addresses. Keep disabled unless those images are intentionally hosted on your private network."
+        },
+        "mermaidPreviewOffline.resourceLimits.useCustom": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Uses the bounded custom resource limits below instead of the standard offline limits. Custom limits remain capped and are disabled in untrusted workspaces."
+        },
+        "mermaidPreviewOffline.resourceLimits.maxSourceMiB": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 64,
+          "scope": "machine",
+          "description": "Maximum Mermaid source size in MiB when custom resource limits are enabled."
+        },
+        "mermaidPreviewOffline.resourceLimits.maxImages": {
+          "type": "integer",
+          "default": 64,
+          "minimum": 1,
+          "maximum": 256,
+          "scope": "machine",
+          "description": "Maximum number of unique resolved images in one diagram when custom resource limits are enabled."
+        },
+        "mermaidPreviewOffline.resourceLimits.maxImageMiB": {
+          "type": "number",
+          "default": 8,
+          "minimum": 1,
+          "maximum": 32,
+          "scope": "machine",
+          "description": "Maximum encoded size of one resolved image in MiB when custom resource limits are enabled."
+        },
+        "mermaidPreviewOffline.resourceLimits.maxTotalImageMiB": {
+          "type": "number",
+          "default": 24,
+          "minimum": 1,
+          "maximum": 128,
+          "scope": "machine",
+          "description": "Maximum combined encoded image size in MiB for one diagram when custom resource limits are enabled."
+        },
+        "mermaidPreviewOffline.resourceLimits.maxRasterMegapixels": {
+          "type": "number",
+          "default": 32,
+          "minimum": 1,
+          "maximum": 64,
+          "scope": "machine",
+          "description": "Maximum raster export and remote-image decode budget in megapixels when custom resource limits are enabled."
+        },
         "mermaidPreviewOffline.refreshMode": {
           "type": "string",
           "enum": [

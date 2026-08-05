@@ -1,9 +1,10 @@
-# Revue des performances — version 1.1.2
+# Performances et politique de ressources — version 1.3.0
 
 Cette revue couvre les chemins d’exécution de l’aperçu VS Code, du Diagram
 Studio, des aperçus de documentation, des différences visuelles, des exports et
 de la CLI. Elle exclut volontairement la revue cyber, conformément au périmètre
-de la version 1.1.2.
+de la version 1.1.2. La version 1.3.0 conserve ces références historiques et
+ajoute une politique bornée pour les ressources locales et HTTPS facultatives.
 
 ## Résultat
 
@@ -87,25 +88,30 @@ la préparation des versions 1.1.0 et 1.1.2. Les quatre mesures propres à la
   dépasserait son budget.
 - Le prétraitement des blocs documentaires et le chargement des images utilisent
   une concurrence bornée.
-- Le cache d’images locales est limité à 24 Mio et invalide une entrée lorsque sa
-  taille ou sa date de modification change.
+- Le cache d’images locales suit le budget agrégé actif et invalide une entrée
+  lorsque sa taille ou sa date de modification change.
+- Le cache mémoire HTTPS est borné par le même budget agrégé, utilise une
+  expiration de cinq minutes et une éviction LRU.
+- Les téléchargements HTTPS contrôlés utilisent quatre chargements concurrents
+  au maximum par diagramme, dix secondes par requête et trois redirections.
 - Les exports documentaires limitent leur résultat Base64 cumulé afin d’éviter
   une agrégation non bornée dans la webview.
 
 ## Garde-fous mesurables
 
-| Ressource | Limite en v1.1.2 |
-|---|---:|
-| Source Mermaid rendue | 10 Mio UTF-8 |
-| Images locales uniques par diagramme | 64 |
-| Taille d’une image locale | 8 Mio |
-| Images locales cumulées | 24 Mio |
-| Concurrence de chargement d’images | 4 |
-| Dimension raster maximale | 16 384 px par côté |
-| Surface raster maximale | 32 000 000 pixels |
-| Résultat Base64 d’un export ou d’un lot documentaire | 192 000 000 caractères |
+| Ressource | Standard v1.3.0 | Plafond personnalisé |
+|---|---:|---:|
+| Source Mermaid rendue | 10 Mio UTF-8 | 64 Mio |
+| Images résolues uniques par diagramme | 64 | 256 |
+| Taille d’une image résolue | 8 Mio | 32 Mio |
+| Images résolues cumulées | 24 Mio | 128 Mio |
+| Concurrence de chargement d’images | 4 | 4 |
+| Dimension raster maximale | 16 384 px par côté | 16 384 px par côté |
+| Surface raster maximale | 32 000 000 pixels | 64 000 000 pixels |
+| Résultat Base64 d’un export ou d’un lot documentaire | 192 000 000 caractères | 192 000 000 caractères |
 
-Chaque dépassement produit un message demandant de réduire la source, le nombre
+Les cellules sans plafond personnalisé restent des invariants internes. Chaque
+dépassement produit un message demandant de réduire la source, le nombre
 d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste possible.
 
 ## Reproductibilité et plateformes
@@ -128,9 +134,10 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
   Les exports PNG, WebP et PDF restent visuellement stables, mais leurs octets
   peuvent varier avec la version et le codec du navigateur Chromium installé
   localement.
-- Le rendu, les chunks, ZenUML, Iconify, les images intégrées et les polices ne
-  nécessitent aucun téléchargement à l’exécution. Le SVG original reste
-  volontairement inchangé et ne reçoit pas de face embarquée à l’export.
+- Le rendu, les chunks, ZenUML, Iconify et les polices ne nécessitent aucun
+  téléchargement à l’exécution. Les images HTTPS constituent un opt-in explicite
+  et sont intégrées avant rendu. Le SVG original reste volontairement inchangé
+  et ne reçoit pas de face embarquée à l’export.
 - Le pipeline CI exécute la vérification sur macOS, Windows et Linux, puis les
   44 exemples dans trois familles de thème, soit 132 rendus.
 
@@ -138,13 +145,16 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 
 - TypeScript : réussi.
 - ESLint : réussi.
-- Tests unitaires et d’intégration : 130/130 réussis.
-- Régression visuelle : 132/132 rendus réussis, plus Diagram Studio et le diff visuel.
-- Build de production : réussi, 17,41 Mio sur le budget de 20 Mio.
-- Package VSIX : réussi, 188 fichiers, 5,58 Mio compressés
-  (5 855 345 octets). Les captures du dépôt en sont bien exclues.
-- Cohérence du lockfile en mode npm hors ligne : réussie.
+- Tests unitaires et d’intégration : 176/176 réussis, y compris les nouvelles
+  règles d’allowlist, de plafonds, d’adresses privées et de formats d’image.
+- Build de production : réussi, 17,44 Mio sur le budget de 20 Mio.
+- Package VSIX : réussi, 190 fichiers et 5,62 Mio compressés
+  (5 894 583 octets).
+- Le contrôle visuel de 132 rendus reste une étape de la checklist de
+  publication ; il n’est pas présenté ici comme ayant été réexécuté pour la
+  modification 1.3.0.
 
-Les tests nécessitant Chromium ont été exécutés localement avec les connexions
-réseau bloquées par le harness, puis la baseline mise à jour a repassé le contrôle
-strict sans différence.
+Les tests de politique couvrent le code indépendant du réseau. Les connexions
+HTTPS réelles ne font pas partie de la suite unitaire : le chargeur les borne,
+épingle l’adresse DNS sélectionnée, revalide chaque redirection et rejette les
+destinations privées par défaut.

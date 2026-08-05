@@ -55,7 +55,7 @@ Legend:
 | Engine information | `info` | ✅ | Diagnostic | [`40-info.mmd`](40-info.mmd) |
 | ZenUML | `zenuml` | ✅ | 🧪 | [`41-zenuml.mmd`](41-zenuml.mmd) |
 
-## Additional offline capabilities
+## Offline-by-default capabilities
 
 | Capability | Support | Implementation | Validated example |
 |---|:---:|---|---|
@@ -66,13 +66,17 @@ Legend:
 | Tidy-tree mindmap layout | ✅ | `@mermaid-js/layout-tidy-tree` is bundled and registered locally | [`44-mindmap-tidy-tree.mmd`](44-mindmap-tidy-tree.mmd) |
 | Relative local images | ✅ | The workspace file is read locally and embedded as a `data:` URL | [`43-local-image.mmd`](43-local-image.mmd) |
 | Pre-embedded images | ✅ | Existing `data:` URLs are left unchanged | Standard Mermaid syntax |
+| Allowlisted absolute/outside-workspace images | ✅ opt-in | Machine-scoped roots, canonical containment, and trusted-workspace gating | User-provided resources |
+| Allowlisted HTTPS raster images | ✅ opt-in | Extension-side download, validation, limits, and `data:` embedding; renderer network remains blocked | User-provided resources |
 
 ## Intentional limitations
 
 | Capability | Support | Reason |
 |---|:---:|---|
-| `http://` or `https://` resources | ❌ | Network access stays blocked for privacy and reproducibility |
-| Absolute paths or paths outside the workspace | ❌ | Rejected to prevent arbitrary local file access |
+| `http://` resources | ❌ | Insecure transport is not accepted |
+| HTTPS SVG or AVIF resources | ❌ | The initial remote loader accepts inspected PNG, JPEG, GIF, WebP, BMP, and ICO only |
+| Arbitrary HTTPS resources | ❌ | Every URL must remain below an exact configured base; private networks need a separate opt-in |
+| Arbitrary absolute paths or paths outside the workspace | ❌ | Every final path must remain below the workspace or a configured machine root |
 | Unidentified third-party plug-ins | ❌ | Every additional module must be named, reviewed, and bundled explicitly |
 | Other Iconify packs | ❌ | Bundling thousands of packs would add excessive weight; `logos`, `mdi`, and `material-icon-theme` cover the documented use cases |
 

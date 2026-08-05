@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.8 — User guide
+# Mermaid Preview Offline 1.3.0 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,11 +7,26 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.2.8 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.3.0 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
-## New in version 1.2.8
+## New in version 1.3.0
+
+Version 1.3.0 keeps the complete no-account, no-cloud, no-required-network
+workflow and adds explicit, machine-scoped options for exceptional resources:
+
+- trusted workspaces can allow absolute paths and paths outside the workspace,
+  but only below configured local roots after canonical path validation;
+- trusted workspaces can fetch supported raster images below exact HTTPS base
+  URLs, embed them as `data:` resources, and keep the renderer networkless;
+- private or local network destinations require an independent opt-in;
+- source, image-count, per-image, aggregate-image, and raster-pixel limits can
+  be raised within fixed hard ceilings;
+- the CLI exposes equivalent explicit flags, while VS Code export tasks inherit
+  the active machine policy.
+
+The following 1.2.8 behavior also remains available.
 
 Version 1.2.8 improves the **Custom** canvas background swatch in every
 Appearance panel:
@@ -163,21 +178,27 @@ bar, or always show labels. `toolbar.visible` hides the complete bar, and
 
 ### Resource safeguards
 
-The following fixed limits prevent one preview or export from consuming
-unbounded memory. They are safety ceilings, not configurable quality settings.
+The standard limits below prevent one preview or export from consuming
+unbounded memory. Trusted users can enable a bounded custom profile in machine
+settings; internal hard ceilings still apply.
 
 | Resource | Limit | User-visible behavior |
 |---|---:|---|
 | Mermaid source | 10 MiB of UTF-8 source | The preview pauses rendering and shows the measured size and 10 MiB ceiling. Text editing remains available. CLI and folder/batch rendering reject or skip the oversized file with the same limit. |
-| Local images in one diagram | 64 unique relative images | Rendering stops with the detected count and the 64-image ceiling. |
-| One local image | 8 MiB | Rendering stops and identifies the oversized reference. |
-| All local images in one diagram | 24 MiB combined | Rendering stops with an aggregate-limit message. |
+| Resolved images in one diagram | 64 unique images | Rendering stops with the detected count and the 64-image ceiling. |
+| One resolved image | 8 MiB | Rendering stops and identifies the oversized reference. |
+| All resolved images in one diagram | 24 MiB combined | Rendering stops with an aggregate-limit message. |
 | Rasterized export | 32,000,000 pixels | PNG, WebP, or PDF export stops before creating an oversized canvas and asks you to reduce scale or DPI. |
 
 SVG is vector output and is not subject to the 32-megapixel raster budget.
 Optimize image files or split image-heavy diagrams; split an exceptional source
 file into smaller diagrams; and lower DPI or scale when a raster export exceeds
 its budget.
+
+Custom limits are capped at 64 MiB of source, 256 images, 32 MiB per image,
+128 MiB of images combined, and 64 megapixels. Image-loading concurrency,
+16,384-pixel dimensions, network timeouts, and serialized-message limits remain
+fixed internal safeguards.
 
 ### Zoom, pan, minimap, and focus
 
@@ -343,7 +364,7 @@ The first view gives an overview of the complete gallery and its visual legend.
 The second shows the same example in the Beside layout, where source and
 rendered result remain in one synchronized custom-editor tab.
 
-### Local images
+### Local and optional external images
 
 Relative image references in Mermaid `img:` attributes are resolved from the
 diagram's directory and embedded as `data:` URIs before rendering. Supported
@@ -359,9 +380,36 @@ flowchart LR
   logo@{ img: "assets/logo.svg", label: "Local logo" }
 ```
 
-Absolute paths, network URLs, and paths that resolve outside the workspace are
-not supported. In a multi-root workspace, the diagram's own workspace folder is
-used. Remote workspaces use the active VS Code file-system provider.
+By default, absolute paths, network URLs, and paths that resolve outside the
+workspace are ignored. In a multi-root workspace, the diagram's own workspace
+folder is used. Remote workspaces use the active VS Code file-system provider.
+
+Version 1.3.0 can opt into two additional capabilities from VS Code’s machine
+settings:
+
+- enable `resources.allowAdditionalLocalRoots`, then add absolute directories
+  or filesystem URIs to `resources.additionalLocalRoots`;
+- enable `resources.allowRemoteImages`, then add exact HTTPS base URLs such as
+  `https://static.example.com/diagrams/` to `resources.allowedRemoteBases`.
+
+Then an allowlisted web image can be referenced directly in the diagram:
+
+```text
+flowchart LR
+  logo@{ img: "https://static.example.com/diagrams/logo.png", label: "Web logo" }
+```
+
+Absolute and escaping relative paths are accepted only when their canonical
+destination remains below the workspace or a configured root. Remote URLs must
+remain below an allowed base after every redirect. Loopback, link-local, and
+private-network addresses require the separate `resources.allowPrivateNetwork`
+opt-in. A filesystem root cannot be used as an additional root. These
+permissions never take effect in an untrusted workspace.
+
+Remote PNG, JPEG, GIF, WebP, BMP, and ICO images are downloaded with byte,
+dimension, redirect, timeout, and aggregate limits, cached briefly, then embedded
+as `data:`. Remote SVG and AVIF are not accepted. The preview webview and Mermaid
+renderer remain unable to access the network directly.
 
 ## Export diagrams
 
@@ -461,6 +509,14 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--no-optimize` | Disable SVG optimization. |
 | `--metadata` | Include source and export metadata (opt in; disabled by default). |
 | `--no-metadata` | Explicitly omit source and export metadata, including when a profile enables it. |
+| `--allow-local-root <path>` | Allow images below an additional absolute directory; repeat as needed. |
+| `--allow-remote-base <https-url>` | Allow and embed raster images below an HTTPS base URL; repeat as needed. |
+| `--allow-private-network` | Permit allowlisted hosts that resolve to private or local addresses. |
+| `--max-source-mib <n>` | Custom source budget, capped at 64 MiB. |
+| `--max-images <n>` | Custom image-count budget, capped at 256. |
+| `--max-image-mib <n>` | Custom per-image budget, capped at 32 MiB. |
+| `--max-total-image-mib <n>` | Custom aggregate image budget, capped at 128 MiB. |
+| `--max-raster-megapixels <n>` | Custom raster/decode budget, capped at 64 megapixels. |
 | `--browser <path>` | Use a specific Chrome, Chromium, or Edge executable. |
 | `--json` | Print machine-readable results. |
 | `-h, --help` | Show all options. |
@@ -516,6 +572,10 @@ that provide a compatible browser.
 | `optimizeSvg` | `true` | Optimize generated SVG. |
 | `includeMetadata` | `false` | Opt in to supported metadata; leave off for reproducible optimized SVG. |
 | `browser` | Auto-detected | Optional browser executable path. |
+
+VS Code export tasks inherit the active machine-scoped external-resource policy
+and bounded custom limits. Standalone CLI invocations do not read VS Code
+settings; pass the corresponding explicit flags instead.
 
 ## Diagram Studio and generators
 
@@ -711,6 +771,17 @@ but they remain searchable in the Command Palette after the extension activates.
 
 | Setting | Default | Scope and effect |
 |---|---:|---|
+| `mermaidPreviewOffline.resources.allowAdditionalLocalRoots` | `false` | Machine-level opt-in for absolute and outside-workspace paths below configured roots; trusted workspaces only. |
+| `mermaidPreviewOffline.resources.additionalLocalRoots` | `[]` | Machine-local absolute directories or VS Code filesystem URIs. |
+| `mermaidPreviewOffline.resources.allowRemoteImages` | `false` | Machine-level opt-in for allowlisted HTTPS raster images; trusted workspaces only. |
+| `mermaidPreviewOffline.resources.allowedRemoteBases` | `[]` | Exact HTTPS URL bases; no wildcards, credentials, queries, or fragments. |
+| `mermaidPreviewOffline.resources.allowPrivateNetwork` | `false` | Separate machine-level opt-in for allowlisted private, link-local, or loopback destinations. |
+| `mermaidPreviewOffline.resourceLimits.useCustom` | `false` | Use bounded custom limits in trusted workspaces. |
+| `mermaidPreviewOffline.resourceLimits.maxSourceMiB` | `10` | Custom source limit, 1–64 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxImages` | `64` | Custom unique-image limit, 1–256. |
+| `mermaidPreviewOffline.resourceLimits.maxImageMiB` | `8` | Custom per-image limit, 1–32 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxTotalImageMiB` | `24` | Custom aggregate-image limit, 1–128 MiB. |
+| `mermaidPreviewOffline.resourceLimits.maxRasterMegapixels` | `32` | Custom raster and remote-image decode budget, 1–64 megapixels. |
 | `mermaidPreviewOffline.refreshMode` | `automatic` | Automatic live rendering or manual refresh. |
 | `mermaidPreviewOffline.refreshDelay` | `140` | Resource-level debounce in milliseconds, 0–2000. Large files use at least 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Resource-level threshold, 64–10240 KB. |
@@ -764,11 +835,17 @@ Example workspace settings:
 
 ## Privacy, offline behavior, and compatibility
 
-Diagram rendering, plug-in registration, icons, local-image embedding, exports,
+Diagram rendering, plug-in registration, icons, image embedding, exports,
 templates, examples, language services, and generators run locally. The
-extension has no account system, telemetry, analytics, remote fonts, or runtime
-asset downloads. Its preview webviews block network connections, and Mermaid is
-configured in strict mode.
+extension has no account system, telemetry, analytics, remote fonts, cloud
+renderer, or required network connection. Its preview webviews block network
+connections, and Mermaid is configured in strict mode.
+
+If remote images are explicitly enabled in a trusted workspace, only the
+extension-side resolver contacts the configured HTTPS bases. It validates and
+embeds the returned raster bytes before rendering. This optional image-loading
+capability does not change the “100% Offline” workflow: creating, editing,
+previewing, and exporting diagrams still requires no account or connection.
 
 The CLI and VS Code task renderer require a locally installed Chromium-based
 browser, but do not require a cloud renderer. A browser executable can be
@@ -813,10 +890,10 @@ Check `refreshDelay` and `largeFileThresholdKb`. Files above the threshold use
 at least a 400 ms debounce. The footer identifies a large file and shows render
 progress. Reduce unnecessary source churn before lowering the delay.
 
-### A source or local-image set exceeds its limit
+### A source or image set exceeds its limit
 
 A Mermaid source larger than 10 MiB stays editable but is not rendered. Split it
-into smaller diagrams before preview, CLI, or folder export. For local images,
+into smaller diagrams before preview, CLI, or folder export. For images,
 keep at most 64 unique references, no more than 8 MiB per file, and no more than
 24 MiB combined in one diagram. Optimize or split the assets named by the
 warning, then refresh.
@@ -827,12 +904,14 @@ Press `Ctrl/Cmd + 0` to re-enable fit mode. The minimap appears only when the
 diagram overflows and `mermaidPreviewOffline.minimap.enabled` is true. Zooming
 in can make a previously fitted diagram overflow.
 
-### A local image is absent
+### An image is absent
 
-Use a supported relative path from the Mermaid file, keep the image inside the
-same workspace folder, and confirm its extension is SVG, PNG, JPEG, GIF, WebP,
-AVIF, BMP, or ICO. Network URLs, absolute paths, unsupported formats, unreadable
-files, and paths outside the workspace are intentionally ignored.
+For the default offline path, use a supported relative reference and keep the
+image inside the same workspace folder. For an external path, verify the
+machine-scoped local-root checkbox and canonical root. For HTTPS, verify the
+remote checkbox, exact base URL, workspace trust, supported raster format, and
+private-network checkbox when applicable. Local formats are SVG, PNG, JPEG,
+GIF, WebP, AVIF, BMP, and ICO; remote formats exclude SVG and AVIF.
 
 ### Export output looks different from the preview
 

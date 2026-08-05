@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.2.8 — Guide utilisateur
+# Mermaid Preview Offline 1.3.0 — Guide utilisateur
 
 [Read this guide in English](USER_GUIDE.md).
 
@@ -8,12 +8,29 @@ s’effectue localement avec le moteur Mermaid et les ressources intégrées à
 l’extension. Aucun compte, service de rendu dans le cloud, CDN ou service de
 télémétrie n’est nécessaire.
 
-Ce guide couvre toutes les fonctionnalités de la version 1.2.8. Pour connaître la
+Ce guide couvre toutes les fonctionnalités de la version 1.3.0. Pour connaître la
 syntaxe Mermaid exacte et son niveau de stabilité, consultez le
 [catalogue de 44 exemples](../examples/README.md) et la
 [matrice de compatibilité](../examples/COMPATIBILITY.md).
 
-## Nouveautés de la version 1.2.8
+## Nouveautés de la version 1.3.0
+
+La version 1.3.0 conserve le parcours complet sans compte, sans cloud et sans
+connexion réseau obligatoire, tout en ajoutant des options explicites, propres
+à la machine, pour les ressources exceptionnelles :
+
+- un espace de travail approuvé peut autoriser les chemins absolus et sortants,
+  uniquement sous des racines locales configurées et après validation du chemin
+  canonique ;
+- il peut récupérer les images matricielles prises en charge sous des bases
+  HTTPS exactes, les intégrer en `data:` et laisser le renderer sans réseau ;
+- les destinations réseau privées ou locales exigent un opt-in indépendant ;
+- les limites de source, de nombre et taille d’images, de cumul d’images et de
+  pixels matriciels peuvent être relevées sous des plafonds internes fixes ;
+- la CLI offre des options explicites équivalentes et les tâches d’export VS
+  Code héritent de la politique machine active.
+
+Le comportement suivant, introduit en 1.2.8, reste également disponible.
 
 La version 1.2.8 améliore le bouton de fond de canevas **Custom** dans tous les
 panneaux Appearance :
@@ -179,16 +196,17 @@ affichées.
 
 ### Garde-fous sur les ressources
 
-Les limites fixes suivantes empêchent un aperçu ou un export de consommer une
-quantité de mémoire non bornée. Il s’agit de plafonds de sécurité, et non de
-réglages de qualité configurables.
+Les limites standard suivantes empêchent un aperçu ou un export de consommer une
+quantité de mémoire non bornée. Dans un espace de travail approuvé, un profil
+personnalisé borné peut être activé dans les réglages machine ; les plafonds
+internes continuent de s’appliquer.
 
 | Ressource | Limite | Comportement visible |
 |---|---:|---|
 | Source Mermaid | 10 Mio de source UTF-8 | L’aperçu suspend le rendu et affiche la taille mesurée ainsi que le plafond de 10 Mio. L’édition du texte reste disponible. Le CLI et le rendu de dossier/par lot rejettent ou ignorent le fichier trop volumineux avec la même limite. |
-| Images locales d’un diagramme | 64 images relatives uniques | Le rendu s’arrête en indiquant le nombre détecté et le plafond de 64 images. |
-| Une image locale | 8 Mio | Le rendu s’arrête et identifie la référence trop volumineuse. |
-| Ensemble des images locales d’un diagramme | 24 Mio cumulés | Le rendu s’arrête avec un message signalant la limite cumulée. |
+| Images résolues d’un diagramme | 64 images uniques | Le rendu s’arrête en indiquant le nombre détecté et le plafond de 64 images. |
+| Une image résolue | 8 Mio | Le rendu s’arrête et identifie la référence trop volumineuse. |
+| Ensemble des images résolues d’un diagramme | 24 Mio cumulés | Le rendu s’arrête avec un message signalant la limite cumulée. |
 | Export matriciel | 32 000 000 pixels (32 Mpx) | L’export PNG, WebP ou PDF s’arrête avant de créer un canevas trop volumineux et demande de réduire l’échelle ou le DPI. |
 
 SVG étant un format vectoriel, il n’est pas soumis au budget matriciel de
@@ -196,6 +214,11 @@ SVG étant un format vectoriel, il n’est pas soumis au budget matriciel de
 beaucoup ; scindez une source exceptionnellement volumineuse en plusieurs petits
 diagrammes ; et réduisez le DPI ou l’échelle lorsqu’un export matriciel dépasse
 son budget.
+
+Les valeurs personnalisées sont plafonnées à 64 Mio de source, 256 images,
+32 Mio par image, 128 Mio d’images cumulées et 64 mégapixels. La concurrence,
+les dimensions maximales de 16 384 pixels, les délais réseau et les limites des
+messages sérialisés restent des garde-fous internes non désactivables.
 
 ### Zoom, déplacement, minimap et focus
 
@@ -372,7 +395,7 @@ visuelle. La seconde montre le même exemple dans le mode Beside, où le code
 source et le rendu restent réunis dans un même onglet d’éditeur personnalisé
 synchronisé.
 
-### Images locales
+### Images locales et externes facultatives
 
 Les références d’images relatives dans les attributs Mermaid `img:` sont
 résolues depuis le répertoire du diagramme et intégrées sous forme d’URI `data:`
@@ -388,10 +411,40 @@ flowchart LR
   logo@{ img: "assets/logo.svg", label: "Local logo" }
 ```
 
-Les chemins absolus, les URL réseau et les chemins qui se résolvent en dehors
-de l’espace de travail ne sont pas pris en charge. Dans un espace multi-racine,
-le dossier d’espace de travail propre au diagramme est utilisé. Les espaces de
-travail distants utilisent le fournisseur de système de fichiers VS Code actif.
+Par défaut, les chemins absolus, les URL réseau et les chemins qui se résolvent
+en dehors de l’espace de travail sont ignorés. Dans un espace multi-racine, le
+dossier propre au diagramme est utilisé. Les espaces de travail distants
+utilisent le fournisseur de système de fichiers VS Code actif.
+
+La version 1.3.0 propose deux autorisations facultatives dans les réglages
+machine de VS Code :
+
+- activez `resources.allowAdditionalLocalRoots`, puis ajoutez des répertoires
+  absolus ou URI de système de fichiers à `resources.additionalLocalRoots` ;
+- activez `resources.allowRemoteImages`, puis ajoutez des bases HTTPS exactes,
+  par exemple `https://static.example.com/diagrams/`, à
+  `resources.allowedRemoteBases`.
+
+Une image web autorisée peut alors être référencée directement dans le
+diagramme :
+
+```text
+flowchart LR
+  logo@{ img: "https://static.example.com/diagrams/logo.png", label: "Logo web" }
+```
+
+Un chemin absolu ou relatif sortant n’est accepté que si sa destination
+canonique reste sous l’espace de travail ou une racine configurée. Une URL doit
+rester sous une base autorisée après chaque redirection. Les destinations
+loopback, link-local ou privées exigent l’opt-in séparé
+`resources.allowPrivateNetwork`. Une racine complète de système de fichiers ne
+peut pas servir de racine supplémentaire. Ces autorisations sont inactives dans
+un espace de travail non approuvé.
+
+Les images distantes PNG, JPEG, GIF, WebP, BMP et ICO sont téléchargées avec des
+limites de taille, dimensions, redirections, délai et total, mises brièvement en
+cache puis intégrées en `data:`. Les SVG et AVIF distants sont refusés. La
+webview d’aperçu et Mermaid n’obtiennent jamais d’accès réseau direct.
 
 ## Exporter les diagrammes
 
@@ -495,6 +548,14 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--no-optimize` | Désactive l’optimisation SVG. |
 | `--metadata` | Inclut les métadonnées de source et d’export (opt-in, désactivé par défaut). |
 | `--no-metadata` | Omet explicitement les métadonnées de source et d’export, y compris si un profil les active. |
+| `--allow-local-root <path>` | Autorise les images sous un répertoire absolu supplémentaire ; option répétable. |
+| `--allow-remote-base <https-url>` | Autorise et intègre les images matricielles sous une base HTTPS ; option répétable. |
+| `--allow-private-network` | Autorise les hôtes allowlistés qui se résolvent vers une adresse privée ou locale. |
+| `--max-source-mib <n>` | Budget source personnalisé, plafonné à 64 Mio. |
+| `--max-images <n>` | Nombre d’images personnalisé, plafonné à 256. |
+| `--max-image-mib <n>` | Budget par image personnalisé, plafonné à 32 Mio. |
+| `--max-total-image-mib <n>` | Budget d’images cumulé, plafonné à 128 Mio. |
+| `--max-raster-megapixels <n>` | Budget matriciel/décodage, plafonné à 64 mégapixels. |
 | `--browser <path>` | Utilise un exécutable Chrome, Chromium ou Edge précis. |
 | `--json` | Affiche des résultats lisibles par une machine. |
 | `-h, --help` | Affiche toutes les options. |
@@ -551,6 +612,10 @@ dans les environnements CI qui disposent d’un navigateur compatible.
 | `optimizeSvg` | `true` | Optimise le SVG généré. |
 | `includeMetadata` | `false` | Active les métadonnées prises en charge ; laisser désactivé pour un SVG optimisé reproductible. |
 | `browser` | Détection automatique | Chemin facultatif de l’exécutable du navigateur. |
+
+Les tâches VS Code héritent de la politique machine des ressources externes et
+des limites personnalisées bornées. Le CLI autonome ne lit pas les réglages VS
+Code ; fournissez-lui les options explicites correspondantes.
 
 ## Diagram Studio et générateurs
 
@@ -755,6 +820,17 @@ palette de commandes après l’activation de l’extension.
 
 | Réglage | Valeur par défaut | Portée et effet |
 |---|---:|---|
+| `mermaidPreviewOffline.resources.allowAdditionalLocalRoots` | `false` | Opt-in machine pour les chemins absolus et hors espace sous des racines configurées ; espace approuvé uniquement. |
+| `mermaidPreviewOffline.resources.additionalLocalRoots` | `[]` | Répertoires absolus ou URI de système de fichiers propres à la machine. |
+| `mermaidPreviewOffline.resources.allowRemoteImages` | `false` | Opt-in machine pour les images matricielles sous des bases HTTPS autorisées ; espace approuvé uniquement. |
+| `mermaidPreviewOffline.resources.allowedRemoteBases` | `[]` | Bases HTTPS exactes, sans joker, identifiants, requête ni fragment. |
+| `mermaidPreviewOffline.resources.allowPrivateNetwork` | `false` | Opt-in machine séparé pour les destinations privées, link-local ou loopback allowlistées. |
+| `mermaidPreviewOffline.resourceLimits.useCustom` | `false` | Utilise des limites personnalisées bornées dans un espace approuvé. |
+| `mermaidPreviewOffline.resourceLimits.maxSourceMiB` | `10` | Limite source personnalisée de 1 à 64 Mio. |
+| `mermaidPreviewOffline.resourceLimits.maxImages` | `64` | Limite de 1 à 256 images uniques. |
+| `mermaidPreviewOffline.resourceLimits.maxImageMiB` | `8` | Limite personnalisée de 1 à 32 Mio par image. |
+| `mermaidPreviewOffline.resourceLimits.maxTotalImageMiB` | `24` | Limite personnalisée de 1 à 128 Mio cumulés. |
+| `mermaidPreviewOffline.resourceLimits.maxRasterMegapixels` | `32` | Budget matriciel et de décodage distant de 1 à 64 mégapixels. |
 | `mermaidPreviewOffline.refreshMode` | `automatic` | Rendu automatique en direct ou actualisation manuelle. |
 | `mermaidPreviewOffline.refreshDelay` | `140` | Délai par ressource en millisecondes, de 0 à 2000. Les fichiers volumineux utilisent au moins 400 ms. |
 | `mermaidPreviewOffline.largeFileThresholdKb` | `512` | Seuil par ressource, de 64 à 10240 KB. |
@@ -809,11 +885,17 @@ Exemple de réglages d’espace de travail :
 ## Vie privée, fonctionnement hors ligne et compatibilité
 
 Le rendu des diagrammes, l’enregistrement des plug-ins, les icônes, l’intégration
-des images locales, les exports, les modèles, les exemples, les services de
-langage et les générateurs s’exécutent localement. L’extension ne possède ni
-système de compte, ni télémétrie, ni analyse d’usage, ni police distante, ni
-téléchargement de ressources pendant l’exécution. Ses webviews d’aperçu bloquent
-les connexions réseau et Mermaid est configuré en mode strict.
+des images, les exports, les modèles, les exemples, les services de langage et
+les générateurs s’exécutent localement. L’extension ne possède ni compte, ni
+télémétrie, ni analyse d’usage, ni police distante, ni moteur cloud, ni connexion
+réseau obligatoire. Ses webviews bloquent les connexions et Mermaid fonctionne
+en mode strict.
+
+Lorsque les images distantes sont explicitement activées dans un espace
+approuvé, seul le résolveur côté extension contacte les bases HTTPS configurées.
+Il valide puis intègre les octets avant le rendu. Cette capacité facultative ne
+change pas le sens de « 100% Offline » : créer, modifier, prévisualiser et
+exporter un diagramme ne demande toujours ni compte ni connexion.
 
 Le CLI et le moteur de rendu des tâches VS Code nécessitent un navigateur local
 basé sur Chromium, mais aucun service de rendu dans le cloud. Un exécutable de
@@ -863,11 +945,11 @@ seuil utilisent un délai minimal de 400 ms. Le pied de page identifie les
 fichiers volumineux et affiche la progression du rendu. Réduisez les
 modifications inutiles de la source avant de diminuer le délai.
 
-### Une source ou un ensemble d’images locales dépasse sa limite
+### Une source ou un ensemble d’images dépasse sa limite
 
 Une source Mermaid de plus de 10 Mio reste modifiable, mais n’est pas rendue.
 Scindez-la en plusieurs petits diagrammes avant l’aperçu, le CLI ou l’export de
-dossier. Pour les images locales, conservez au maximum 64 références uniques,
+dossier. Pour les images, conservez au maximum 64 références uniques,
 avec une taille maximale de 8 Mio par fichier et de 24 Mio cumulés dans un même
 diagramme. Optimisez ou répartissez les ressources nommées dans l’avertissement,
 puis actualisez l’aperçu.
@@ -879,13 +961,14 @@ apparaît uniquement lorsque le diagramme dépasse et que
 `mermaidPreviewOffline.minimap.enabled` vaut true. Un zoom avant peut faire
 dépasser un diagramme auparavant ajusté.
 
-### Une image locale est absente
+### Une image est absente
 
-Utilisez un chemin relatif pris en charge depuis le fichier Mermaid, conservez
-l’image dans le même dossier d’espace de travail et vérifiez que son extension
-est SVG, PNG, JPEG, GIF, WebP, AVIF, BMP ou ICO. Les URL réseau, chemins absolus,
-formats non pris en charge, fichiers illisibles et chemins hors de l’espace de
-travail sont volontairement ignorés.
+Dans le mode hors ligne par défaut, utilisez un chemin relatif pris en charge et
+gardez l’image dans le même espace de travail. Pour une ressource externe,
+vérifiez l’opt-in machine, la racine canonique ou la base HTTPS exacte, la
+confiance de l’espace de travail et, si nécessaire, l’autorisation réseau privée.
+Les formats locaux sont SVG, PNG, JPEG, GIF, WebP, AVIF, BMP et ICO ; les formats
+distants excluent SVG et AVIF.
 
 ### Le résultat exporté diffère de l’aperçu
 
