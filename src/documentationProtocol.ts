@@ -38,6 +38,7 @@ export type ExtensionToDocumentationWebviewMessage =
   | {
       blocks: Array<{ fileName: string; id: string; source: string }>;
       fontFamily: DiagramFontFamily;
+      maxRasterPixels: number;
       requestId: string;
       settings: ExportSettings;
       sourceUri: string;

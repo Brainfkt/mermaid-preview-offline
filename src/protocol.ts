@@ -48,6 +48,7 @@ export interface PreviewConfiguration {
   diagramSurface: DiagramSurfaceConfiguration;
   diagramTheme: DiagramTheme;
   largeFileThresholdBytes: number;
+  maxRasterPixels: number;
   minimapEnabled: boolean;
   navigation: DiagramNavigationConfiguration;
   refreshDelay: number;
@@ -106,6 +107,7 @@ export type ExtensionToWebviewMessage =
       batchId: string;
       fileId: string;
       fileName: string;
+      maxRasterPixels: number;
       relativeDirectory: string;
       settings: ExportSettings;
       source: string;

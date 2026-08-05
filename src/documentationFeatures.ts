@@ -30,7 +30,6 @@ import {
   transformTextOffset,
 } from './documentationTracking';
 import { sanitizeFileName, type ExportFormat } from './exportSettings';
-import { inlineLocalImages } from './localImages';
 import {
   normalizeDiagramControlsVisibility,
   normalizeDiagramMouseNavigation,
@@ -44,7 +43,9 @@ import type {
   DiagramTheme,
   SerializedExportArtifact,
 } from './protocol';
-import { loadWorkspaceImage } from './workspaceImages';
+import type { ResourcePolicy } from './resourcePolicy';
+import { readResourcePolicy } from './resourceSettings';
+import { inlineWorkspaceImages } from './workspaceImages';
 import { isDocumentationWebviewMessage } from './webviewMessageValidation';
 
 interface PreviewContext {
@@ -102,7 +103,9 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
           event.affectsConfiguration('mermaidPreviewOffline.canvas') ||
           event.affectsConfiguration('mermaidPreviewOffline.diagramFontFamily') ||
           event.affectsConfiguration('mermaidPreviewOffline.documentation') ||
-          event.affectsConfiguration('mermaidPreviewOffline.navigation')
+          event.affectsConfiguration('mermaidPreviewOffline.navigation') ||
+          event.affectsConfiguration('mermaidPreviewOffline.resources') ||
+          event.affectsConfiguration('mermaidPreviewOffline.resourceLimits')
         ) {
           this.schedulePreviewRefresh(0);
         }
@@ -392,13 +395,12 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const visibleBlocks = context.mode === 'cursor'
       ? selectedBlock ? [selectedBlock] : []
       : blocks;
+    const resourcePolicy = readResourcePolicy(document.uri);
     const preparedBlocks = await mapWithConcurrency(visibleBlocks, 4, async (block) => ({
       endLine: block.endLine,
       id: block.id,
       index: block.index,
-      source: await inlineLocalImages(block.source, (reference) =>
-        loadWorkspaceImage(document.uri, reference),
-      ),
+      source: await inlineDocumentationBlock(block.source, document.uri, resourcePolicy),
       startLine: block.startLine,
     }));
     if (generation !== this.refreshGeneration || this.panel !== panel) return;
@@ -440,12 +442,11 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
       format,
       svgVariant: 'optimized' as const,
     };
+    const resourcePolicy = readResourcePolicy(document.uri);
     const renderBlocks = await mapWithConcurrency(blocks, 4, async (block) => ({
       fileName: `${sourceStem}-diagram-${block.index + 1}.mmd`,
       id: block.id,
-      source: await inlineLocalImages(block.source, (reference) =>
-        loadWorkspaceImage(document.uri, reference),
-      ),
+      source: await inlineDocumentationBlock(block.source, document.uri, resourcePolicy),
     }));
     const requestId = `documentation-export-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const result = new Promise<Array<{ artifact: SerializedExportArtifact; blockId: string }>>(
@@ -460,6 +461,7 @@ export class MermaidDocumentationFeatures implements vscode.Disposable {
     const delivered = await panel.webview.postMessage({
       blocks: renderBlocks,
       fontFamily: configuredDiagramFontFamily(document.uri),
+      maxRasterPixels: resourcePolicy.limits.maxRasterPixels,
       requestId,
       settings,
       sourceUri: document.uri.toString(),
@@ -692,6 +694,21 @@ function fileNameOf(uri: vscode.Uri): string {
 
 function fileStem(fileName: string): string {
   return fileName.replace(/\.[^.]+$/u, '') || 'document';
+}
+
+async function inlineDocumentationBlock(
+  source: string,
+  documentUri: vscode.Uri,
+  policy: ResourcePolicy,
+): Promise<string> {
+  const byteLength = Buffer.byteLength(source, 'utf8');
+  if (byteLength > policy.limits.maxSourceBytes) {
+    throw new Error(
+      `Mermaid block exceeds the ` +
+      `${Math.round(policy.limits.maxSourceBytes / (1024 * 1024))} MB render limit.`,
+    );
+  }
+  return inlineWorkspaceImages(source, documentUri, policy);
 }
 
 function safePathSegment(value: string): string {

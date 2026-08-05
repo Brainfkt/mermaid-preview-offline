@@ -11,6 +11,7 @@ import type { SerializedExportArtifact } from './protocol';
 export interface CliRenderRequest {
   fileName: string;
   fontFamily: DiagramFontFamily;
+  maxRasterPixels: number;
   settings: ExportSettings;
   source: string;
   sourceUri: string;
@@ -56,6 +57,7 @@ window.mermaidOfflineCli = {
       const artifact = await renderExportArtifact({
         fileName: request.fileName,
         fontFamily,
+        maxRasterPixels: request.maxRasterPixels,
         metadata: {
           exportedAt: new Date().toISOString(),
           fileName: request.fileName,

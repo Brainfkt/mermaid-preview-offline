@@ -1,5 +1,10 @@
 import { Buffer } from 'node:buffer';
 
+import {
+  DEFAULT_IMAGE_INLINING_LIMITS,
+  type ImageInliningLimits,
+} from './resourcePolicy';
+
 export interface LoadedLocalImage {
   bytes: Uint8Array;
   mimeType: string;
@@ -9,19 +14,11 @@ export type LocalImageLoader = (
   reference: string,
 ) => Promise<LoadedLocalImage | undefined>;
 
-export interface LocalImageInliningLimits {
-  maxConcurrency: number;
-  maxImageBytes: number;
-  maxImages: number;
-  maxTotalBytes: number;
-}
+export type ImageReferencePredicate = (reference: string) => boolean;
 
-export const DEFAULT_LOCAL_IMAGE_LIMITS: Readonly<LocalImageInliningLimits> = {
-  maxConcurrency: 4,
-  maxImageBytes: 8 * 1024 * 1024,
-  maxImages: 64,
-  maxTotalBytes: 24 * 1024 * 1024,
-};
+export type LocalImageInliningLimits = ImageInliningLimits;
+
+export const DEFAULT_LOCAL_IMAGE_LIMITS = DEFAULT_IMAGE_INLINING_LIMITS;
 
 const IMAGE_REFERENCE = /(\bimg\s*:\s*)(["'])([^"'\r\n]+)\2/gu;
 const URI_SCHEME = /^[a-z][a-z\d+.-]*:/iu;
@@ -32,19 +29,28 @@ export async function inlineLocalImages(
   loadImage: LocalImageLoader,
   limits: LocalImageInliningLimits = DEFAULT_LOCAL_IMAGE_LIMITS,
 ): Promise<string> {
+  return inlineImageReferences(source, loadImage, isRelativeLocalImage, limits);
+}
+
+export async function inlineImageReferences(
+  source: string,
+  loadImage: LocalImageLoader,
+  shouldLoad: ImageReferencePredicate,
+  limits: LocalImageInliningLimits = DEFAULT_LOCAL_IMAGE_LIMITS,
+): Promise<string> {
   const matches = [...source.matchAll(IMAGE_REFERENCE)];
   const references = [
     ...new Set(
       matches
         .map((match) => match[3])
         .filter((reference): reference is string =>
-          reference !== undefined && isRelativeLocalImage(reference),
+          reference !== undefined && shouldLoad(reference),
         ),
     ),
   ];
   if (references.length > limits.maxImages) {
     throw new Error(
-      `This diagram references ${references.length.toLocaleString()} local images; ` +
+      `This diagram references ${references.length.toLocaleString()} resolved images; ` +
       `the offline preview limit is ${limits.maxImages.toLocaleString()}.`,
     );
   }
@@ -61,7 +67,7 @@ export async function inlineLocalImages(
       const image = await loadImage(reference);
       if (image && image.bytes.byteLength > limits.maxImageBytes) {
         throw new Error(
-          `Local image ${reference} is ${formatLimit(image.bytes.byteLength)}; ` +
+          `Image ${reference} is ${formatLimit(image.bytes.byteLength)}; ` +
           `the per-image limit is ${formatLimit(limits.maxImageBytes)}.`,
         );
       }
@@ -69,7 +75,7 @@ export async function inlineLocalImages(
         totalBytes += image.bytes.byteLength;
         if (totalBytes > limits.maxTotalBytes) {
           throw new Error(
-            `Local images exceed the ${formatLimit(limits.maxTotalBytes)} aggregate preview limit.`,
+            `Images exceed the ${formatLimit(limits.maxTotalBytes)} aggregate preview limit.`,
           );
         }
       }
@@ -103,7 +109,7 @@ export async function inlineLocalImages(
 
     result += source.slice(cursor, index);
     let replacement = fullMatch;
-    if (isRelativeLocalImage(reference)) {
+    if (shouldLoad(reference)) {
       const image = loadedImages.get(reference);
       if (image) {
         const base64 = Buffer.from(image.bytes).toString('base64');

@@ -13,9 +13,9 @@ import {
   writeFile,
 } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, extname, isAbsolute, join, parse, relative, resolve } from 'node:path';
 import process from 'node:process';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { CdpClient, withTimeout } from './cdpClient';
 import {
@@ -32,12 +32,19 @@ import {
 } from './exportSettings';
 import {
   assertOfflineImageReferences,
-  DEFAULT_LOCAL_IMAGE_LIMITS,
   imageMimeType,
-  inlineLocalImages,
+  inlineImageReferences,
+  isRelativeLocalImage,
 } from './localImages';
 import type { SerializedExportArtifact } from './protocol';
-import { MAX_RENDER_SOURCE_BYTES } from './renderPolicy';
+import { loadRemoteImage } from './remoteImages';
+import {
+  allowedRemoteImageUrl,
+  normalizeRemoteBases,
+  normalizeResourceLimits,
+  type ResourceLimitInput,
+  type ResourcePolicy,
+} from './resourcePolicy';
 
 interface CliOptions {
   browser?: string;
@@ -46,6 +53,7 @@ interface CliOptions {
   json: boolean;
   output?: string;
   profile?: string;
+  resourcePolicy: ResourcePolicy;
   settings: ExportSettings;
 }
 
@@ -59,6 +67,7 @@ interface BrowserSession {
   render(request: {
     fileName: string;
     fontFamily: DiagramFontFamily;
+    maxRasterPixels: number;
     settings: ExportSettings;
     source: string;
     sourceUri: string;
@@ -96,10 +105,11 @@ async function main(): Promise<void> {
   const exported: Array<{ height: number; output: string; width: number }> = [];
   try {
     for (const file of files) {
-      const source = await loadSourceWithImages(file.uri, inputRoot);
+      const source = await loadSourceWithImages(file.uri, inputRoot, options.resourcePolicy);
       const artifact = await browser.render({
         fileName: basename(file.uri),
         fontFamily: options.fontFamily,
+        maxRasterPixels: options.resourcePolicy.limits.maxRasterPixels,
         settings: options.settings,
         source,
         sourceUri: pathToFileURL(file.uri).toString(),
@@ -150,6 +160,10 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
   let browser: string | undefined;
   let fontFamily: DiagramFontFamily = DEFAULT_DIAGRAM_FONT_FAMILY;
   let json = false;
+  let allowPrivateNetwork = false;
+  const additionalLocalRoots: string[] = [];
+  const remoteBaseInputs: string[] = [];
+  const limitInput: ResourceLimitInput = {};
 
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
@@ -162,6 +176,13 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
       const value = args[index + 1];
       if (!value) throw new Error(`Missing value after ${argument}.`);
       index += 1;
+      return value;
+    };
+    const takePositiveNumber = (): number => {
+      const value = Number(takeValue());
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error(`${argument} requires a positive number.`);
+      }
       return value;
     };
     switch (argument) {
@@ -193,6 +214,36 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
       case '--metadata': settingsValue.includeMetadata = true; break;
       case '--no-metadata': settingsValue.includeMetadata = false; break;
       case '--browser': browser = takeValue(); break;
+      case '--allow-local-root': {
+        const root = resolve(takeValue());
+        if (parse(root).root === root) {
+          throw new Error('--allow-local-root cannot grant access to a filesystem root.');
+        }
+        additionalLocalRoots.push(root);
+        break;
+      }
+      case '--allow-remote-base': remoteBaseInputs.push(takeValue()); break;
+      case '--allow-private-network': allowPrivateNetwork = true; break;
+      case '--max-source-mib':
+        limitInput.maxSourceBytes = takePositiveNumber() * 1024 * 1024;
+        limitInput.useCustom = true;
+        break;
+      case '--max-images':
+        limitInput.maxImages = takePositiveNumber();
+        limitInput.useCustom = true;
+        break;
+      case '--max-image-mib':
+        limitInput.maxImageBytes = takePositiveNumber() * 1024 * 1024;
+        limitInput.useCustom = true;
+        break;
+      case '--max-total-image-mib':
+        limitInput.maxTotalBytes = takePositiveNumber() * 1024 * 1024;
+        limitInput.useCustom = true;
+        break;
+      case '--max-raster-megapixels':
+        limitInput.maxRasterPixels = takePositiveNumber() * 1_000_000;
+        limitInput.useCustom = true;
+        break;
       case '--profile': profile = takeValue(); break;
       case '--json': json = true; break;
       default: throw new Error(`Unknown argument: ${argument}`);
@@ -205,7 +256,19 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
     throw new Error(`Unsupported format: ${String(settingsValue.format)}`);
   }
   const settings = normalizeExportSettings(settingsValue);
-  return { browser, fontFamily, input, json, output, profile, settings };
+  const allowedRemoteBases = normalizeRemoteBases(remoteBaseInputs);
+  if (allowedRemoteBases.length !== remoteBaseInputs.length) {
+    throw new Error('--allow-remote-base requires an HTTPS URL without credentials, query, or fragment.');
+  }
+  const resourcePolicy: ResourcePolicy = {
+    additionalLocalRoots,
+    allowAdditionalLocalRoots: additionalLocalRoots.length > 0,
+    allowPrivateNetwork,
+    allowRemoteImages: allowedRemoteBases.length > 0,
+    allowedRemoteBases,
+    limits: normalizeResourceLimits(limitInput),
+  };
+  return { browser, fontFamily, input, json, output, profile, resourcePolicy, settings };
 }
 
 async function startBrowser(preferredExecutable?: string): Promise<BrowserSession> {
@@ -356,34 +419,82 @@ async function collectMermaidFiles(root: string, directory = root): Promise<Rend
   return files;
 }
 
-async function loadSourceWithImages(file: string, root: string): Promise<string> {
+async function loadSourceWithImages(
+  file: string,
+  root: string,
+  policy: ResourcePolicy,
+): Promise<string> {
   const sourceMetadata = await stat(file);
-  if (sourceMetadata.size > MAX_RENDER_SOURCE_BYTES) {
+  if (sourceMetadata.size > policy.limits.maxSourceBytes) {
     throw new Error(
-      `Source file exceeds the ${Math.round(MAX_RENDER_SOURCE_BYTES / (1024 * 1024))} MB ` +
+      `Source file exceeds the ` +
+      `${Math.round(policy.limits.maxSourceBytes / (1024 * 1024))} MB ` +
       `render limit: ${file}`,
     );
   }
   const source = await readFile(file, 'utf8');
-  assertOfflineImageReferences(source, { allowRelative: true });
-  const inlined = await inlineLocalImages(source, async (referenceValue) => {
-    const mimeType = imageMimeType(referenceValue);
-    const relativePath = referenceValue.split(/[?#]/u, 1)[0];
-    if (!mimeType || !relativePath) return undefined;
-    try {
-      const resource = await realpath(resolve(dirname(file), decodeURIComponent(relativePath)));
-      if (!isPathInside(root, resource)) return undefined;
-      const metadata = await stat(resource);
-      if (!metadata.isFile() || metadata.size > DEFAULT_LOCAL_IMAGE_LIMITS.maxImageBytes) {
-        return undefined;
-      }
-      return { bytes: await readFile(resource), mimeType };
-    } catch {
-      return undefined;
-    }
-  });
+  const inlined = await inlineImageReferences(
+    source,
+    (reference) => loadCliImage(file, root, reference, policy),
+    (reference) => shouldResolveCliImage(reference, policy),
+    policy.limits,
+  );
   assertOfflineImageReferences(inlined);
   return inlined;
+}
+
+async function loadCliImage(
+  file: string,
+  inputRoot: string,
+  reference: string,
+  policy: ResourcePolicy,
+): Promise<{ bytes: Uint8Array; mimeType: string } | undefined> {
+  const remoteUrl = policy.allowRemoteImages
+    ? allowedRemoteImageUrl(reference, policy.allowedRemoteBases)
+    : undefined;
+  if (remoteUrl) {
+    return loadRemoteImage(remoteUrl.toString(), {
+      allowPrivateNetwork: policy.allowPrivateNetwork,
+      allowedBases: policy.allowedRemoteBases,
+      maxBytes: policy.limits.maxImageBytes,
+      maxPixels: policy.limits.maxRasterPixels,
+    });
+  }
+
+  const mimeType = imageMimeType(reference);
+  const referencePath = reference.split(/[?#]/u, 1)[0];
+  if (!mimeType || !referencePath) return undefined;
+  try {
+    const requestedPath = referencePath.startsWith('file:')
+      ? fileURLToPath(referencePath)
+      : isAbsolute(referencePath)
+        ? decodeURIComponent(referencePath)
+        : resolve(dirname(file), decodeURIComponent(referencePath));
+    const resource = await realpath(requestedPath);
+    const allowedRoots = [
+      await realpath(inputRoot),
+      ...policy.allowAdditionalLocalRoots
+        ? await Promise.all(policy.additionalLocalRoots.map((candidate) => realpath(candidate)))
+        : [],
+    ];
+    if (!allowedRoots.some((allowedRoot) => isPathInside(allowedRoot, resource))) return undefined;
+    const metadata = await stat(resource);
+    if (!metadata.isFile() || metadata.size > policy.limits.maxImageBytes) return undefined;
+    const bytes = await readFile(resource);
+    return bytes.byteLength <= policy.limits.maxImageBytes ? { bytes, mimeType } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function shouldResolveCliImage(reference: string, policy: ResourcePolicy): boolean {
+  if (isRelativeLocalImage(reference)) return true;
+  if (policy.allowRemoteImages && allowedRemoteImageUrl(reference, policy.allowedRemoteBases)) {
+    return true;
+  }
+  const referencePath = reference.split(/[?#]/u, 1)[0] ?? '';
+  return policy.allowAdditionalLocalRoots &&
+    (referencePath.startsWith('file:') || isAbsolute(referencePath));
 }
 
 function outputPathFor(
@@ -480,6 +591,19 @@ Options:
       --no-optimize          Disable SVG optimization
       --metadata             Include source metadata and export time
       --no-metadata          Omit metadata, including from a loaded profile
+      --allow-local-root <path>
+                             Allow images under an additional absolute directory
+      --allow-remote-base <https-url>
+                             Allow and inline images below an HTTPS base URL
+      --allow-private-network
+                             Permit allowlisted hosts that resolve to private addresses
+      --max-source-mib <n>   Custom source limit, capped at 64 MiB
+      --max-images <n>       Custom image-count limit, capped at 256
+      --max-image-mib <n>    Custom per-image limit, capped at 32 MiB
+      --max-total-image-mib <n>
+                             Custom aggregate image limit, capped at 128 MiB
+      --max-raster-megapixels <n>
+                             Custom raster budget, capped at 64 megapixels
       --browser <path>       Chrome, Chromium, or Edge executable
       --json                 Print a machine-readable result
   -h, --help                 Show this help

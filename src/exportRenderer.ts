@@ -12,6 +12,7 @@ import {
   replaceSvgAttributeIdReferences,
   replaceSvgStyleIdReferences,
 } from './svgIdReferences';
+import { DEFAULT_MAX_RASTER_PIXELS } from './resourcePolicy';
 
 export interface ExportArtifact {
   bytes: Uint8Array;
@@ -25,6 +26,7 @@ export interface ExportArtifact {
 export interface ExportRenderInput {
   fileName: string;
   fontFamily?: DiagramFontFamily;
+  maxRasterPixels?: number;
   metadata: ExportSourceMetadata;
   settings: ExportSettings;
   svg: string;
@@ -44,7 +46,7 @@ interface RasterizedSvg {
 
 const textEncoder = new TextEncoder();
 const MAX_RASTER_DIMENSION = 16_384;
-export const MAX_RASTER_PIXELS = 32_000_000;
+export const MAX_RASTER_PIXELS = DEFAULT_MAX_RASTER_PIXELS;
 
 export async function renderExportArtifact(input: ExportRenderInput): Promise<ExportArtifact> {
   const settings = normalizeExportSettings(input.settings);
@@ -62,7 +64,7 @@ export async function renderExportArtifact(input: ExportRenderInput): Promise<Ex
   }
 
   const prepared = prepareSvg(input.svg, settings, input.metadata, input.fontFamily);
-  const raster = await rasterizeSvg(prepared, settings);
+  const raster = await rasterizeSvg(prepared, settings, input.maxRasterPixels);
   if (settings.format === 'pdf') {
     const bytes = await canvasToPdf(
       raster.canvas,
@@ -109,7 +111,11 @@ export async function renderExportPreview(
   });
   const prepared = prepareSvg(input.svg, settings, input.metadata, input.fontFamily);
   const previewScale = Math.min(1, maximumDimension / Math.max(prepared.width, prepared.height));
-  const raster = await rasterizeSvg(prepared, { ...settings, scale: previewScale });
+  const raster = await rasterizeSvg(
+    prepared,
+    { ...settings, scale: previewScale },
+    input.maxRasterPixels,
+  );
   const outputScale = input.settings.scale * (input.settings.dpi / 96);
   return {
     dataUrl: raster.canvas.toDataURL('image/png'),
@@ -225,6 +231,7 @@ export function artifactDataBase64(artifact: ExportArtifact): string {
 async function rasterizeSvg(
   prepared: PreparedSvg,
   settings: ExportSettings,
+  maxRasterPixels = MAX_RASTER_PIXELS,
 ): Promise<RasterizedSvg> {
   const pixelScale = settings.scale * (settings.dpi / 96);
   const width = Math.max(1, Math.round(prepared.width * pixelScale));
@@ -232,11 +239,11 @@ async function rasterizeSvg(
   if (
     width > MAX_RASTER_DIMENSION ||
     height > MAX_RASTER_DIMENSION ||
-    width * height > MAX_RASTER_PIXELS
+    width * height > maxRasterPixels
   ) {
     throw new Error(
       `The requested ${width.toLocaleString()} × ${height.toLocaleString()} export exceeds the ` +
-      `${MAX_RASTER_PIXELS.toLocaleString()}-pixel memory budget. Reduce scale or DPI.`,
+      `${maxRasterPixels.toLocaleString()}-pixel memory budget. Reduce scale or DPI.`,
     );
   }
 

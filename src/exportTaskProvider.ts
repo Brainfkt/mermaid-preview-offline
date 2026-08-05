@@ -12,6 +12,8 @@ import { isExportFormat, type ExportFormat } from './exportSettings';
 import { isDiagramTheme } from './previewState';
 import { isDiagramDensity } from './appearance';
 import type { DiagramDensity, DiagramTheme } from './protocol';
+import { DEFAULT_RESOURCE_LIMITS, type ResourcePolicy } from './resourcePolicy';
+import { readResourcePolicy } from './resourceSettings';
 
 export const MERMAID_EXPORT_TASK_TYPE = 'mermaid-export';
 
@@ -110,6 +112,7 @@ class MermaidExportTaskTerminal implements vscode.Pseudoterminal {
       vscode.Uri.joinPath(this.context.extensionUri, 'dist', 'cli.js').fsPath,
       substituteVariables(this.definition.source, workspacePath, activeUri),
       ...taskArguments({ ...this.definition, font }, workspacePath, activeUri),
+      ...resourcePolicyArguments(readResourcePolicy(activeUri ?? workspaceFolder?.uri)),
     ];
     this.writeEmitter.fire(`Mermaid export: ${args.slice(1).join(' ')}\r\n`);
     this.child = spawn(process.execPath, args, {
@@ -174,4 +177,43 @@ function substituteVariables(
     .replaceAll('${workspaceFolder}', workspacePath)
     .replaceAll('${file}', activeUri?.fsPath ?? '')
     .replaceAll('${fileDirname}', activeUri ? vscode.Uri.joinPath(activeUri, '..').fsPath : '');
+}
+
+function resourcePolicyArguments(policy: ResourcePolicy): string[] {
+  const args: string[] = [];
+  if (policy.allowAdditionalLocalRoots) {
+    for (const root of policy.additionalLocalRoots) {
+      args.push('--allow-local-root', cliFileSystemPath(root));
+    }
+  }
+  if (policy.allowRemoteImages) {
+    for (const base of policy.allowedRemoteBases) args.push('--allow-remote-base', base);
+    if (policy.allowPrivateNetwork) args.push('--allow-private-network');
+  }
+  if (policy.limits.maxSourceBytes !== DEFAULT_RESOURCE_LIMITS.maxSourceBytes) {
+    args.push('--max-source-mib', String(policy.limits.maxSourceBytes / (1024 * 1024)));
+  }
+  if (policy.limits.maxImages !== DEFAULT_RESOURCE_LIMITS.maxImages) {
+    args.push('--max-images', String(policy.limits.maxImages));
+  }
+  if (policy.limits.maxImageBytes !== DEFAULT_RESOURCE_LIMITS.maxImageBytes) {
+    args.push('--max-image-mib', String(policy.limits.maxImageBytes / (1024 * 1024)));
+  }
+  if (policy.limits.maxTotalBytes !== DEFAULT_RESOURCE_LIMITS.maxTotalBytes) {
+    args.push('--max-total-image-mib', String(policy.limits.maxTotalBytes / (1024 * 1024)));
+  }
+  if (policy.limits.maxRasterPixels !== DEFAULT_RESOURCE_LIMITS.maxRasterPixels) {
+    args.push('--max-raster-megapixels', String(policy.limits.maxRasterPixels / 1_000_000));
+  }
+  return args;
+}
+
+function cliFileSystemPath(value: string): string {
+  try {
+    if (!/^[a-z][a-z\d+.-]*:\/\//iu.test(value) && !value.startsWith('file:')) return value;
+    const uri = vscode.Uri.parse(value, true);
+    return uri.scheme === 'file' ? uri.fsPath : decodeURIComponent(uri.path);
+  } catch {
+    return value;
+  }
 }

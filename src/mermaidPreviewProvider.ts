@@ -18,7 +18,6 @@ import {
   type ExportProfile,
   type ExportSettings,
 } from './exportSettings';
-import { inlineLocalImages } from './localImages';
 import type { MermaidDiagnosticStore } from './languageFeatures';
 import {
   normalizeDiagramControlsVisibility,
@@ -37,12 +36,12 @@ import type {
 } from './protocol';
 import {
   effectiveRefreshDelay,
-  MAX_RENDER_SOURCE_BYTES,
   renderBlockReason,
 } from './renderPolicy';
 import { recordEligibleReviewSession } from './reviewPrompt';
+import { readResourcePolicy } from './resourceSettings';
 import { createNonce, createWebviewHtml } from './webviewHtml';
-import { loadWorkspaceImage } from './workspaceImages';
+import { inlineWorkspaceImages } from './workspaceImages';
 import { isPreviewWebviewMessage } from './webviewMessageValidation';
 
 export const MERMAID_PREVIEW_VIEW_TYPE = 'brainfkt.mermaidPreviewOffline';
@@ -271,12 +270,11 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
       const version = document.version;
       const documentSource = document.getText();
       const byteLength = Buffer.byteLength(documentSource, 'utf8');
-      const blockedReason = renderBlockReason(byteLength);
+      const resourcePolicy = readResourcePolicy(document.uri);
+      const blockedReason = renderBlockReason(byteLength, resourcePolicy.limits.maxSourceBytes);
       const source = blockedReason
         ? ''
-        : await inlineLocalImages(documentSource, (reference) =>
-            loadWorkspaceImage(document.uri, reference),
-          );
+        : await inlineWorkspaceImages(documentSource, document.uri, resourcePolicy);
       if (
         disposed ||
         generation !== documentGeneration ||
@@ -931,16 +929,16 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
     session.pendingFile = file;
     try {
       const metadata = await vscode.workspace.fs.stat(file.uri);
-      if (metadata.size > MAX_RENDER_SOURCE_BYTES) {
+      const resourcePolicy = readResourcePolicy(file.uri);
+      if (metadata.size > resourcePolicy.limits.maxSourceBytes) {
         throw new Error(
-          `Source exceeds the ${Math.round(MAX_RENDER_SOURCE_BYTES / (1024 * 1024))} MB ` +
+          `Source exceeds the ` +
+          `${Math.round(resourcePolicy.limits.maxSourceBytes / (1024 * 1024))} MB ` +
           'batch-render limit.',
         );
       }
       const sourceText = new TextDecoder().decode(await vscode.workspace.fs.readFile(file.uri));
-      const source = await inlineLocalImages(sourceText, (reference) =>
-        loadWorkspaceImage(file.uri, reference),
-      );
+      const source = await inlineWorkspaceImages(sourceText, file.uri, resourcePolicy);
       if (session.paused || session.pendingFile !== file) {
         return;
       }
@@ -949,6 +947,7 @@ export class MermaidPreviewProvider implements vscode.CustomTextEditorProvider {
         batchId,
         fileId: file.fileId,
         fileName: file.fileName,
+        maxRasterPixels: resourcePolicy.limits.maxRasterPixels,
         relativeDirectory: file.relativeDirectory,
         settings: session.settings,
         source,
@@ -1131,6 +1130,7 @@ function readConfiguration(
   const toolbarVisible = configuration.get<boolean>('toolbar.visible', true);
   const toolbarLabelMode = configuration.get<unknown>('toolbar.labelMode', 'icons');
   const toolbarControls = configuration.get<unknown>('toolbar.controls');
+  const resourcePolicy = readResourcePolicy(resource);
 
   return {
     diagramDensity: appearance.diagramDensity,
@@ -1138,6 +1138,7 @@ function readConfiguration(
     diagramSurface: appearance.diagramSurface,
     diagramTheme: appearance.diagramTheme,
     largeFileThresholdBytes: clampInteger(largeFileThresholdKb, 64, 10_240) * 1024,
+    maxRasterPixels: resourcePolicy.limits.maxRasterPixels,
     minimapEnabled,
     navigation: {
       controlsVisibility: normalizeDiagramControlsVisibility(controlsVisibility),

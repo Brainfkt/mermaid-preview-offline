@@ -70,6 +70,7 @@ const DEFAULT_CONFIGURATION: PreviewConfiguration = {
   diagramSurface: DEFAULT_DIAGRAM_SURFACE,
   diagramTheme: 'adaptive',
   largeFileThresholdBytes: 512 * 1024,
+  maxRasterPixels: 32_000_000,
   minimapEnabled: true,
   navigation: DEFAULT_DIAGRAM_NAVIGATION_CONFIGURATION,
   refreshDelay: 140,
@@ -284,6 +285,7 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
             message.sourceUri,
             message.fileName,
             message.settings,
+            message.maxRasterPixels,
           );
           vscode.postMessage({
             type: 'batchExportResult',
@@ -1222,6 +1224,7 @@ function scheduleExportPreview(): void {
         const preview = await renderExportPreview({
           fileName: fileName.textContent || 'diagram.mmd',
           fontFamily,
+          maxRasterPixels: configuration.maxRasterPixels,
           metadata: currentExportMetadata(),
           settings,
           svg,
@@ -1352,6 +1355,7 @@ async function createArtifact(
   sourceUri: string,
   sourceFileName: string,
   rawSettings: ExportSettings,
+  maxRasterPixels = configuration.maxRasterPixels,
 ): Promise<ExportArtifact> {
   const settings = normalizeExportSettings(rawSettings);
   const fontFamily = configuration.diagramFontFamily;
@@ -1359,6 +1363,7 @@ async function createArtifact(
   return renderExportArtifact({
     fileName: sourceFileName,
     fontFamily,
+    maxRasterPixels,
     metadata: {
       exportedAt: new Date().toISOString(),
       fileName: sourceFileName,

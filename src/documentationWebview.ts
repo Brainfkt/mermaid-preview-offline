@@ -379,6 +379,7 @@ async function renderDocumentationExport(
         const { svg } = await mermaid.render(renderId, block.source);
         const artifact = await renderExportArtifact({
           fileName: block.fileName,
+          maxRasterPixels: request.maxRasterPixels,
           metadata: {
             exportedAt: new Date().toISOString(),
             fileName: block.fileName,

@@ -9,7 +9,7 @@ import type {
   SerializedExportArtifact,
   WebviewToExtensionMessage,
 } from './protocol';
-import { MAX_RENDER_SOURCE_BYTES } from './renderPolicy';
+import { HARD_RESOURCE_LIMITS } from './resourcePolicy';
 
 export const MAX_SERIALIZED_EXPORT_BASE64_BYTES = 192_000_000;
 
@@ -56,7 +56,7 @@ export function isPreviewWebviewMessage(
       isNonNegativeSafeInteger(candidate.requestId) &&
       isNonNegativeSafeInteger(candidate.version) &&
       typeof candidate.source === 'string' &&
-      candidate.source.length <= MAX_RENDER_SOURCE_BYTES * 2
+      candidate.source.length <= HARD_RESOURCE_LIMITS.maxSourceBytes * 2
     );
   }
   if (candidate.type === 'clearDiagnostic') {
