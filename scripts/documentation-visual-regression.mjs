@@ -52,6 +52,13 @@ const documentationData = {
   totalBlocks: blocks.length,
   type: 'documentationData',
 };
+const lazyBlocks = Array.from({ length: 24 }, (_, index) => ({
+  endLine: index * 5 + 3,
+  id: `lazy-block-${index}`,
+  index,
+  source: `flowchart LR\n  A[Diagram ${index + 1}] --> B[Local preview]`,
+  startLine: index * 5,
+}));
 
 mkdirSync(outputDirectory, { recursive: true });
 if (screenshotDirectory) mkdirSync(screenshotDirectory, { recursive: true });
@@ -64,6 +71,13 @@ const presentationPath = createHarness(
   'documentation-presentation.html',
   presentationAssertions(),
   1,
+);
+const lazyPath = createHarness(
+  'documentation-lazy.html',
+  lazyAssertions(),
+  1,
+  { ...documentationData, blocks: lazyBlocks, totalBlocks: lazyBlocks.length },
+  lazyInstrumentation(),
 );
 const chrome = findChrome();
 const normalResult = await runBrowserHarness({
@@ -88,11 +102,22 @@ const presentationResult = await runBrowserHarness({
     : undefined,
   windowSize: '1440,900',
 });
+const lazyResult = await runBrowserHarness({
+  chrome,
+  compiledRoot,
+  harnessPath: lazyPath,
+  label: 'Documentation rendering on demand',
+  resultElementId: 'documentation-visual-results',
+  windowSize: '1440,900',
+});
 if (normalResult.error) {
   throw new Error(`Documentation preview: ${normalResult.error}`);
 }
 if (presentationResult.error) {
   throw new Error(`Documentation presentation: ${presentationResult.error}`);
+}
+if (lazyResult.error) {
+  throw new Error(`Documentation rendering on demand: ${lazyResult.error}`);
 }
 if (
   normalResult.cardCount !== blocks.length ||
@@ -113,8 +138,17 @@ if (
 console.log(
   `Documentation visual regression passed: ${blocks.length} ordered diagrams, translucent controls, shared appearance, circular custom swatch, aligned presentation controls, pagination, and Esc exit.`,
 );
+console.log(
+  `Documentation rendering on demand passed: ${lazyResult.initialRendered}/${lazyBlocks.length} initial diagrams, scroll and active slide rendering, unchanged SVG/zoom preservation, deferred edits, complete export, and observer cleanup.`,
+);
 
-function createHarness(fileName, assertions, requiredRenderedDiagrams) {
+function createHarness(
+  fileName,
+  assertions,
+  requiredRenderedDiagrams,
+  data = documentationData,
+  instrumentation = '',
+) {
   const html = createDocumentationWebviewHtml({
     cspSource: 'file:',
     nonce,
@@ -128,14 +162,14 @@ function createHarness(fileName, assertions, requiredRenderedDiagrams) {
   }
   const harness = html.replace(
     module,
-    `${stub(assertions, requiredRenderedDiagrams)}${module}`,
+    `${stub(assertions, requiredRenderedDiagrams, data, instrumentation)}${module}`,
   );
   const path = join(outputDirectory, fileName);
   writeFileSync(path, harness);
   return path;
 }
 
-function stub(assertions, requiredRenderedDiagrams) {
+function stub(assertions, requiredRenderedDiagrams, data, instrumentation) {
   return `<script nonce="${nonce}">
     const postedMessages = [];
     const runtimeProblems = [];
@@ -177,7 +211,8 @@ function stub(assertions, requiredRenderedDiagrams) {
         throw new Error('Runtime console is not clean: ' + runtimeProblems.join(' | '));
       }
     };
-    let currentData = ${safeJson(documentationData)};
+    let currentData = ${safeJson(data)};
+    ${instrumentation}
     document.body.className = 'vscode-dark';
     for (const [name, value] of Object.entries({
       '--vscode-editor-background': '#202337',
@@ -214,7 +249,7 @@ function stub(assertions, requiredRenderedDiagrams) {
     window.addEventListener('load', () => {
       (async () => {
         await waitFor(
-          () => document.querySelectorAll('.documentation-card svg').length >= ${requiredRenderedDiagrams},
+          () => document.querySelectorAll('.documentation-diagram > svg').length >= ${requiredRenderedDiagrams},
           'rendered documentation diagrams',
         );
         ${assertions}
@@ -433,6 +468,164 @@ function presentationAssertions() {
       surfaceMessage: postedMessages.findLast((message) => message.type === 'setDiagramSurface'),
       themeMessage: postedMessages.find((message) => message.type === 'setDiagramTheme'),
     });`;
+}
+
+function lazyInstrumentation() {
+  return `
+    const diagramWrites = [];
+    let detachedDiagramWrites = 0;
+    const innerHtml = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+    Object.defineProperty(Element.prototype, 'innerHTML', {
+      ...innerHtml,
+      set(value) {
+        if (this.classList.contains('documentation-diagram')) {
+          if (!this.isConnected) detachedDiagramWrites += 1;
+          diagramWrites.push(this.closest('.documentation-card')?.dataset.blockId);
+        }
+        innerHtml.set.call(this, value);
+      },
+    });
+    const observedCards = new Map();
+    const NativeIntersectionObserver = globalThis.IntersectionObserver;
+    globalThis.IntersectionObserver = class extends NativeIntersectionObserver {
+      constructor(callback, options) {
+        super(callback, options);
+        observedCards.set(this, new Set());
+      }
+      observe(target) {
+        observedCards.get(this).add(target);
+        super.observe(target);
+      }
+      unobserve(target) {
+        observedCards.get(this).delete(target);
+        super.unobserve(target);
+      }
+      disconnect() {
+        observedCards.get(this).clear();
+        super.disconnect();
+      }
+    };`;
+}
+
+function lazyAssertions() {
+  return `
+    const card = (index) => document.querySelector('[data-block-id="lazy-block-' + index + '"]');
+    const diagram = (index) => card(index)?.querySelector('.documentation-diagram > svg');
+    const renderedCount = () => document.querySelectorAll('.documentation-diagram > svg').length;
+    const settleRendering = async () => {
+      await delay(100);
+      await waitFor(
+        () => !document.querySelector('.documentation-card[data-render-state="rendering"]'),
+        'settled visible render queue',
+      );
+    };
+    const updateBlock = (index, source) => {
+      currentData = {
+        ...currentData,
+        blocks: currentData.blocks.map((block) => block.index === index ? { ...block, source } : block),
+      };
+      window.postMessage(currentData, '*');
+    };
+    await settleRendering();
+    const initialRendered = renderedCount();
+    if (initialRendered < 2 || initialRendered > 5 || diagram(12) || diagram(23)) {
+      throw new Error('The initial preview rendered distant diagrams instead of visible/nearby cards.');
+    }
+    if (card(23).getBoundingClientRect().height < 160 ||
+        card(23).querySelector('.documentation-canvas').getAttribute('aria-busy') !== 'true') {
+      throw new Error('Deferred diagrams do not preserve a usable placeholder.');
+    }
+
+    // Export must include every source even though most UI cards are still deferred.
+    window.postMessage({
+      blocks: currentData.blocks.map((block) => ({
+        fileName: 'diagram-' + block.index + '.mmd', id: block.id, source: block.source,
+      })),
+      fontFamily: currentData.fontFamily,
+      maxRasterPixels: 32000000,
+      requestId: 'lazy-export-all',
+      settings: { format: 'svg' },
+      sourceUri: 'file:///documentation-lazy.md',
+      type: 'renderDocumentationExport',
+    }, '*');
+    await waitFor(
+      () => postedMessages.some((message) => message.requestId === 'lazy-export-all'),
+      'export of deferred diagrams',
+    );
+    const exported = postedMessages.find((message) => message.requestId === 'lazy-export-all');
+    if (exported.type !== 'documentationExportResult' ||
+        exported.artifacts.length !== currentData.blocks.length ||
+        !exported.artifacts.every((entry, index) =>
+          entry.blockId === currentData.blocks[index].id && entry.artifact.dataBase64.length > 0)) {
+      throw new Error('The document export omitted a deferred diagram: ' + JSON.stringify(exported));
+    }
+    if (renderedCount() !== initialRendered) {
+      throw new Error('Export unnecessarily rendered deferred preview cards.');
+    }
+
+    const firstSvg = diagram(0);
+    card(0).querySelector('[data-action="zoom-in"]').click();
+    await delay(50);
+    const zoomedWidth = firstSvg.style.width;
+    updateBlock(1, 'flowchart LR\\n  A[Edited visible diagram] --> B[Saved]');
+    await waitFor(() => diagram(1)?.textContent.includes('Edited visible diagram'), 'edited visible diagram');
+    if (diagram(0) !== firstSvg || firstSvg.style.width !== zoomedWidth) {
+      throw new Error('Editing a nearby block reset the unchanged SVG or zoom.');
+    }
+    updateBlock(23, 'flowchart LR\\n  A[Deferred latest source] --> B[Saved]');
+    await settleRendering();
+    if (diagram(23)) throw new Error('An off-screen source edit eagerly rendered its card.');
+    if ([...observedCards.values()].some((targets) => [...targets].some((target) => !target.isConnected))) {
+      throw new Error('Replaced cards remain observed.');
+    }
+
+    card(12).scrollIntoView({ block: 'start' });
+    await waitFor(() => diagram(12), 'diagram after scrolling into view');
+    await settleRendering();
+    if (renderedCount() <= initialRendered || diagram(23) || diagram(22)) {
+      throw new Error('Scrolling did not render nearby cards selectively.');
+    }
+    if (diagram(0) !== firstSvg || firstSvg.style.width !== zoomedWidth) {
+      throw new Error('Scrolling discarded the existing diagram or its zoom.');
+    }
+
+    document.querySelector('#documentation-present').click();
+    const writesBeforeJump = diagramWrites.length;
+    for (let index = 0; index < 22; index += 1) document.querySelector('#presentation-next').click();
+    await waitFor(() => diagram(22), 'active deferred presentation slide');
+    await settleRendering();
+    if (document.querySelector('#presentation-counter').textContent !== '23 / 24' ||
+        diagramWrites.slice(writesBeforeJump).some((id) => id !== 'lazy-block-22') ||
+        diagram(23)) {
+      throw new Error('Presentation rendered skipped slides ahead of its active slide.');
+    }
+    document.querySelector('#presentation-next').click();
+    await waitFor(() => diagram(23)?.textContent.includes('Deferred latest source'), 'deferred edit in presentation');
+
+    // Multiple queued source updates must never write into detached cards.
+    updateBlock(23, 'flowchart LR\\n  A[Obsolete source] --> B[Old]');
+    updateBlock(23, 'flowchart LR\\n  A[Latest source after rapid edits] --> B[Current]');
+    await waitFor(
+      () => diagram(23)?.textContent.includes('Latest source after rapid edits'),
+      'latest presentation source after rapid edits',
+    );
+    await settleRendering();
+    if (detachedDiagramWrites || diagram(0) !== firstSvg || firstSvg.style.width !== zoomedWidth) {
+      throw new Error('A stale render wrote into a detached card or reset an unchanged diagram.');
+    }
+    document.querySelector('#presentation-exit').click();
+    card(0).scrollIntoView({ block: 'start' });
+    await settleRendering();
+    if (diagram(0) !== firstSvg || firstSvg.style.width !== zoomedWidth) {
+      throw new Error('Exiting presentation reset the unchanged diagram state.');
+    }
+    window.dispatchEvent(new PageTransitionEvent('pagehide'));
+    if ([...observedCards.values()].some((targets) => targets.size) ||
+        document.querySelector('.documentation-navigation-controls')) {
+      throw new Error('Closing the preview did not disconnect observers and diagram controllers.');
+    }
+    assertConsoleHealth();
+    finish({ initialRendered, exported: exported.artifacts.length, detachedDiagramWrites });`;
 }
 
 function findChrome() {

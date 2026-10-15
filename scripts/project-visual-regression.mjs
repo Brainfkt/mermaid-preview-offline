@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { runBrowserHarness } from './browser-harness.mjs';
@@ -140,6 +141,18 @@ const diffStub = stubFor(diffData, `
   await waitFor(() => document.querySelector('#after-diagram svg'), 'after preview');
   await waitFor(() => document.querySelector('#overlay-before svg'), 'before overlay layer');
   await waitFor(() => document.querySelector('#overlay-after svg'), 'after overlay layer');
+  await waitFor(() => document.querySelector('#semantic-diff[data-status="supported"]'), 'structural diff');
+  const semanticChanges = [...document.querySelectorAll('.semantic-review__change')];
+  if (semanticChanges.length !== 7) throw new Error('Expected 2 added nodes, 1 modified node, 3 added links and 1 removed link.');
+  const modifiedNode = semanticChanges.find((button) => button.dataset.entity === 'node' && button.dataset.changeKind === 'modified');
+  modifiedNode.click();
+  if (modifiedNode.getAttribute('aria-pressed') !== 'true') throw new Error('Semantic selection was not retained.');
+  if (!document.querySelector('#before-diagram .semantic-selected') || !document.querySelector('#after-diagram .semantic-selected')) {
+    throw new Error('Selecting a modified node did not highlight both versions: ' + JSON.stringify([...document.querySelectorAll('#before-diagram .node, #after-diagram .node')].map((node) => ({id:node.id,dataId:node.getAttribute('data-id'), change:node.getAttribute('data-semantic-change')}))));
+  }
+  const addedEdge = semanticChanges.find((button) => button.dataset.entity === 'edge' && button.dataset.changeKind === 'added');
+  addedEdge.click();
+  if (!document.querySelector('#after-diagram .flowchart-link.semantic-selected')) throw new Error('Selecting an added edge did not locate its rendered path.');
   for (const [sourceSelector, overlaySelector, suffix] of [
     ['#before-diagram svg', '#overlay-before svg', 'before-1'],
     ['#after-diagram svg', '#overlay-after svg', 'after-1'],
@@ -168,6 +181,24 @@ const diffStub = stubFor(diffData, `
   if (document.documentElement.scrollWidth > document.documentElement.clientWidth + 1) {
     throw new Error('Visual diff overflows horizontally at the desktop viewport.');
   }
+  const groupedBefore = 'flowchart LR\\nsubgraph SG[Old group]\\nUser_Login[Old user] primary@--> API.v1[API]\\nend';
+  const groupedAfter = 'flowchart LR\\nsubgraph SG[New group]\\nUser_Login[New user] primary@-->|Changed| API.v1[API]\\nend';
+  window.postMessage({ ...initialData, before: {label:'HEAD', source:groupedBefore}, after: {label:'Working tree', source:groupedAfter} }, '*');
+  await waitFor(() => document.querySelector('#after-diagram').dataset.renderSource === groupedAfter && document.querySelector('#after-diagram [data-semantic-change]'), 'grouped diff');
+  const groupButton = [...document.querySelectorAll('.semantic-review__change')].find((button) => button.textContent.includes('Group SG'));
+  groupButton.click();
+  if (!document.querySelector('#before-diagram .cluster.semantic-selected') || !document.querySelector('#after-diagram .cluster.semantic-selected')) throw new Error('Subgraph identity was not matched in both SVGs.');
+  document.querySelector('.semantic-review__change[data-entity="edge"]').click();
+  if (!document.querySelector('#after-diagram .flowchart-link.semantic-selected')) throw new Error('Explicit edge ID was not matched.');
+  window.postMessage({ ...initialData, before: {label:'HEAD', source:'sequenceDiagram\\nA->>B: hello'}, after: {label:'Working tree', source:'sequenceDiagram\\nA->>B: updated'} }, '*');
+  await waitFor(() => document.querySelector('#semantic-diff').dataset.status === 'unsupported', 'unsupported diagram fallback');
+  if (document.querySelector('.semantic-review__change') || document.querySelector('[data-semantic-change]')) {
+    throw new Error('Unsupported diagrams retained stale structural changes.');
+  }
+  await waitFor(() => document.querySelector('#after-diagram').dataset.renderSource === 'sequenceDiagram\\nA->>B: updated', 'unsupported visual rendering retained');
+  window.postMessage(initialData, '*');
+  await waitFor(() => document.querySelector('#semantic-diff').dataset.status === 'supported' && document.querySelector('#after-diagram [data-semantic-change]'), 'restored structural diff');
+  document.querySelector('.semantic-review__change[data-change-kind="modified"]').click();
   finish({
     afterLabel: document.querySelector('#after-label').textContent,
     beforeLabel: document.querySelector('#before-label').textContent,
@@ -195,9 +226,20 @@ const diffResult = await runBrowserHarness({
   label: 'Visual diff',
   resultElementId: 'project-visual-results',
   windowSize: '1280,800',
+  screenshotPath: join(tmpdir(), 'mermaid-semantic-diff.png'),
+});
+const compactDiffResult = await runBrowserHarness({
+  chrome,
+  compiledRoot,
+  harnessPath: diffPath,
+  label: 'Compact visual diff',
+  resultElementId: 'project-visual-results',
+  windowSize: '390,844',
+  screenshotPath: join(tmpdir(), 'mermaid-semantic-diff-compact.png'),
 });
 if (galleryResult.error) throw new Error(`Diagram Studio: ${galleryResult.error}`);
 if (diffResult.error) throw new Error(`Visual diff: ${diffResult.error}`);
+if (compactDiffResult.error) throw new Error(`Compact visual diff: ${compactDiffResult.error}`);
 if (galleryResult.cards !== examples.length || galleryResult.createMessage?.type !== 'createDiagram') {
   throw new Error('Diagram Studio did not complete the gallery and creation workflow.');
 }
@@ -220,6 +262,7 @@ function injectHarness(html, stub) {
 function stubFor(data, assertions) {
   return `<script nonce="${nonce}">
     const postedMessages = [];
+    const initialData = ${safeJson(data)};
     const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
     const waitFor = async (predicate, label) => {
       const deadline = performance.now() + 30000;

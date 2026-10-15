@@ -29,6 +29,7 @@ const CYCLE_LAYOUT_COMMAND = 'mermaidPreviewOffline.cycleEditorLayout';
 const EXPORT_COMMAND = 'mermaidPreviewOffline.export';
 const EXPORT_FOLDER_COMMAND = 'mermaidPreviewOffline.exportFolder';
 const NEW_DIAGRAM_COMMAND = 'mermaidPreviewOffline.newDiagram';
+const SAVE_AS_TEMPLATE_COMMAND = 'mermaidPreviewOffline.saveAsTemplate';
 const OPEN_GALLERY_FOR_FILE_COMMAND = 'mermaidPreviewOffline.openGalleryForFile';
 const BROWSE_EXAMPLES_COMMAND = 'mermaidPreviewOffline.browseExamples';
 const GENERATE_FROM_TEMPLATE_COMMAND = 'mermaidPreviewOffline.generateFromTemplate';
@@ -101,6 +102,9 @@ export function activate(context: vscode.ExtensionContext): MarkdownItExtension 
     }),
     vscode.commands.registerCommand(NEW_DIAGRAM_COMMAND, async () => {
       await projectFeatures.showGallery('templates');
+    }),
+    vscode.commands.registerCommand(SAVE_AS_TEMPLATE_COMMAND, async (resource?: vscode.Uri) => {
+      await projectFeatures.saveAsTemplate(resource);
     }),
     vscode.commands.registerCommand(
       OPEN_GALLERY_FOR_FILE_COMMAND,

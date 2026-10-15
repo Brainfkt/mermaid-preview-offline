@@ -55,6 +55,7 @@ import {
   canPanWithPointer as pointerPanningAllowed,
 } from './previewNavigation';
 import { SourceSynchronizer } from './sourceSynchronization';
+import { SourceEditorController } from './sourceEditorController';
 
 interface VsCodeApi {
   getState(): unknown;
@@ -189,6 +190,15 @@ let searchIndex = -1;
 let diagramPointerStart: { x: number; y: number } | undefined;
 let sourceEditTimer: number | undefined;
 const sourceSynchronizer = new SourceSynchronizer();
+let latestDocumentSource = '';
+const sourceEditing = new SourceEditorController({
+  input: sourceEditor,
+  highlight: element<HTMLElement>('source-highlight'),
+  lines: sourceLineNumbers,
+  completions: element<HTMLElement>('source-completions'),
+  diagnostic: element<HTMLButtonElement>('source-diagnostic'),
+  hint: element<HTMLElement>('source-editor-help'),
+});
 
 updateThemePicker();
 applyCanvasAppearance();
@@ -396,9 +406,6 @@ surfaceCustomColor.addEventListener('change', () => {
   });
 });
 sourceEditor.addEventListener('input', handleSourceInput);
-sourceEditor.addEventListener('scroll', () => {
-  sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
-});
 sourceEditor.addEventListener('blur', flushSourceEdit);
 sourceEditor.addEventListener('keydown', handleSourceEditorKeydown);
 searchInput.addEventListener('input', updateDiagramSearch);
@@ -577,6 +584,7 @@ async function renderLatest(): Promise<void> {
     exportOpenButton.disabled = true;
     showState('empty');
     renderStatus.textContent = 'Empty file';
+    sourceEditing.setDiagnostic();
     vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion, rendered: false });
     activeRenderController = undefined;
     rendering = false;
@@ -627,6 +635,7 @@ async function renderLatest(): Promise<void> {
         ? ` • ${formatByteLength(latestByteLength)}`
         : '';
     renderStatus.textContent = `Rendered • ${Math.round(performance.now() - startedAt)} ms${sizeStatus}`;
+    sourceEditing.setDiagnostic();
     vscode.postMessage({ type: 'clearDiagnostic', version: latestVersion, rendered: true });
   } catch (error: unknown) {
     cleanupFailedRender(renderId);
@@ -788,6 +797,7 @@ function vscodeColorScheme(): PreviewColorScheme {
 
 function displayError(error: unknown, source: string): void {
   const details = describeMermaidError(error, source);
+  sourceEditing.setDiagnostic(sourceEditor.value === latestDocumentSource ? details : undefined);
   errorMessage.textContent = details.message;
   errorLocation.hidden = details.line === undefined;
   errorLocation.textContent = details.line
@@ -1478,6 +1488,7 @@ function openSourceOnly(): void {
 }
 
 function receiveDocumentSource(source: string, version: number): void {
+  latestDocumentSource = source;
   const result = sourceSynchronizer.receive(source, version, sourceEditor.value);
   if (result.document) {
     applySourceDocument(result.document.source);
@@ -1493,12 +1504,11 @@ function applySourceDocument(source: string): void {
     sourceEditor.value = source;
     sourceEditor.setSelectionRange(selectionStart, selectionEnd);
   }
-  updateSourceLineNumbers();
+  sourceEditing.sync();
   updateSourceEditStatus();
 }
 
 function handleSourceInput(): void {
-  updateSourceLineNumbers();
   sourceEditStatus.textContent = 'Editing…';
   if (sourceEditTimer !== undefined) {
     window.clearTimeout(sourceEditTimer);
@@ -1543,29 +1553,8 @@ function reloadConflictingSource(): void {
   applySourceDocument(documentState.source);
 }
 
-function updateSourceLineNumbers(): void {
-  const lineCount = Math.max(sourceEditor.value.split('\n').length, 1);
-  let numbers = '';
-  for (let line = 1; line <= lineCount; line += 1) {
-    numbers += `${line}\n`;
-  }
-  sourceLineNumbers.textContent = numbers;
-  sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
-}
-
 function handleSourceEditorKeydown(event: KeyboardEvent): void {
-  if (event.key === 'Tab' && !event.metaKey && !event.ctrlKey && !event.altKey) {
-    event.preventDefault();
-    const indentation = '  ';
-    sourceEditor.setRangeText(
-      indentation,
-      sourceEditor.selectionStart,
-      sourceEditor.selectionEnd,
-      'end',
-    );
-    handleSourceInput();
-    return;
-  }
+  if (event.defaultPrevented || event.isComposing) return;
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 's') {
     event.preventDefault();
     flushSourceEdit();
@@ -1777,7 +1766,7 @@ function revealInternalSourceLine(line: number): void {
   const lineHeight = Number.parseFloat(getComputedStyle(sourceEditor).lineHeight);
   if (Number.isFinite(lineHeight)) {
     sourceEditor.scrollTop = Math.max(0, line * lineHeight - sourceEditor.clientHeight / 2);
-    sourceLineNumbers.scrollTop = sourceEditor.scrollTop;
+    sourceEditing.syncScroll();
   }
 }
 

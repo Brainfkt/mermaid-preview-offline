@@ -46,6 +46,18 @@ interface DocumentationCard {
   source: string;
 }
 
+type DocumentationData = Extract<
+  ExtensionToDocumentationWebviewMessage,
+  { type: 'documentationData' }
+>;
+
+interface PendingDocumentationCard {
+  block: DocumentationPreviewBlock;
+  card: DocumentationCard;
+  data: DocumentationData;
+  generation: number;
+}
+
 declare function acquireVsCodeApi(): VsCodeApi;
 
 registerOfflineIconPacks();
@@ -79,10 +91,16 @@ let selectedDensity: DiagramDensity = activeDensity;
 let selectedSurface: DiagramSurfaceConfiguration = activeSurface;
 let presentationMode = false;
 let presentationIndex = 0;
+let disposed = false;
+let renderingCard = false;
+let visibilityObserver: IntersectionObserver | undefined;
+const DOCUMENTATION_PRELOAD_MARGIN = 400;
 const MAX_DOCUMENTATION_EXPORT_BASE64_BYTES = 192_000_000;
 const diagramControllers = new Map<string, DocumentationDiagramController>();
 const diagramStates = new Map<string, DocumentationDiagramState>();
 const documentationCards = new Map<string, DocumentationCard>();
+const pendingCards = new Map<string, PendingDocumentationCard>();
+const nearbyCards = new Set<Element>();
 
 initializeMermaid(activeTheme, activeFontFamily);
 
@@ -107,8 +125,9 @@ window.addEventListener('keydown', handlePresentationKey);
 window.addEventListener(
   'message',
   (event: MessageEvent<ExtensionToDocumentationWebviewMessage>) => {
+    if (disposed) return;
     if (event.data.type === 'documentationData') {
-      void showDocumentation(event.data);
+      showDocumentation(event.data);
     } else {
       void renderDocumentationExport(event.data);
     }
@@ -117,10 +136,10 @@ window.addEventListener(
 
 vscode.postMessage({ type: 'ready' });
 
-async function showDocumentation(
-  data: Extract<ExtensionToDocumentationWebviewMessage, { type: 'documentationData' }>,
-): Promise<void> {
+function showDocumentation(data: DocumentationData): void {
   const generation = ++renderGeneration;
+  disconnectVisibilityObserver();
+  pendingCards.clear();
   const surfaceAffectsRender =
     !diagramSurfacesEqual(activeSurface, data.surface) &&
     (activeTheme === 'adaptive' ||
@@ -139,14 +158,12 @@ async function showDocumentation(
   selectedDensity = data.density;
   selectedSurface = data.surface;
   applyDocumentationSurface();
-  initializeMermaid(activeTheme, activeFontFamily);
   updatePresentationAppearance(activeTheme, activeDensity, activeSurface);
   empty.hidden = data.blocks.length > 0;
   list.hidden = data.blocks.length === 0;
   presentButton.hidden = data.blocks.length === 0 || presentationMode;
   const controllerConfiguration = documentationControllerConfiguration(data);
   const nextCards = new Map<string, DocumentationCard>();
-  const cardsToRender: Array<{ block: DocumentationPreviewBlock; card: DocumentationCard }> = [];
 
   for (const block of data.blocks) {
     const existing = documentationCards.get(block.id);
@@ -176,7 +193,7 @@ async function showDocumentation(
     }
     const card = createDiagramCard(block, controllerConfiguration);
     nextCards.set(block.id, card);
-    cardsToRender.push({ block, card });
+    pendingCards.set(block.id, { block, card, data, generation });
   }
 
   for (const [id, card] of documentationCards) {
@@ -189,24 +206,96 @@ async function showDocumentation(
   for (const [id, card] of nextCards) documentationCards.set(id, card);
   reconcileDocumentationCardOrder(nextCards.values());
   if (presentationMode) updatePresentation();
+  observePendingCards();
+}
 
-  for (const { block, card } of cardsToRender) {
-    if (generation !== renderGeneration) return;
-    const rendered = await queuedRender(
-      card.diagram,
-      card.error,
-      block.source,
-      data.fontFamily,
-      generation,
-    );
-    if (generation !== renderGeneration) return;
-    card.settled = true;
-    if (rendered) {
-      diagramControllers.set(
-        block.id,
-        createDiagramController(card, block, data, diagramStates.get(block.id)),
-      );
+function disconnectVisibilityObserver(): void {
+  visibilityObserver?.disconnect();
+  visibilityObserver = undefined;
+  nearbyCards.clear();
+}
+
+function observePendingCards(): void {
+  disconnectVisibilityObserver();
+  if (disposed) return;
+  if (presentationMode) {
+    scheduleVisibleRendering();
+    return;
+  }
+  const generation = renderGeneration;
+  const observer = new IntersectionObserver((entries) => {
+    if (disposed || generation !== renderGeneration || visibilityObserver !== observer) return;
+    for (const entry of entries) {
+      if (entry.isIntersecting) nearbyCards.add(entry.target);
+      else nearbyCards.delete(entry.target);
     }
+    scheduleVisibleRendering();
+  }, { rootMargin: `${DOCUMENTATION_PRELOAD_MARGIN}px 0px` });
+  visibilityObserver = observer;
+  for (const { card } of pendingCards.values()) visibilityObserver.observe(card.article);
+}
+
+function cardRenderPriority(card: DocumentationCard): number {
+  if (!card.article.isConnected || card.article.hidden) return Infinity;
+  if (presentationMode) return 0;
+  if (!nearbyCards.has(card.article)) return Infinity;
+  const bounds = card.article.getBoundingClientRect();
+  if (bounds.bottom < -DOCUMENTATION_PRELOAD_MARGIN ||
+      bounds.top > window.innerHeight + DOCUMENTATION_PRELOAD_MARGIN) return Infinity;
+  if (bounds.bottom > 0 && bounds.top < window.innerHeight) return 0;
+  return 1 + Math.max(-bounds.bottom, bounds.top - window.innerHeight, 0);
+}
+
+function isCurrentCard(pending: PendingDocumentationCard): boolean {
+  return !disposed && pending.generation === renderGeneration &&
+    pendingCards.get(pending.block.id) === pending && pending.card.article.isConnected;
+}
+
+function scheduleVisibleRendering(): void {
+  if (disposed || renderingCard) return;
+  let next: PendingDocumentationCard | undefined;
+  let priority = Infinity;
+  for (const pending of pendingCards.values()) {
+    const candidatePriority = cardRenderPriority(pending.card);
+    if (candidatePriority < priority) {
+      next = pending;
+      priority = candidatePriority;
+    }
+  }
+  if (!next) return;
+  renderingCard = true;
+  void renderPendingCard(next).finally(() => {
+    renderingCard = false;
+    scheduleVisibleRendering();
+  });
+}
+
+async function renderPendingCard(pending: PendingDocumentationCard): Promise<void> {
+  const { block, card, data } = pending;
+  card.article.dataset.renderState = 'rendering';
+  const rendered = await queuedRender(
+    card.diagram,
+    card.error,
+    block.source,
+    data.fontFamily,
+    () => isCurrentCard(pending) && Number.isFinite(cardRenderPriority(card)),
+  );
+  if (!isCurrentCard(pending)) return;
+  if (rendered === undefined) {
+    card.article.dataset.renderState = 'pending';
+    return;
+  }
+  pendingCards.delete(block.id);
+  visibilityObserver?.unobserve(card.article);
+  nearbyCards.delete(card.article);
+  card.settled = true;
+  card.article.dataset.renderState = rendered ? 'ready' : 'error';
+  card.canvas.setAttribute('aria-busy', 'false');
+  if (rendered) {
+    diagramControllers.set(
+      block.id,
+      createDiagramController(card, block, data, diagramStates.get(block.id)),
+    );
   }
 }
 
@@ -228,9 +317,15 @@ function createDiagramCard(
   const article = document.createElement('article');
   article.className = 'documentation-card';
   article.dataset.blockId = block.id;
+  article.dataset.renderState = 'pending';
 
   const canvas = document.createElement('div');
   canvas.className = 'documentation-canvas';
+  canvas.setAttribute('aria-busy', 'true');
+  const state = diagramStates.get(block.id);
+  if (state?.source === block.source && state.customHeight !== undefined) {
+    canvas.style.height = `${state.customHeight}px`;
+  }
   canvas.classList.toggle('pattern-dots', activeSurface.pattern === 'dots');
   canvas.classList.toggle('pattern-grid', activeSurface.pattern === 'grid');
   canvas.tabIndex = 0;
@@ -309,26 +404,33 @@ async function queuedRender(
   errorTarget: HTMLElement,
   source: string,
   fontFamily: DiagramFontFamily,
-  generation: number,
-): Promise<boolean> {
-  const task = async (): Promise<boolean> => {
-    if (generation !== renderGeneration) return false;
+  isCurrent: () => boolean,
+): Promise<boolean | undefined> {
+  const task = async (): Promise<boolean | undefined> => {
+    if (!isCurrent()) return undefined;
+    const renderId = `mermaid-document-${++renderSequence}`;
     try {
       await prepareMermaidExtensions(source, fontFamily);
-      const { svg } = await mermaid.render(`mermaid-document-${++renderSequence}`, source);
-      if (generation !== renderGeneration) return false;
+      if (!isCurrent()) return undefined;
+      initializeMermaid(activeTheme, fontFamily);
+      const { svg } = await mermaid.render(renderId, source);
+      if (!isCurrent()) return undefined;
       target.innerHTML = svg;
       target.hidden = false;
       errorTarget.hidden = true;
       return true;
     } catch (error: unknown) {
-      if (generation !== renderGeneration) return false;
+      if (!isCurrent()) return undefined;
       target.replaceChildren();
       target.hidden = true;
       errorTarget.textContent = errorMessageOf(error);
       errorTarget.hidden = false;
       removeTemporaryRenderNodes();
       return false;
+    } finally {
+      const temporarySvg = document.getElementById(renderId);
+      if (temporarySvg && !target.contains(temporarySvg)) temporarySvg.remove();
+      document.getElementById(`d${renderId}`)?.remove();
     }
   };
   const queued = renderQueue.then(task, task);
@@ -343,7 +445,13 @@ function saveAndDisposeDiagramControllers(): void {
   diagramControllers.clear();
 }
 
-window.addEventListener('pagehide', saveAndDisposeDiagramControllers);
+window.addEventListener('pagehide', () => {
+  disposed = true;
+  renderGeneration += 1;
+  disconnectVisibilityObserver();
+  pendingCards.clear();
+  saveAndDisposeDiagramControllers();
+});
 
 async function renderDocumentationExport(
   request: Extract<
@@ -483,6 +591,7 @@ function enterPresentation(): void {
   presentButton.hidden = true;
   presentationControls.hidden = false;
   presentationThemeControl.hidden = false;
+  disconnectVisibilityObserver();
   updatePresentation();
 }
 
@@ -495,6 +604,7 @@ function exitPresentation(): void {
   closePresentationThemeMenu();
   presentButton.hidden = documentationCards.size === 0;
   for (const card of documentationCards.values()) card.article.hidden = false;
+  observePendingCards();
 }
 
 function updatePresentation(): void {
@@ -506,6 +616,7 @@ function updatePresentation(): void {
   presentationPrevious.disabled = presentationIndex === 0;
   presentationNext.disabled = presentationIndex === cards.length - 1;
   cards[presentationIndex]?.canvas.focus({ preventScroll: true });
+  scheduleVisibleRendering();
 }
 
 function movePresentation(direction: -1 | 1): void {

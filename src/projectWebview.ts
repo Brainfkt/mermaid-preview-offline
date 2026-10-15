@@ -17,11 +17,13 @@ import {
   type DiagramTemplateField,
 } from './diagramTemplates';
 import { prepareMermaidExtensions, registerOfflineIconPacks } from './mermaidExtensions';
+import { isPersonalTemplateMessage, type PersonalTemplateMessage, type SavedDiagramTemplate } from './personalTemplates';
 import {
   replaceSvgAttributeIdReferences,
   replaceSvgStyleIdReferences,
 } from './svgIdReferences';
 import type { LineDiffSummary } from './visualDiff';
+import { createSemanticDiffView } from './semanticDiffView';
 import type { DiagramDensity, DiagramSurfaceConfiguration, DiagramTheme } from './protocol';
 
 interface VsCodeApi {
@@ -31,6 +33,11 @@ interface VsCodeApi {
 }
 
 interface GalleryDataMessage {
+  canSaveActive?: boolean;
+  favorites?: string[];
+  savedTemplates?: SavedDiagramTemplate[];
+  resetSelection?: boolean;
+  templateNotice?: string;
   density: DiagramDensity;
   examples: DiagramExample[];
   fontFamily: DiagramFontFamily;
@@ -54,13 +61,15 @@ interface VisualDiffDataMessage {
   type: 'visualDiffData';
 }
 
-type ExtensionToProjectWebviewMessage = GalleryDataMessage | VisualDiffDataMessage;
+type ExtensionToProjectWebviewMessage = GalleryDataMessage | VisualDiffDataMessage | { type: 'templateFavorites'; favorites: string[] };
 type ProjectWebviewToExtensionMessage =
+  | PersonalTemplateMessage
   | { type: 'ready' }
   | { fileName: string; source: string; type: 'createDiagram' };
 type GalleryTab = 'examples' | 'templates';
 type GalleryItem =
   | { kind: 'example'; value: DiagramExample }
+  | { kind: 'saved'; value: SavedDiagramTemplate }
   | { kind: 'template'; value: DiagramTemplate };
 
 declare function acquireVsCodeApi(): VsCodeApi;
@@ -104,7 +113,15 @@ function initializeGallery(): void {
   const create = element<HTMLButtonElement>('create-diagram');
   const reset = element<HTMLButtonElement>('reset-template');
   const form = element<HTMLFormElement>('template-form');
+  const libraryFilter = element<HTMLSelectElement>('template-library-filter');
+  const saveTemplate = element<HTMLButtonElement>('save-template');
+  const saveActive = element<HTMLButtonElement>('save-active-template');
+  const favorite = element<HTMLButtonElement>('favorite-template');
+  const libraryNotice = element<HTMLElement>('template-library-notice');
   let templates: DiagramTemplate[] = [];
+  let savedTemplates: SavedDiagramTemplate[] = [];
+  let favorites = new Set<string>();
+  let initialized = false;
   let examples: DiagramExample[] = [];
   let activeTab: GalleryTab = 'templates';
   let activeCategory = 'All';
@@ -117,6 +134,12 @@ function initializeGallery(): void {
   const cardSources = new Map<Element, string>();
 
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
+    if (event.data.type === 'templateFavorites') {
+      favorites = new Set(event.data.favorites);
+      updateFavorite();
+      renderCatalog();
+      return;
+    }
     if (event.data.type !== 'galleryData') return;
     activeFontFamily = event.data.fontFamily;
     activeDensity = event.data.density;
@@ -125,15 +148,45 @@ function initializeGallery(): void {
     applyProjectSurface();
     initializeMermaid(activeFontFamily);
     templates = event.data.templates;
+    savedTemplates = event.data.savedTemplates ?? [];
+    favorites = new Set(event.data.favorites ?? []);
+    saveActive.disabled = !event.data.canSaveActive;
+    libraryNotice.textContent = event.data.templateNotice ?? '';
+    libraryNotice.hidden = !libraryNotice.textContent;
     examples = event.data.examples;
-    activeTab = event.data.initialTab;
     suggestedFileName = event.data.suggestedFileName;
-    setTab(activeTab);
+    if (!initialized || event.data.resetSelection) {
+      setTab(event.data.initialTab);
+      initialized = true;
+    } else {
+      renderCategories();
+      renderCatalog();
+      updateFavorite();
+      if (selected) schedulePreview(source.value, 0);
+    }
   });
 
   templatesTab.addEventListener('click', () => setTab('templates'));
   examplesTab.addEventListener('click', () => setTab('examples'));
   search.addEventListener('input', () => renderCatalog());
+  libraryFilter.addEventListener('change', () => renderCatalog());
+  element<HTMLButtonElement>('refresh-templates').addEventListener('click', () => vscode.postMessage({ type: 'refreshTemplates' }));
+  saveActive.addEventListener('click', () => vscode.postMessage({ type: 'saveActiveTemplate' }));
+  saveTemplate.addEventListener('click', () => {
+    if (!selected || !source.value.trim()) return;
+    const message = { type: 'saveTemplate', source: source.value, title: selected.value.title, fileName: fileName.value };
+    if (!isPersonalTemplateMessage(message)) {
+      libraryNotice.textContent = 'Use a .mmd or .mermaid file name without directory separators and source up to 1 MB to save a template.';
+      libraryNotice.hidden = false;
+      return;
+    }
+    vscode.postMessage(message);
+  });
+  favorite.addEventListener('click', () => {
+    const key = itemId(selected);
+    if (!key) return;
+    vscode.postMessage({ type: 'setTemplateFavorite', key, favorite: !favorites.has(key) });
+  });
   reset.addEventListener('click', () => {
     if (selected?.kind === 'template') selectItem(selected);
   });
@@ -153,6 +206,7 @@ function initializeGallery(): void {
     activeCategory = 'All';
     search.value = '';
     search.placeholder = tab === 'templates' ? 'Search templates' : 'Search examples';
+    libraryFilter.disabled = tab === 'examples';
     templatesTab.classList.toggle('is-active', tab === 'templates');
     examplesTab.classList.toggle('is-active', tab === 'examples');
     selected = undefined;
@@ -165,7 +219,7 @@ function initializeGallery(): void {
 
   function allItems(): GalleryItem[] {
     return activeTab === 'templates'
-      ? templates.map((value) => ({ kind: 'template' as const, value }))
+      ? [...templates.map((value) => ({ kind: 'template' as const, value })), ...savedTemplates.map((value) => ({ kind: 'saved' as const, value }))]
       : examples.map((value) => ({ kind: 'example' as const, value }));
   }
 
@@ -174,7 +228,12 @@ function initializeGallery(): void {
     return allItems().filter((item) => {
       const matchesCategory = activeCategory === 'All' || item.value.category === activeCategory;
       const description = item.kind === 'template' ? item.value.description : item.value.fileName;
-      return matchesCategory && (!query || `${item.value.title} ${item.value.category} ${description}`.toLocaleLowerCase().includes(query));
+      const library = libraryFilter.value;
+      const matchesLibrary = activeTab === 'examples' || library === 'all' ||
+        (library === 'favorites' && favorites.has(itemId(item))) ||
+        (library === 'builtin' && item.kind === 'template') ||
+        (item.kind === 'saved' && library === item.value.origin);
+      return matchesLibrary && matchesCategory && (!query || `${item.value.title} ${item.value.category} ${description}`.toLocaleLowerCase().includes(query));
     });
   }
 
@@ -219,9 +278,9 @@ function initializeGallery(): void {
       const copy = document.createElement('span');
       copy.className = 'catalog-card__copy';
       const title = document.createElement('strong');
-      title.textContent = item.value.title;
+      title.textContent = `${favorites.has(itemId(item)) ? '★ ' : ''}${item.value.title}`;
       const category = document.createElement('span');
-      category.textContent = item.value.category;
+      category.textContent = `${originLabel(item)} · ${item.value.category}`;
       copy.append(title, category);
       card.append(cardPreview, copy);
       card.addEventListener('click', () => selectItem(item, true));
@@ -252,15 +311,17 @@ function initializeGallery(): void {
     for (const card of Array.from(grid.querySelectorAll('.catalog-card'))) {
       card.classList.toggle('is-selected', (card as HTMLElement).dataset.itemId === itemId(item));
     }
-    inspectorCategory.textContent = `${item.kind === 'template' ? 'Template' : 'Example'} · ${item.value.category}`;
+    inspectorCategory.textContent = `${originLabel(item)} · ${item.value.category}`;
     inspectorTitle.textContent = item.value.title;
-    inspectorDescription.textContent = item.kind === 'template'
+    inspectorDescription.textContent = item.kind !== 'example'
       ? item.value.description
       : `Bundled example · ${item.value.fileName}`;
     reset.hidden = item.kind !== 'template';
     source.disabled = false;
     fileName.disabled = false;
     create.disabled = false;
+    saveTemplate.disabled = false;
+    updateFavorite();
     fields.replaceChildren();
     if (item.kind === 'template') {
       const values = defaultTemplateValues(item.value);
@@ -269,7 +330,7 @@ function initializeGallery(): void {
       fileName.value = suggestedFileName ?? item.value.fileName;
     } else {
       source.value = item.value.source;
-      fileName.value = suggestedFileName ?? item.value.fileName.replace(/^\d+[-_]?/u, '');
+      fileName.value = suggestedFileName ?? (item.kind === 'saved' ? item.value.fileName : item.value.fileName.replace(/^\d+[-_]?/u, ''));
     }
     schedulePreview(source.value, 0);
     if (revealInspector && window.matchMedia('(max-width: 820px)').matches) {
@@ -283,6 +344,14 @@ function initializeGallery(): void {
         top: scrollTop,
       });
     }
+  }
+
+  function updateFavorite(): void {
+    const isFavorite = favorites.has(itemId(selected));
+    favorite.disabled = !selected;
+    favorite.hidden = selected?.kind === 'example';
+    favorite.setAttribute('aria-pressed', String(isFavorite));
+    favorite.textContent = isFavorite ? '★ Remove favorite' : '☆ Add to favorites';
   }
 
   function createField(field: DiagramTemplateField, values: Record<string, string>): HTMLElement {
@@ -355,6 +424,11 @@ function initializeVisualDiff(): void {
   const zoomValue = element<HTMLElement>('diff-zoom-value');
   const opacity = element<HTMLInputElement>('overlay-opacity');
   const opacityValue = element<HTMLElement>('overlay-opacity-value');
+  const semanticReview = createSemanticDiffView(
+    element<HTMLElement>('visual-diff'),
+    [beforeDiagram, overlayBefore],
+    [afterDiagram, overlayAfter],
+  );
   let diffGeneration = 0;
 
   window.addEventListener('message', (event: MessageEvent<ExtensionToProjectWebviewMessage>) => {
@@ -374,6 +448,7 @@ function initializeVisualDiff(): void {
     element<HTMLElement>('diff-added').textContent = String(data.summary.added);
     element<HTMLElement>('diff-changed').textContent = String(data.summary.changed);
     element<HTMLElement>('diff-removed').textContent = String(data.summary.removed);
+    semanticReview.setSources(data.before.source, data.after.source);
     void Promise.all([
       renderMermaid(
         beforeDiagram,
@@ -393,6 +468,7 @@ function initializeVisualDiff(): void {
       if (generation !== diffGeneration) return;
       copyRenderedDiagram(beforeDiagram, overlayBefore, `before-${generation}`);
       copyRenderedDiagram(afterDiagram, overlayAfter, `after-${generation}`);
+      semanticReview.refreshHighlights();
     });
   });
 
@@ -534,7 +610,12 @@ function sourceFor(item: GalleryItem): string {
 }
 
 function itemId(item: GalleryItem | undefined): string {
-  return item ? `${item.kind}:${item.value.id}` : '';
+  return item?.kind === 'saved' ? item.value.key : item ? `${item.kind}:${item.value.id}` : '';
+}
+
+function originLabel(item: GalleryItem): string {
+  if (item.kind === 'saved') return item.value.origin === 'personal' ? 'Personal' : `Project · ${item.value.projectName ?? 'Workspace'}`;
+  return item.kind === 'template' ? 'Built-in' : 'Example';
 }
 
 function element<T extends HTMLElement>(id: string): T {

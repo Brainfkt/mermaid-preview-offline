@@ -17,7 +17,7 @@ export function createGalleryWebviewHtml(options: ProjectWebviewHtmlOptions): st
           <span class="studio__mark" aria-hidden="true">M</span>
           <div>
             <h1>Diagram Studio</h1>
-            <p>Start from a local template or explore every bundled Mermaid example.</p>
+            <p>Reuse your templates or explore every bundled Mermaid example.</p>
           </div>
         </div>
         <nav class="segmented" aria-label="Diagram Studio sections">
@@ -36,6 +36,14 @@ export function createGalleryWebviewHtml(options: ProjectWebviewHtmlOptions): st
             <span class="catalog__count" id="catalog-count">0 items</span>
           </div>
           <div class="category-filter" id="category-filter" aria-label="Categories"></div>
+          <div class="library-tools">
+            <label class="field library-filter"><span>Library</span><select id="template-library-filter" aria-label="Template library">
+              <option value="all">All templates</option><option value="builtin">Built-in</option><option value="personal">Personal</option><option value="project">Project</option><option value="favorites">Favorites</option>
+            </select></label>
+            <button class="button button--subtle" id="save-active-template" type="button" disabled>Save current diagram…</button>
+            <button class="button button--subtle" id="refresh-templates" type="button" title="Reload saved templates">Refresh</button>
+          </div>
+          <p class="library-notice" id="template-library-notice" role="status" hidden></p>
           <div class="catalog__grid" id="catalog-grid" aria-live="polite"></div>
           <section class="catalog-empty" id="catalog-empty" hidden>
             <h2>No matching diagrams</h2>
@@ -72,6 +80,10 @@ export function createGalleryWebviewHtml(options: ProjectWebviewHtmlOptions): st
               <span>Mermaid source</span>
               <textarea id="template-source" rows="7" spellcheck="false" disabled></textarea>
             </label>
+            <div class="template-actions">
+              <button class="button" id="save-template" type="button" disabled>Save as template…</button>
+              <button class="button button--subtle" id="favorite-template" type="button" aria-pressed="false" disabled>Add to favorites</button>
+            </div>
           </form>
         </aside>
       </main>
@@ -94,9 +106,9 @@ export function createVisualDiffWebviewHtml(options: ProjectWebviewHtmlOptions):
       </header>
 
       <section class="diff-summary" aria-label="Source change summary">
-        <span class="diff-summary__item diff-summary__item--added"><strong id="diff-added">0</strong> added</span>
-        <span class="diff-summary__item diff-summary__item--changed"><strong id="diff-changed">0</strong> changed</span>
-        <span class="diff-summary__item diff-summary__item--removed"><strong id="diff-removed">0</strong> removed</span>
+        <span class="diff-summary__item diff-summary__item--added"><strong id="diff-added">0</strong> lines added</span>
+        <span class="diff-summary__item diff-summary__item--changed"><strong id="diff-changed">0</strong> lines changed</span>
+        <span class="diff-summary__item diff-summary__item--removed"><strong id="diff-removed">0</strong> lines removed</span>
         <span class="diff-summary__spacer"></span>
         <label class="zoom-control">Zoom <input id="diff-zoom" type="range" min="50" max="180" value="100"><span id="diff-zoom-value">100%</span></label>
       </section>

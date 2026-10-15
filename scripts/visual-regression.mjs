@@ -393,6 +393,72 @@ const runner = `<script nonce="${nonce}">
       () => document.querySelector('#source-edit-status')?.textContent === 'Saved',
       'internal source edit acknowledgement',
     );
+    const savedSource = sourceInput.value;
+    const setSourceText = (value) => {
+      sourceInput.value = value;
+      sourceInput.setSelectionRange(value.length, value.length);
+      sourceInput.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText' }));
+    };
+    const sourceKey = (key, extra = {}) => sourceInput.dispatchEvent(new KeyboardEvent('keydown', {
+      bubbles: true, cancelable: true, key, ...extra,
+    }));
+    sourceInput.focus();
+    setSourceText('flow');
+    sourceKey(' ', { code: 'Space', ctrlKey: true });
+    if (document.querySelector('#source-completions').hidden ||
+        !document.querySelector('#source-completions').textContent.includes('flowchart')) {
+      throw new Error('The source editor did not offer keyword completion.');
+    }
+    sourceKey('Enter');
+    if (sourceInput.value !== 'flowchart' || sourceInput.selectionStart !== 9) {
+      throw new Error('Keyword completion did not replace the prefix and preserve the caret.');
+    }
+    sourceKey('Enter');
+    if (sourceInput.value !== 'flowchart\\n  ') {
+      throw new Error('Enter did not indent after the diagram declaration.');
+    }
+    setSourceText('flowchart LR\\n  customer[Customer] --> order\\n  cus');
+    sourceKey(' ', { code: 'Space', ctrlKey: true });
+    if (!document.querySelector('#source-completions').textContent.includes('customer')) {
+      throw new Error('The source editor did not suggest identifiers from the diagram.');
+    }
+    sourceKey('Tab');
+    if (!sourceInput.value.endsWith('customer')) throw new Error('Tab did not accept identifier completion.');
+    setSourceText('flowchart LR\\nA --> B\\nB --> C');
+    sourceInput.setSelectionRange(13, sourceInput.value.length);
+    sourceKey('Tab');
+    if (sourceInput.value !== 'flowchart LR\\n  A --> B\\n  B --> C') {
+      throw new Error('Tab did not indent the selected source lines.');
+    }
+    sourceKey('Tab', { shiftKey: true });
+    if (sourceInput.value !== 'flowchart LR\\nA --> B\\nB --> C') {
+      throw new Error('Shift+Tab did not outdent the selected source lines.');
+    }
+    sourceInput.setSelectionRange(sourceInput.value.length, sourceInput.value.length);
+    const beforeUndo = sourceInput.value;
+    sourceKey('Tab');
+    if (!document.execCommand('undo') || sourceInput.value !== beforeUndo) {
+      throw new Error('The native textarea undo stack did not retain an indentation edit.');
+    }
+    sourceKey('Escape');
+    if (!sourceKey('Tab')) throw new Error('Escape then Tab did not release keyboard focus traversal.');
+    setSourceText('flowchart LR\\n  %% <img onerror=alert(1)>\\n' +
+      Array.from({ length: 80 }, (_, index) => '  node' + index + '[' + 'Label '.repeat(35) + ']').join('\\n'));
+    const sourceHighlight = document.querySelector('#source-highlight');
+    if (!sourceHighlight.querySelector('.source-token--keyword') || sourceHighlight.querySelector('img')) {
+      throw new Error('Source syntax highlighting is missing or rendered source as markup.');
+    }
+    sourceInput.scrollTop = 300;
+    sourceInput.scrollLeft = 180;
+    sourceInput.dispatchEvent(new Event('scroll'));
+    if (sourceHighlight.scrollTop !== sourceInput.scrollTop || sourceHighlight.scrollLeft !== sourceInput.scrollLeft ||
+        document.querySelector('#source-line-numbers').scrollTop !== sourceInput.scrollTop) {
+      throw new Error('Highlight and line numbers drifted from the textarea scroll position.');
+    }
+    setSourceText(savedSource);
+    sourceInput.scrollTop = 0;
+    sourceInput.scrollLeft = 0;
+    sourceInput.dispatchEvent(new Event('scroll'));
     const sourceSaveStart = postedMessages.length;
     sourceInput.dispatchEvent(new KeyboardEvent('keydown', {
       bubbles: true,
@@ -827,6 +893,22 @@ const runner = `<script nonce="${nonce}">
       throw new Error('The renderer did not report a valid Mermaid syntax diagnostic.');
     }
 
+    window.postMessage({ type: 'editorMode', detached: false, mode: 'beside' }, '*');
+    await waitFor(() => document.querySelector('#workspace').classList.contains('workspace--beside'), 'source diagnostic layout');
+    const sourceDiagnostic = document.querySelector('#source-diagnostic');
+    if (sourceDiagnostic.hidden || sourceInput.getAttribute('aria-invalid') !== 'true' ||
+        !document.querySelector('.source-editor__code-line--error')) {
+      throw new Error('A Mermaid syntax error was not exposed in the source editor.');
+    }
+    sourceDiagnostic.click();
+    if (document.activeElement !== sourceInput || sourceInput.selectionStart < invalidSource.indexOf('\\n') + 1) {
+      throw new Error('Clicking the inline diagnostic did not reveal its source line.');
+    }
+    sourceInput.setSelectionRange(0, 0);
+    sourceKey('F8');
+    if (sourceInput.selectionStart < invalidSource.indexOf('\\n') + 1) {
+      throw new Error('F8 did not navigate to the source error.');
+    }
     const output = document.createElement('script');
     output.id = 'visual-results';
     output.type = 'application/json';
@@ -868,6 +950,7 @@ const actual = await runBrowserHarness({
   harnessPath,
   label: 'Visual regression harness',
   resultElementId: 'visual-results',
+  screenshotPath: process.env.MERMAID_VISUAL_SCREENSHOT,
 });
 if (actual.error) {
   throw new Error(actual.error);

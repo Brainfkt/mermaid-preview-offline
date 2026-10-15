@@ -1,4 +1,5 @@
 import { relative } from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 import * as vscode from 'vscode';
 
@@ -23,6 +24,23 @@ import {
 import { summarizeLineDiff, isMermaidPath, type LineDiffSummary } from './visualDiff';
 import { isUriWithin } from './workspacePaths';
 import { isProjectWebviewMessage } from './webviewMessageValidation';
+import {
+  createPersonalTemplate,
+  isPersonalTemplateMessage,
+  isTemplateSource,
+  MAX_TEMPLATE_FILE_BYTES,
+  nextTemplateId,
+  normalizeTemplateFavorites,
+  templateTitleError,
+  type SavedDiagramTemplate,
+} from './personalTemplates';
+import {
+  loadPersonalTemplateLibrary,
+  savePersonalTemplate,
+  type PersonalTemplateStorage,
+} from './personalTemplatesStore';
+import { readResourcePolicy } from './resourceSettings';
+import { inlineWorkspaceImages } from './workspaceImages';
 
 export type GalleryInitialTab = 'examples' | 'templates';
 
@@ -71,6 +89,10 @@ export class MermaidProjectFeatures implements vscode.Disposable {
   private galleryPanel: vscode.WebviewPanel | undefined;
   private galleryTab: GalleryInitialTab = 'templates';
   private galleryTargetUri: vscode.Uri | undefined;
+  private gallerySourceUri: vscode.Uri | undefined;
+  private readonly galleryFavoriteKeys = new Set<string>();
+  private templateWritePending = false;
+  private favoriteQueue = Promise.resolve();
   private visualDiffPanel: vscode.WebviewPanel | undefined;
   private visualComparison: VisualComparison | undefined;
   private examplesPromise: Promise<DiagramExample[]> | undefined;
@@ -98,10 +120,12 @@ export class MermaidProjectFeatures implements vscode.Disposable {
   ): Promise<void> {
     this.galleryTab = initialTab;
     this.galleryTargetUri = targetUri;
+    const activeUri = targetUri ?? activeMermaidUri();
+    if (activeUri) this.gallerySourceUri = isMermaidPath(activeUri.path) ? activeUri : undefined;
     if (this.galleryPanel) {
       this.galleryPanel.title = initialTab === 'templates' ? 'Diagram Studio' : 'Mermaid Examples';
       this.galleryPanel.reveal(vscode.ViewColumn.Active, true);
-      await this.postGalleryData();
+      await this.postGalleryData(true);
       return;
     }
     const panel = vscode.window.createWebviewPanel(
@@ -137,6 +161,19 @@ export class MermaidProjectFeatures implements vscode.Disposable {
       messageSubscription.dispose();
       if (this.galleryPanel === panel) this.galleryPanel = undefined;
     });
+  }
+
+  public async saveAsTemplate(resource?: vscode.Uri): Promise<void> {
+    const uri = resource ?? activeMermaidUri() ?? this.gallerySourceUri;
+    if (!uri || !isMermaidPath(uri.path)) {
+      void vscode.window.showWarningMessage('Select a .mmd or .mermaid file to save as a template.');
+      return;
+    }
+    try {
+      await this.saveTemplate(await readTextDocument(uri), titleFromFileName(fileNameOf(uri)), fileNameOf(uri), uri);
+    } catch (error: unknown) {
+      void vscode.window.showErrorMessage(`Could not save template: ${errorMessageOf(error)}`);
+    }
   }
 
   public async compareGitVersions(resource?: vscode.Uri): Promise<void> {
@@ -204,6 +241,28 @@ export class MermaidProjectFeatures implements vscode.Disposable {
   }
 
   private async handleGalleryMessage(message: unknown): Promise<void> {
+    if (isPersonalTemplateMessage(message)) {
+      if (message.type === 'setTemplateFavorite') {
+        if (!this.galleryFavoriteKeys.has(message.key)) return;
+        this.favoriteQueue = this.favoriteQueue.then(async () => {
+          const favorites = new Set(normalizeTemplateFavorites(this.context.globalState.get('templateFavorites')));
+          if (message.favorite) favorites.add(message.key);
+          else favorites.delete(message.key);
+          await this.context.globalState.update('templateFavorites', [...favorites]);
+          await this.galleryPanel?.webview.postMessage({ type: 'templateFavorites', favorites: [...favorites] });
+        }).catch((error: unknown) => {
+          void vscode.window.showErrorMessage(`Could not save favorite: ${errorMessageOf(error)}`);
+        });
+        await this.favoriteQueue;
+      } else if (message.type === 'saveTemplate') {
+        await this.saveTemplate(message.source, message.title, message.fileName, this.gallerySourceUri);
+      } else if (message.type === 'saveActiveTemplate') {
+        await this.saveAsTemplate(this.gallerySourceUri);
+      } else {
+        await this.postGalleryData();
+      }
+      return;
+    }
     if (!isProjectWebviewMessage(message)) return;
     if (message.type === 'ready') {
       await this.postGalleryData();
@@ -212,10 +271,24 @@ export class MermaidProjectFeatures implements vscode.Disposable {
     await this.createDiagram(message.fileName, message.source);
   }
 
-  private async postGalleryData(): Promise<void> {
-    if (!this.galleryPanel) return;
-    await this.galleryPanel.webview.postMessage({
-      examples: await this.examples(),
+  private async postGalleryData(resetSelection = false): Promise<void> {
+    const panel = this.galleryPanel;
+    if (!panel) return;
+    const [examples, saved] = await Promise.all([this.examples(), this.loadSavedTemplates()]);
+    if (this.galleryPanel !== panel) return;
+    this.galleryFavoriteKeys.clear();
+    for (const key of [
+      ...DIAGRAM_TEMPLATES.map((template) => `template:${template.id}`),
+      ...examples.map((example) => `example:${example.id}`),
+      ...saved.templates.map((template) => template.key),
+    ]) this.galleryFavoriteKeys.add(key);
+    await panel.webview.postMessage({
+      canSaveActive: Boolean(this.gallerySourceUri),
+      examples,
+      favorites: normalizeTemplateFavorites(this.context.globalState.get('templateFavorites')),
+      savedTemplates: saved.templates,
+      resetSelection,
+      templateNotice: saved.notice,
       fontFamily: configuredDiagramFontFamily(),
       ...configuredDiagramAppearance(),
       initialTab: this.galleryTab,
@@ -223,6 +296,92 @@ export class MermaidProjectFeatures implements vscode.Disposable {
       templates: DIAGRAM_TEMPLATES,
       type: 'galleryData',
     });
+  }
+
+  private async loadSavedTemplates(): Promise<{ templates: SavedDiagramTemplate[]; notice: string }> {
+    const templates: SavedDiagramTemplate[] = [];
+    const issues: string[] = [];
+    const libraries: Array<{ root: vscode.Uri; origin: 'personal' | 'project'; projectName?: string }> = [
+      { root: vscode.Uri.joinPath(this.context.globalStorageUri, 'templates'), origin: 'personal' },
+    ];
+    if (vscode.workspace.isTrusted) {
+      for (const folder of vscode.workspace.workspaceFolders ?? []) {
+        libraries.push({ root: vscode.Uri.joinPath(folder.uri, '.mermaid-templates'), origin: 'project', projectName: folder.name });
+      }
+    } else if (vscode.workspace.workspaceFolders?.length) {
+      issues.push('Trust this workspace to load and save project templates. Personal templates remain available.');
+    }
+    for (const library of libraries) {
+      try {
+        const loaded = await loadPersonalTemplateLibrary(templateStorage(library.root));
+        for (const template of loaded.templates) templates.push({
+          ...template,
+          origin: library.origin,
+          projectName: library.projectName,
+          key: library.origin === 'personal' ? `personal:${template.id}` : `project:${library.root.toString()}:${template.id}`,
+        });
+        if (loaded.issues.length) issues.push(`${library.projectName ?? 'Personal library'}: ${loaded.issues.length} template issue(s). ${loaded.issues[0]}`);
+      } catch (error: unknown) {
+        issues.push(`${library.projectName ?? 'Personal library'}: ${errorMessageOf(error)}`);
+      }
+    }
+    return { templates, notice: issues.join(' ') };
+  }
+
+  private async saveTemplate(source: string, suggestedTitle: string, requestedFileName: string, sourceUri?: vscode.Uri): Promise<void> {
+    if (this.templateWritePending) return;
+    this.templateWritePending = true;
+    try {
+      const fileName = sanitizeMermaidFileName(requestedFileName);
+      // Validate the source before opening any save prompts.
+      if (!isTemplateSource(source)) throw new Error('Template source must contain 1–1,000,000 UTF-8 bytes and no null characters.');
+      if (sourceUri) {
+        source = await inlineWorkspaceImages(source, sourceUri, {
+          ...readResourcePolicy(sourceUri), allowRemoteImages: false,
+        });
+      }
+      createPersonalTemplate('Diagram', source, fileName);
+      const title = await vscode.window.showInputBox({
+        title: 'Save Mermaid template', prompt: 'Template title',
+        value: suggestedTitle.slice(0, 120), validateInput: templateTitleError,
+      });
+      if (title === undefined) return;
+      const destinations = [{
+        label: 'Personal library', description: 'Available locally in every workspace',
+        root: vscode.Uri.joinPath(this.context.globalStorageUri, 'templates'), project: false,
+      }];
+      if (vscode.workspace.isTrusted) {
+        const folders = [...vscode.workspace.workspaceFolders ?? []];
+        const sourceFolder = sourceUri ? vscode.workspace.getWorkspaceFolder(sourceUri) : undefined;
+        folders.sort((left, right) => Number(right === sourceFolder) - Number(left === sourceFolder));
+        for (const folder of folders) destinations.push({
+          label: `Project · ${folder.name}`, description: '.mermaid-templates/ · share through version control',
+          root: vscode.Uri.joinPath(folder.uri, '.mermaid-templates'), project: true,
+        });
+      }
+      const destination = await vscode.window.showQuickPick(destinations, { title: 'Save template to…', placeHolder: 'Choose the library for this template' });
+      if (!destination) return;
+      if (destination.project && !vscode.workspace.isTrusted) throw new Error('Trust the workspace before saving project templates.');
+      const storage = templateStorage(destination.root);
+      const existing = new Set((await storage.list()).map((name) => name.replace(/\.json$/u, '')));
+      const template = createPersonalTemplate(title, source, fileName);
+      if (existing.has(template.id)) {
+        const copyId = nextTemplateId(template.id, existing);
+        const choice = await vscode.window.showWarningMessage(
+          `A template named “${template.id}” already exists. Save a separate copy as “${copyId}”?`,
+          { modal: true }, 'Save copy',
+        );
+        if (choice !== 'Save copy') return;
+        template.id = copyId;
+      }
+      await savePersonalTemplate(storage, template);
+      await this.postGalleryData();
+      void vscode.window.showInformationMessage(`Saved “${template.title}” to ${destination.label}.`);
+    } catch (error: unknown) {
+      void vscode.window.showErrorMessage(`Could not save template: ${errorMessageOf(error)}`);
+    } finally {
+      this.templateWritePending = false;
+    }
   }
 
   private async examples(): Promise<DiagramExample[]> {
@@ -461,4 +620,50 @@ function fileNameOf(uri: vscode.Uri): string {
 
 function errorMessageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function templateStorage(root: vscode.Uri): PersonalTemplateStorage {
+  const assertDirectory = async (): Promise<boolean> => {
+    try {
+      const stat = await vscode.workspace.fs.stat(root);
+      if ((stat.type & vscode.FileType.SymbolicLink) !== 0 || (stat.type & vscode.FileType.Directory) === 0) {
+        throw new Error('The template library must be a directory, not a symbolic link.');
+      }
+      return true;
+    } catch (error: unknown) {
+      if (error instanceof vscode.FileSystemError && error.code === 'FileNotFound') return false;
+      throw error;
+    }
+  };
+  return {
+    list: async () => {
+      if (!await assertDirectory()) return [];
+      return (await vscode.workspace.fs.readDirectory(root))
+        .filter(([name, type]) => name.endsWith('.json') && (type & vscode.FileType.File) !== 0 && (type & vscode.FileType.SymbolicLink) === 0)
+        .map(([name]) => name);
+    },
+    read: async (fileName) => {
+      const uri = vscode.Uri.joinPath(root, fileName);
+      const stat = await vscode.workspace.fs.stat(uri);
+      if ((stat.type & vscode.FileType.SymbolicLink) !== 0 || (stat.type & vscode.FileType.File) === 0) throw new Error('Only regular template files can be loaded.');
+      if (stat.size > MAX_TEMPLATE_FILE_BYTES) throw new Error('Template file exceeds 1.1 MB.');
+      return vscode.workspace.fs.readFile(uri);
+    },
+    createExclusive: async (fileName, bytes) => {
+      await assertDirectory();
+      await vscode.workspace.fs.createDirectory(root);
+      const target = vscode.Uri.joinPath(root, fileName);
+      const temporary = vscode.Uri.joinPath(root, `.template-${randomUUID()}.tmp`);
+      try {
+        await vscode.workspace.fs.writeFile(temporary, bytes);
+        await vscode.workspace.fs.rename(temporary, target, { overwrite: false });
+      } finally {
+        try {
+          await vscode.workspace.fs.delete(temporary);
+        } catch {
+          // Renaming normally consumed the temporary file; leave the saved file intact.
+        }
+      }
+    },
+  };
 }

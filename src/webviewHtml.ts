@@ -157,15 +157,27 @@ export function createWebviewHtml(options: WebviewHtmlOptions): string {
       </header>
       <div class="source-editor">
         <pre class="source-editor__lines" id="source-line-numbers" aria-hidden="true">1</pre>
+        <div class="source-editor__text">
+        <pre class="source-editor__highlight" id="source-highlight" aria-hidden="true"></pre>
         <textarea
           class="source-editor__input"
           id="source-editor"
           aria-label="Mermaid source editor"
+          aria-describedby="source-editor-help source-diagnostic"
+          aria-autocomplete="list"
+          aria-controls="source-completions"
+          aria-expanded="false"
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
           wrap="off"
         ></textarea>
+        <div class="source-editor__completions" id="source-completions" role="listbox" aria-label="Mermaid completions" hidden></div>
+        </div>
+      </div>
+      <div class="source-pane__tools">
+        <span id="source-editor-help">Ctrl+Space suggestions · Tab indent · Esc then Tab leaves editor · F8 error</span>
+        <button id="source-diagnostic" type="button" aria-live="polite" title="Go to syntax error" hidden></button>
       </div>
     </section>
     <div

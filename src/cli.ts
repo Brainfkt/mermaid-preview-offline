@@ -2,8 +2,6 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { Buffer } from 'node:buffer';
 import { existsSync } from 'node:fs';
 import {
-  lstat,
-  mkdir,
   mkdtemp,
   readFile,
   readdir,
@@ -12,12 +10,22 @@ import {
   stat,
   writeFile,
 } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { release, tmpdir } from 'node:os';
 import { basename, dirname, extname, isAbsolute, join, parse, relative, resolve } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { CdpClient, withTimeout } from './cdpClient';
+import {
+  CLI_CACHE_FILE_NAME,
+  CliExportCache,
+  assertCliOutputPaths,
+  canReuseCliExport,
+  hashCliFile,
+  hashCliValue,
+  writeCliFileAtomically,
+} from './cliIncremental';
+import { cliWatchSnapshot, runCliWatch } from './cliWatch';
 import {
   DEFAULT_DIAGRAM_FONT_FAMILY,
   isDiagramFontFamily,
@@ -26,6 +34,7 @@ import {
 import {
   DEFAULT_EXPORT_SETTINGS,
   EXPORT_FORMATS,
+  createExportFileName,
   normalizeExportSettings,
   sanitizeFileName,
   type ExportSettings,
@@ -50,11 +59,13 @@ interface CliOptions {
   browser?: string;
   fontFamily: DiagramFontFamily;
   input: string;
+  incremental: boolean;
   json: boolean;
   output?: string;
   profile?: string;
   resourcePolicy: ResourcePolicy;
   settings: ExportSettings;
+  watch: boolean;
 }
 
 interface RenderFile {
@@ -80,17 +91,19 @@ void main().catch((error: unknown) => {
 });
 
 async function main(): Promise<void> {
-  const options = await parseArguments(process.argv.slice(2));
+  const args = process.argv.slice(2);
+  const options = await parseArguments(args);
   const inputPath = resolve(options.input);
   const inputStats = await stat(inputPath);
-  const inputRoot = await realpath(inputStats.isDirectory() ? inputPath : dirname(inputPath));
-  const files = inputStats.isDirectory()
+  const directoryInput = inputStats.isDirectory();
+  const inputRoot = await realpath(directoryInput ? inputPath : dirname(inputPath));
+  const initialFiles = directoryInput
     ? await collectMermaidFiles(inputPath)
     : [{ relativeDirectory: '', uri: inputPath }];
-  if (files.length === 0) {
+  if (initialFiles.length === 0 && !options.watch) {
     throw new Error('No .mmd or .mermaid files were found.');
   }
-  for (const file of files) {
+  for (const file of initialFiles) {
     if (!/\.(?:mmd|mermaid)$/iu.test(file.uri)) {
       throw new Error(`Unsupported input file: ${file.uri}`);
     }
@@ -98,35 +111,172 @@ async function main(): Promise<void> {
 
   const output = options.output
     ? resolve(options.output)
-    : files.length > 1
+    : initialFiles.length > 1 || (options.watch && directoryInput)
       ? join(inputPath, 'exports')
       : dirname(inputPath);
-  const browser = await startBrowser(options.browser);
-  const exported: Array<{ height: number; output: string; width: number }> = [];
-  try {
+  // A watched folder remains a folder when files are added or removed.
+  const outputIsFile = !(options.watch && directoryInput) && initialFiles.length === 1 && Boolean(extname(output));
+  const cachePath = join(outputIsFile ? dirname(output) : output, CLI_CACHE_FILE_NAME);
+  const cache = options.incremental ? await CliExportCache.load(cachePath) : undefined;
+  const engineIdentity = options.incremental ? await cliEngineIdentity(options.browser) : undefined;
+  const controller = new AbortController();
+  let browser: BrowserSession | undefined;
+  let browserStarting: Promise<BrowserSession> | undefined;
+  let dependencies = new Set<string>();
+  let hasRemoteImages = false;
+  let previousSources = new Set(initialFiles.map((file) => file.uri));
+  const stop = (): void => {
+    controller.abort();
+    // Close the renderer to interrupt an in-flight render as well as idle waits.
+    if (browser) void browser.close().catch(() => undefined);
+  };
+  process.once('SIGINT', stop);
+  process.once('SIGTERM', stop);
+  const getBrowser = async (): Promise<BrowserSession> => {
+    browserStarting ??= startBrowser(options.browser);
+    browser = await browserStarting;
+    if (controller.signal.aborted) {
+      await browser.close();
+      throw new Error('Export stopped.');
+    }
+    return browser;
+  };
+  const reportError = (error: unknown): void => {
+    const message = errorMessageOf(error);
+    if (options.json) console.log(JSON.stringify({ event: 'error', error: message }));
+    else console.error(`mermaid-preview-offline: ${message}`);
+  };
+
+  const run = async (): Promise<void> => {
+    // Re-read the profile on every cycle; explicit command-line overrides still win.
+    const current = options.watch ? await parseArguments(args) : options;
+    const files = directoryInput
+      ? await collectMermaidFiles(inputPath)
+      : existsSync(inputPath) ? [{ relativeDirectory: '', uri: inputPath }] : [];
+    const sources = new Set(files.map((file) => file.uri));
+    const removed = [...previousSources].filter((source) => !sources.has(source));
+    previousSources = sources;
+    cache?.forgetSources(new Set(removed));
+    const exported: Array<{ height: number; output: string; width: number }> = [];
+    const skipped: Array<{ height: number; output: string; width: number }> = [];
+    const errors: Array<{ input: string; error: string }> = [];
+    dependencies = new Set<string>();
+    hasRemoteImages = false;
+    const protectedInputs = [...sources, ...(current.profile ? [resolve(current.profile)] : [])];
+    // Read just the bounded source text to protect every local image before any
+    // output is written, including images referenced by a later input file.
     for (const file of files) {
-      const source = await loadSourceWithImages(file.uri, inputRoot, options.resourcePolicy);
-      const artifact = await browser.render({
-        fileName: basename(file.uri),
-        fontFamily: options.fontFamily,
-        maxRasterPixels: options.resourcePolicy.limits.maxRasterPixels,
-        settings: options.settings,
-        source,
-        sourceUri: pathToFileURL(file.uri).toString(),
-      });
-      const target = outputPathFor(output, files.length, file, artifact.fileName);
-      await mkdir(dirname(target), { recursive: true });
-      await writeOutputFile(target, Buffer.from(artifact.dataBase64, 'base64'));
-      exported.push({ height: artifact.height, output: target, width: artifact.width });
-      if (!options.json) {
-        console.log(`${target} (${artifact.width} × ${artifact.height})`);
+      try {
+        const raw = await readCliSource(file.uri, current.resourcePolicy);
+        for (const match of raw.matchAll(/\bimg\s*:\s*(["'])([^"'\r\n]+)\1/gu)) {
+          const reference = match[2];
+          if (!reference || !shouldResolveCliImage(reference, current.resourcePolicy) || /^https:/iu.test(reference)) continue;
+          const path = cliLocalImagePath(file.uri, reference);
+          if (path) protectedInputs.push(path);
+        }
+      } catch (error: unknown) {
+        // Per-file loading below reports invalid/missing sources in watch mode.
+        if (!options.watch) throw error;
       }
     }
+    const plannedTargets = files.map((file) => outputPathFor(output, outputIsFile ? 1 : 2, file,
+      createExportFileName({ fileName: basename(file.uri), settings: current.settings })));
+    await assertCliOutputPaths(plannedTargets, protectedInputs, cache ? cachePath : undefined);
+    for (const [fileIndex, file] of files.entries()) {
+      if (controller.signal.aborted) break;
+      try {
+        const loaded = await loadSourceWithImages(file.uri, inputRoot, current.resourcePolicy, dependencies);
+        hasRemoteImages ||= loaded.hasRemoteImages;
+        const fingerprint = hashCliValue({
+          engineIdentity,
+          fontFamily: current.fontFamily,
+          resourcePolicy: current.resourcePolicy,
+          settings: current.settings,
+          source: loaded.source,
+          sourceHash: loaded.sourceHash,
+          sourceUri: pathToFileURL(file.uri).toString(),
+        });
+        const expectedName = createExportFileName({ fileName: basename(file.uri), settings: current.settings });
+        const expectedTarget = outputPathFor(output, outputIsFile ? 1 : 2, file, expectedName);
+        const cached = canReuseCliExport(current.settings)
+          ? await cache?.lookup(file.uri, expectedTarget, fingerprint)
+          : undefined;
+        if (cached) {
+          skipped.push({ height: cached.height, output: cached.output, width: cached.width });
+          if (!current.json) console.log(`${cached.output} (up to date)`);
+          continue;
+        }
+        const activeBrowser = await getBrowser();
+        const artifact = await withTimeout(activeBrowser.render({
+          fileName: basename(file.uri),
+          fontFamily: current.fontFamily,
+          maxRasterPixels: current.resourcePolicy.limits.maxRasterPixels,
+          settings: current.settings,
+          source: loaded.source,
+          sourceUri: pathToFileURL(file.uri).toString(),
+        }), 60_000, `Rendering timed out after 60 seconds: ${file.uri}`);
+        if (controller.signal.aborted) break;
+        const target = outputPathFor(output, outputIsFile ? 1 : 2, file, artifact.fileName);
+        if (target !== plannedTargets[fileIndex]) {
+          // A date/time template may cross a clock boundary while rendering.
+          plannedTargets[fileIndex] = target;
+          await assertCliOutputPaths(plannedTargets, protectedInputs, cache ? cachePath : undefined);
+        }
+        const bytes = Buffer.from(artifact.dataBase64, 'base64');
+        await writeCliFileAtomically(target, bytes);
+        cache?.remember({
+          fingerprint,
+          height: artifact.height,
+          output: target,
+          outputHash: await hashCliFile(target),
+          source: file.uri,
+          width: artifact.width,
+        });
+        exported.push({ height: artifact.height, output: target, width: artifact.width });
+        if (!current.json) console.log(`${target} (${artifact.width} × ${artifact.height})`);
+      } catch (error: unknown) {
+        if (controller.signal.aborted) break;
+        if (!options.watch) throw error;
+        errors.push({ input: file.uri, error: errorMessageOf(error) });
+        if (!current.json) console.error(`${file.uri}: ${errorMessageOf(error)}`);
+        // A terminated renderer or timeout must not poison later watch cycles.
+        await browser?.close().catch(() => undefined);
+        browser = undefined;
+        browserStarting = undefined;
+      }
+    }
+    await cache?.save();
+    if (options.json && !controller.signal.aborted) {
+      console.log(options.watch
+        ? JSON.stringify({ event: 'cycle', exported, skipped, errors, removed })
+        : JSON.stringify(options.incremental ? { exported, skipped } : { exported }, undefined, 2));
+    } else if (options.watch && removed.length > 0) {
+      for (const source of removed) console.log(`${source} (removed; existing exports kept)`);
+    }
+  };
+  try {
+    if (options.watch) {
+      if (!options.json) console.log(`Watching ${inputPath}; press Ctrl+C to stop.`);
+      await runCliWatch({
+        onError: reportError,
+        run,
+        signal: controller.signal,
+        snapshot: async () => {
+          const files = directoryInput ? await collectMermaidFiles(inputPath) : [{ uri: inputPath }];
+          return cliWatchSnapshot([
+            ...directoryInput ? [] : [inputPath],
+            ...files.map((file) => file.uri),
+            ...dependencies,
+            ...(options.profile ? [resolve(options.profile)] : []),
+          ], hasRemoteImages || options.resourcePolicy.allowRemoteImages);
+        },
+      });
+    } else await run();
   } finally {
-    await browser.close();
-  }
-  if (options.json) {
-    console.log(JSON.stringify({ exported }, undefined, 2));
+    process.removeListener('SIGINT', stop);
+    process.removeListener('SIGTERM', stop);
+    if (browserStarting) await (await browserStarting.catch(() => undefined))?.close();
+    if (options.watch && options.json) console.log(JSON.stringify({ event: 'stopped' }));
   }
 }
 
@@ -160,6 +310,8 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
   let browser: string | undefined;
   let fontFamily: DiagramFontFamily = DEFAULT_DIAGRAM_FONT_FAMILY;
   let json = false;
+  let incremental = false;
+  let watch = false;
   let allowPrivateNetwork = false;
   const additionalLocalRoots: string[] = [];
   const remoteBaseInputs: string[] = [];
@@ -246,6 +398,8 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
         break;
       case '--profile': profile = takeValue(); break;
       case '--json': json = true; break;
+      case '--incremental': incremental = true; break;
+      case '--watch': watch = true; incremental = true; break;
       default: throw new Error(`Unknown argument: ${argument}`);
     }
   }
@@ -268,7 +422,7 @@ async function parseArguments(args: string[]): Promise<CliOptions> {
     allowedRemoteBases,
     limits: normalizeResourceLimits(limitInput),
   };
-  return { browser, fontFamily, input, json, output, profile, resourcePolicy, settings };
+  return { browser, fontFamily, input, incremental, json, output, profile, resourcePolicy, settings, watch };
 }
 
 async function startBrowser(preferredExecutable?: string): Promise<BrowserSession> {
@@ -314,11 +468,15 @@ async function startBrowser(preferredExecutable?: string): Promise<BrowserSessio
       15_000,
       'Chromium did not initialize its debugging connection within 15 seconds.',
     );
+    let closing: Promise<void> | undefined;
     return {
-      async close(): Promise<void> {
-        connectedClient.close();
-        await stopBrowser(browserProcess);
-        await rm(temporaryDirectory, { force: true, recursive: true });
+      close(): Promise<void> {
+        closing ??= (async () => {
+          connectedClient.close();
+          await stopBrowser(browserProcess);
+          await rm(temporaryDirectory, { force: true, recursive: true });
+        })();
+        return closing;
       },
       async render(request): Promise<SerializedExportArtifact> {
         const expression = `window.mermaidOfflineCli.render(${JSON.stringify(request)})`;
@@ -406,7 +564,10 @@ function findBrowserExecutable(): string | undefined {
 }
 
 async function collectMermaidFiles(root: string, directory = root): Promise<RenderFile[]> {
-  const entries = await readdir(directory, { withFileTypes: true });
+  const entries = await readdir(directory, { withFileTypes: true }).catch((error: unknown) => {
+    if (error instanceof Error && 'code' in error && error.code === 'ENOENT') return [];
+    throw error;
+  });
   const files: RenderFile[] = [];
   for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
     const entryPath = join(directory, entry.name);
@@ -423,7 +584,24 @@ async function loadSourceWithImages(
   file: string,
   root: string,
   policy: ResourcePolicy,
-): Promise<string> {
+  dependencies: Set<string>,
+): Promise<{ hasRemoteImages: boolean; source: string; sourceHash: string }> {
+  const source = await readCliSource(file, policy);
+  let hasRemoteImages = false;
+  const inlined = await inlineImageReferences(
+    source,
+    (reference) => {
+      hasRemoteImages ||= /^https:/iu.test(reference);
+      return loadCliImage(file, root, reference, policy, dependencies);
+    },
+    (reference) => shouldResolveCliImage(reference, policy),
+    policy.limits,
+  );
+  assertOfflineImageReferences(inlined);
+  return { hasRemoteImages, source: inlined, sourceHash: hashCliValue(source) };
+}
+
+async function readCliSource(file: string, policy: ResourcePolicy): Promise<string> {
   const sourceMetadata = await stat(file);
   if (sourceMetadata.size > policy.limits.maxSourceBytes) {
     throw new Error(
@@ -433,14 +611,10 @@ async function loadSourceWithImages(
     );
   }
   const source = await readFile(file, 'utf8');
-  const inlined = await inlineImageReferences(
-    source,
-    (reference) => loadCliImage(file, root, reference, policy),
-    (reference) => shouldResolveCliImage(reference, policy),
-    policy.limits,
-  );
-  assertOfflineImageReferences(inlined);
-  return inlined;
+  if (Buffer.byteLength(source) > policy.limits.maxSourceBytes) {
+    throw new Error(`Source file grew beyond the render limit while reading: ${file}`);
+  }
+  return source;
 }
 
 async function loadCliImage(
@@ -448,6 +622,7 @@ async function loadCliImage(
   inputRoot: string,
   reference: string,
   policy: ResourcePolicy,
+  dependencies: Set<string>,
 ): Promise<{ bytes: Uint8Array; mimeType: string } | undefined> {
   const remoteUrl = policy.allowRemoteImages
     ? allowedRemoteImageUrl(reference, policy.allowedRemoteBases)
@@ -462,15 +637,15 @@ async function loadCliImage(
   }
 
   const mimeType = imageMimeType(reference);
-  const referencePath = reference.split(/[?#]/u, 1)[0];
-  if (!mimeType || !referencePath) return undefined;
+  if (!mimeType) return undefined;
   try {
-    const requestedPath = referencePath.startsWith('file:')
-      ? fileURLToPath(referencePath)
-      : isAbsolute(referencePath)
-        ? decodeURIComponent(referencePath)
-        : resolve(dirname(file), decodeURIComponent(referencePath));
+    const requestedPath = cliLocalImagePath(file, reference);
+    if (!requestedPath) return undefined;
+    // Keep unresolved paths too: creating a previously missing image must recover
+    // an errored watch export without editing its Mermaid source again.
+    dependencies.add(requestedPath);
     const resource = await realpath(requestedPath);
+    dependencies.add(resource);
     const allowedRoots = [
       await realpath(inputRoot),
       ...policy.allowAdditionalLocalRoots
@@ -485,6 +660,16 @@ async function loadCliImage(
   } catch {
     return undefined;
   }
+}
+
+function cliLocalImagePath(file: string, reference: string): string | undefined {
+  const referencePath = reference.split(/[?#]/u, 1)[0];
+  if (!referencePath) return undefined;
+  return referencePath.startsWith('file:')
+    ? fileURLToPath(referencePath)
+    : isAbsolute(referencePath)
+      ? decodeURIComponent(referencePath)
+      : resolve(dirname(file), decodeURIComponent(referencePath));
 }
 
 function shouldResolveCliImage(reference: string, policy: ResourcePolicy): boolean {
@@ -517,19 +702,26 @@ function isPathInside(root: string, candidate: string): boolean {
   return relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
 }
 
-async function writeOutputFile(target: string, bytes: Uint8Array): Promise<void> {
-  try {
-    const existing = await lstat(target);
-    if (existing.isSymbolicLink()) {
-      throw new Error(`Refusing to write an export through a symbolic link: ${target}`);
+async function cliEngineIdentity(preferredBrowser?: string): Promise<string> {
+  const bundles = [join(__dirname, 'cli-renderer.js')];
+  const chunks = join(__dirname, 'chunks');
+  if (existsSync(chunks)) {
+    for (const entry of (await readdir(chunks)).sort()) {
+      if (entry.endsWith('.js')) bundles.push(join(chunks, entry));
     }
-    if (!existing.isFile()) {
-      throw new Error(`The export destination is not a regular file: ${target}`);
-    }
-  } catch (error: unknown) {
-    if (!isNodeError(error) || error.code !== 'ENOENT') throw error;
   }
-  await writeFile(target, bytes);
+  const executable = preferredBrowser ? resolve(preferredBrowser) : findBrowserExecutable();
+  const browserMetadata = executable ? await stat(executable, { bigint: true }) : undefined;
+  const hashes: string[] = [];
+  for (const bundle of bundles) hashes.push(await hashCliFile(bundle));
+  return hashCliValue({
+    browser: executable,
+    browserModified: browserMetadata?.mtimeNs.toString(),
+    browserSize: browserMetadata?.size.toString(),
+    bundles: hashes,
+    platform: [process.platform, process.arch, release()],
+    version: await packageVersion(),
+  });
 }
 
 async function packageVersion(): Promise<string> {
@@ -540,10 +732,6 @@ async function packageVersion(): Promise<string> {
     throw new Error('The extension package version is unavailable.');
   }
   return manifest.version;
-}
-
-function isNodeError(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
 }
 
 function isSerializedExportArtifact(value: unknown): value is SerializedExportArtifact {
@@ -605,7 +793,9 @@ Options:
       --max-raster-megapixels <n>
                              Custom raster budget, capped at 64 megapixels
       --browser <path>       Chrome, Chromium, or Edge executable
-      --json                 Print a machine-readable result
+      --incremental          Skip intact exports with unchanged source, images, and settings
+      --watch                Watch sources, images, and profile; implies --incremental
+      --json                 Print JSON (one JSON object per cycle with --watch)
   -h, --help                 Show this help
   -v, --version              Show the version`;
 }
