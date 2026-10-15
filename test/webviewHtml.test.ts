@@ -208,6 +208,11 @@ void test('navigation controls use one internal editor surface and expose focuse
   assert.match(html, /id="editor-layout"/u);
   assert.match(html, /id="source-editor"/u);
   assert.match(html, /id="source-line-numbers"/u);
+  assert.match(html, /id="source-highlight" aria-hidden="true"/u);
+  assert.match(html, /id="source-completions" role="listbox"/u);
+  assert.match(html, /aria-controls="source-completions"/u);
+  assert.match(html, /id="source-diagnostic"/u);
+  assert.match(html, /Esc then Tab leaves editor/u);
   assert.match(html, /id="split-handle"/u);
   assert.match(html, /id="open-native-source"/u);
   assert.match(html, /<textarea[\s\S]*aria-label="Mermaid source editor"/u);

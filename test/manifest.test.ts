@@ -146,6 +146,7 @@ void test('preview commands expose the three internal layouts and full Source ed
     'mermaidPreviewOffline.export',
     'mermaidPreviewOffline.exportFolder',
     'mermaidPreviewOffline.newDiagram',
+    'mermaidPreviewOffline.saveAsTemplate',
     'mermaidPreviewOffline.browseExamples',
     'mermaidPreviewOffline.compareGitVersions',
     'mermaidPreviewOffline.previewVisualDiff',
@@ -259,6 +260,7 @@ void test('v0.6 project workflows expose Diagram Studio and visual Git diff comm
   const commands = manifest.contributes.commands.map((entry) => entry.command);
   const projectCommands = [
     'mermaidPreviewOffline.newDiagram',
+    'mermaidPreviewOffline.saveAsTemplate',
     'mermaidPreviewOffline.browseExamples',
     'mermaidPreviewOffline.compareGitVersions',
     'mermaidPreviewOffline.previewVisualDiff',
