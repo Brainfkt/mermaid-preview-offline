@@ -39,7 +39,22 @@ plug-ins, icons, and supported local assets all ship inside the extension.
 Mermaid blocks embedded in Markdown, MDX, and AsciiDoc can be previewed one at
 a time or together in a live document view.
 
-## What's new in 1.3.0
+## What's new in 1.3.1
+
+Edit directly in **Beside** or **Above** with local syntax coloring,
+indentation, keyword and identifier suggestions, and source-linked render
+errors. Visual Git comparisons now identify node and link changes for supported
+flowcharts. Documentation previews render visible and nearby diagrams first,
+while presentation renders the active slide on demand.
+
+Save reusable personal or project templates and mark favorites in Diagram
+Studio. For documentation builds, use the CLI's `--incremental` option to reuse
+current exports or `--watch` to update them as their inputs change. The
+[English](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md)
+and [French](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.fr.md)
+guides cover the workflows and their limits.
+
+### Earlier 1.3.0 improvements
 
 Version 1.3.0 keeps rendering local and offline by default while adding explicit
 opt-ins for images stored outside the workspace or below allowlisted HTTPS base
@@ -121,10 +136,11 @@ binding can be changed in VS Code's Keyboard Shortcuts settings.
 Drag the internal separator in Beside or Above; the split ratio is restored per
 file.
 
-The integrated source surface supports direct editing, line navigation,
-conflict-safe synchronization, and save. It intentionally remains lightweight:
-select **Source only** or **Full editor** for VS Code completion, syntax
-coloring, formatting, snippets, quick fixes, diagnostics, or rename. Every
+The integrated source surface supports local syntax coloring, indentation,
+keyword and identifier suggestions, source-linked render errors, line navigation,
+conflict-safe synchronization, and save. Select **Source only** or **Full
+editor** for the full VS Code language tools, including formatting, snippets,
+hover help, quick fixes, and rename. Every
 preview stays pinned to its file, and a preview copied to another
 VS Code window keeps an independent mode without disturbing the original.
 Press `P` with the preview focused to cycle Preview only, Beside, and Above.
@@ -248,7 +264,8 @@ SVG. Neither action opens the professional export dialog.
 - One workspace-wide Preview/Beside/Above selection plus a Source-only handoff
   to VS Code's full text editor.
 - Per-file draggable split ratios without VS Code editor-group mutations.
-- Versioned, conflict-safe source editing with a one-click full-editor escape hatch.
+- Versioned, conflict-safe source editing with local coloring, indentation,
+  completion, and render-error navigation inside Beside and Above.
 - Fit-to-window, incremental zoom, drag-to-pan, and an optional minimap.
 - Exact UTF-8 file size and natural rendered diagram dimensions in the footer.
 - Eleven workspace-wide classic and modern appearances in a visual gallery.
@@ -262,16 +279,19 @@ SVG. Neither action opens the professional export dialog.
 - A modern glass interface that remains native to VS Code themes.
 - Live export preview with reusable profiles.
 - PNG, WebP, PDF, optimized SVG, and original SVG export.
-- Direct PNG clipboard copy, recursive folder export, and a task-ready offline CLI.
+- Direct PNG clipboard copy, recursive folder export, and an offline CLI with
+  incremental exports and watch mode.
 - Configurable DPI, scale, margin, transparent or colored background, export
   theme, metadata, and file name templates.
-- Diagram Studio with eight customizable templates and all 44 bundled examples.
+- Diagram Studio with eight customizable templates, reusable personal and
+  project templates, favorites, and all 44 bundled examples.
 - Local SQL-schema generation of Mermaid entity-relationship diagrams.
 - Local `package.json` dependency-graph generation.
-- Rendered Git comparisons with side-by-side and color-coded overlay views.
+- Rendered Git comparisons with side-by-side and color-coded overlay views,
+  plus clickable node/link changes for supported flowcharts.
 - Preview the Mermaid block under the cursor in Markdown, MDX, or AsciiDoc.
-- Render every Mermaid block in a live document view with independent pan,
-  pointer-centered zoom, trackpad pinch, source navigation, and restored state.
+- Render Mermaid blocks as they approach the document viewport, with independent
+  pan, pointer-centered zoom, trackpad pinch, source navigation, and restored state.
 - Resize documentation diagrams vertically and cap their height through settings.
 - Recognize fenced and `::: mermaid` Markdown/MDX blocks, with configurable
   Mermaid language identifiers.
@@ -295,6 +315,13 @@ SVG. Neither action opens the professional export dialog.
 - Workspace-aware local assets in multi-root and remote workspaces.
 
 ## Mermaid-aware editing
+
+Beside and Above support **Tab**/**Shift+Tab** indentation, indentation on
+**Enter**, and local keyword/identifier suggestions as you type or press
+**Ctrl+Space**. Use arrow keys to select a suggestion, **Enter** or **Tab** to
+accept it, and **Escape** to dismiss it. **F8** reveals a render error in the
+source. Coloring and suggestions switch off above 150,000 characters; editing
+remains available.
 
 The native text editor provides declaration completion, contextual help,
 snippets, diagnostics, quick fixes, formatting, node insertion, missing-ID
@@ -428,6 +455,7 @@ dimension, timeout, and serialized-message ceilings remain internal safeguards.
 | **Mermaid Preview: Export Diagram…** | Open the export preview and settings. |
 | **Mermaid Preview: Export Folder…** | Recursively export a selected folder from the Explorer or Command Palette. |
 | **Mermaid Preview: New Diagram from Template…** | Open Diagram Studio for templates and custom generation. |
+| **Mermaid Preview: Save Current Diagram as Template…** | Save the current Mermaid source to a personal or project library. |
 | **Mermaid Preview: Browse Example Gallery…** | Search and inspect the 44 bundled examples. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Generate an ER diagram from a local SQL schema. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate a dependency graph from a local package manifest. |
@@ -449,6 +477,15 @@ result, optionally edit the generated Mermaid source, and create the file in the
 workspace. **Mermaid Preview: Browse Example Gallery…** switches directly to a
 searchable visual catalog of all 44 examples shipped with the extension.
 
+Use **Mermaid Preview: Save Current Diagram as Template…** to reuse the current
+source, including unsaved edits, or **Save as template…** inside Studio. Choose
+**Personal library** for local reuse across workspaces, or **Project** to save
+JSON files under `.mermaid-templates/` for sharing through Git. Project templates
+require a trusted workspace. Filter by origin or **Favorites**, mark cards with
+the star button, and use **Refresh** after editing or pulling template files.
+Supported local Mermaid images are embedded when saving from a known source
+file; unresolved or external image references must be embedded or removed first.
+
 ![Diagram Studio showing its eight customizable Mermaid templates and a live entity-relationship preview](https://raw.githubusercontent.com/Brainfkt/mermaid-preview-offline/main/media/screenshots/gallery-templates.png)
 
 For an existing `.mmd` or `.mermaid` file, run **Mermaid Preview: Compare Git
@@ -457,6 +494,14 @@ the before and after revisions, including the current working tree, then compare
 their rendered diagrams side by side or as a color-coded overlay. The view also
 shows added, changed, and removed source-line counts and provides synchronized
 zoom.
+
+For supported flowcharts, **Diagram changes** also lists node and link additions,
+modifications, and removals. Select an entry to locate it in the rendered
+diagrams. Nodes are matched by identifier, so relabeling a node is a modification
+while renaming its identifier is a removal and an addition. Styling and layout
+changes remain visible in the rendered comparison but are excluded from these
+structural counts. Unsupported or ambiguous syntax shows an explicit fallback
+message and keeps the existing visual comparison.
 
 When a Mermaid file is already open in VS Code's text diff editor, select
 **Mermaid Preview: Preview Diff Visually** from the editor title bar to render
@@ -476,12 +521,17 @@ restoration. Native resizing follows the built-in
 `markdown-mermaid.resizable` and `markdown-mermaid.maxHeight` settings.
 
 Place the cursor inside a Mermaid block and run **Mermaid Preview: Preview Block
-Under Cursor**. To render every diagram in the active document, use **Mermaid
+Under Cursor**. To browse every diagram in the active document, use **Mermaid
 Preview: Preview All Blocks in Document**. Both commands are available from the
 editor title and context menus. These focused views show only the diagram
 canvases in source order. Each top-right toolbar groups Zoom out, Fit, Zoom in,
 and the compact `</>` Source only action. The icon-labelled **Present** button stays
 fixed at bottom right.
+
+Visible diagrams render first, followed by nearby blocks as you scroll. Already
+rendered diagrams keep their SVG and viewport state; they are not discarded when
+scrolled out of view. Presentation renders its active slide on demand, and
+document export still includes every block, including blocks never displayed.
 
 Presentation inherits the complete workspace appearance. Use the palette button
 at bottom left to change the shared theme, density, pattern, or canvas
@@ -555,6 +605,9 @@ mpo examples/01-flowchart.mmd \
 
 mpo examples \
   --output exported --format pdf --theme neutral
+
+mpo examples --output exported --format svg --incremental
+mpo examples --output exported --format svg --watch
 ```
 
 `npm link` exposes the local executable as the short `mpo` command.
@@ -563,6 +616,14 @@ mpo examples \
 handles a non-standard browser location, and `--json` emits machine-readable
 output. `--help` lists every option. In CLI mode, `vscode` resolves to the
 system UI font stack because VS Code's CSS variable is unavailable.
+
+`--incremental` skips intact outputs when their source, embedded images,
+settings, and rendering environment match the local cache. `--watch` implies
+incremental mode and follows source files, local images, and the JSON profile;
+stop it with **Ctrl+C**. Deleted sources leave their existing exports in place.
+`--watch --json` emits one JSON event per line. See the
+[CLI guide](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md#incremental-exports-and-watch-mode)
+for cache behavior, remote-image refresh, and time-dependent exports.
 
 Use repeatable `--allow-local-root <path>` and `--allow-remote-base <https-url>`
 flags for external images. `--allow-private-network` separately enables private
@@ -639,15 +700,18 @@ npm run package:vsix
 ```
 
 The visual suite renders all 44 examples in light, dark, and high-contrast
-themes. The VSIX is generated in `artifacts/`. To debug the extension, open the
-repository in VS Code and launch **Run Mermaid Preview Offline** with `F5`.
+themes and checks the editor, semantic diffs, template library, documentation
+views, and CLI workflows. Run `npm run test:cli` to build and check incremental
+exports and watch mode separately. The VSIX is generated in `artifacts/`. To
+debug the extension, open the repository in VS Code and launch **Run Mermaid
+Preview Offline** with `F5`.
 
 ## Support
 
 Read the [complete user guide](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.md) or the
 [French guide](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/USER_GUIDE.fr.md) for workflows, configuration,
 compatibility, and troubleshooting. Maintainers preparing a release can use the
-[v1.1.2 performance review](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/PERFORMANCE.md).
+[performance and resource notes](https://github.com/Brainfkt/mermaid-preview-offline/blob/main/docs/PERFORMANCE.md).
 
 Found a bug or have an idea? Open a
 [GitHub issue](https://github.com/Brainfkt/mermaid-preview-offline/issues).

@@ -1,12 +1,13 @@
-# Performances et politique de ressources — version 1.3.0
+# Performances et politique de ressources — version 1.3.1
 
 Cette revue couvre les chemins d’exécution de l’aperçu VS Code, du Diagram
 Studio, des aperçus de documentation, des différences visuelles, des exports et
 de la CLI. Elle exclut volontairement la revue cyber, conformément au périmètre
-de la version 1.1.2. La version 1.3.0 conserve ces références historiques et
-ajoute une politique bornée pour les ressources locales et HTTPS facultatives.
+de la version 1.1.2. La version 1.3.1 conserve les références historiques et la
+politique bornée introduite en 1.3.0 pour les ressources locales et HTTPS
+facultatives.
 
-## Résultat
+## Mesures historiques — v1.1.2
 
 | Indicateur | Référence | v1.1.2 | Évolution |
 |---|---:|---:|---:|
@@ -26,6 +27,26 @@ la préparation des versions 1.1.0 et 1.1.2. Les quatre mesures propres à la
 1.1.2 comparent, sur la même machine, le chemin antérieur et le chemin optimisé.
 
 ## Correctifs appliqués
+
+### Priorité au contenu visible en 1.3.1
+
+- L’aperçu documentaire rend d’abord les blocs visibles, puis les blocs proches
+  du viewport. Les autres restent en attente jusqu’au défilement.
+- En présentation, la diapositive active passe avant les travaux différés. Les
+  diapositives non consultées ne sont pas rendues préventivement.
+- Les SVG déjà rendus restent présents hors écran ; cette optimisation réduit
+  le travail à l’ouverture, sans promettre de borner la mémoire totale du
+  document. Les blocs inchangés conservent leur SVG, leur zoom et leur position.
+- Les exports documentaires continuent à traiter tous les blocs, indépendamment
+  de leur visibilité dans l’aperçu.
+- L’éditeur intégré limite la coloration lexicale et les suggestions aux sources
+  de 150 000 caractères au maximum, sans interrompre l’édition des plus grandes.
+- Les exports CLI incrémentaux évitent un nouveau rendu lorsque les empreintes
+  des entrées, de l’environnement et de la sortie correspondent. Le cache disque
+  est borné à 4 096 entrées et 4 Mio ; il peut être recréé à partir des sources.
+- Le mode `--watch` réutilise le navigateur entre passes d’export et regroupe
+  les changements rapprochés. Ces comportements n’établissent pas, à eux seuls,
+  un gain temporel mesuré.
 
 ### Chargement et taille du paquet
 
@@ -141,7 +162,7 @@ d’images, le facteur d’échelle ou le DPI. L’édition du fichier reste pos
 - Le pipeline CI exécute la vérification sur macOS, Windows et Linux, puis les
   44 exemples dans trois familles de thème, soit 132 rendus.
 
-## Validation de release
+## Validation historique — v1.3.0
 
 - TypeScript : réussi.
 - ESLint : réussi.
@@ -158,3 +179,32 @@ Les tests de politique couvrent le code indépendant du réseau. Les connexions
 HTTPS réelles ne font pas partie de la suite unitaire : le chargeur les borne,
 épingle l’adresse DNS sélectionnée, revalide chaque redirection et rejette les
 destinations privées par défaut.
+
+## Validation de la version 1.3.1
+
+Validation locale du 15 octobre 2026 sur macOS, Node.js 22 et Chromium :
+
+- TypeScript, ESLint et les **225 tests unitaires** passent, sans test ignoré.
+- Les six scripts de la suite `test:visual`, exécutés séparément après build,
+  passent : 132 rendus (44 exemples dans trois thèmes), galerie/diff, modèles
+  personnels, documentation, redimensionnement Markdown et CLI incrémentale.
+- L’éditeur intégré est vérifié par saisie, complétion, indentation, annulation,
+  défilement et navigation vers une erreur. Le diff vérifie aussi les groupes,
+  les liens identifiés et le repli vers la comparaison visuelle.
+- La galerie de modèles et le diff sont contrôlés à 1280 × 800 et 390 × 844.
+  Le scénario documentaire à 1440 × 900 rend **3 cartes sur 24 initialement**,
+  puis les suivantes au défilement ; l’export inclut bien les 24 diagrammes.
+- Les dix groupes de scénarios CLI couvrent le cache persistant, les images,
+  les profils, la réparation d’une sortie altérée, les collisions, la reprise
+  après erreur et les arrêts SIGINT/SIGTERM.
+- `npm run package:vsix` réussit, y compris `verify` et le build de production.
+  Le JavaScript navigateur occupe **17,48 Mio sur le budget de 20 Mio**.
+- Le paquet `mermaid-preview-offline-1.3.1.vsix` contient **190 fichiers** et
+  **5 916 005 octets**. Ses deux manifestes indiquent bien la version 1.3.1 ;
+  aucune source map n’est embarquée.
+
+Ces vérifications utilisent les webviews avec une API VS Code simulée et le
+moteur CLI réel. L’installation du VSIX dans VS Code et les exécutions Windows
+et Linux restent des vérifications de publication distinctes. Les mesures
+historiques ci-dessus restent celles des versions indiquées ; aucun gain
+chiffré de latence n’est déduit de la seule réduction du travail effectué.

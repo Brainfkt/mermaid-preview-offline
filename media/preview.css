@@ -495,7 +495,7 @@ select:focus-visible {
 
 .source-editor {
   position: absolute;
-  inset: 73px 0 28px;
+  inset: 73px 0 56px;
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
   overflow: hidden;
@@ -510,6 +510,7 @@ body.toolbar-hidden .source-editor {
 }
 
 .source-editor__lines,
+.source-editor__highlight,
 .source-editor__input {
   height: 100%;
   margin: 0;
@@ -542,6 +543,14 @@ body.toolbar-hidden .source-editor {
   user-select: none;
 }
 
+.source-editor__text {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.source-editor__highlight,
 .source-editor__input {
   width: 100%;
   min-width: 0;
@@ -552,12 +561,130 @@ body.toolbar-hidden .source-editor {
   white-space: pre;
 }
 
+.source-editor__input {
+  position: relative;
+  display: block;
+}
+
+.source-editor__highlight {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.source-editor__input--highlighted {
+  color: transparent;
+  background: transparent;
+  caret-color: var(--vscode-editor-foreground);
+}
+
+.source-editor__highlight[hidden],
+.source-editor__completions[hidden],
+.source-pane__tools [hidden] {
+  display: none;
+}
+
+.source-editor__code-line--error {
+  background: color-mix(in srgb, var(--vscode-errorForeground, #d13438) 14%, transparent);
+  text-decoration: underline wavy var(--vscode-errorForeground, #d13438);
+  text-underline-offset: 3px;
+}
+
+.source-editor__line-number--error {
+  color: var(--vscode-errorForeground, #d13438);
+  font-weight: 700;
+}
+
+.source-token--keyword { color: #7952b3; }
+.source-token--string { color: #a31515; }
+.source-token--comment { color: #52734b; }
+.source-token--operator { color: #006b85; }
+.source-token--number { color: #16714a; }
+body.vscode-dark .source-token--keyword,
+body.vscode-high-contrast .source-token--keyword { color: #c792ea; }
+body.vscode-dark .source-token--string,
+body.vscode-high-contrast .source-token--string { color: #e5ad90; }
+body.vscode-dark .source-token--comment,
+body.vscode-high-contrast .source-token--comment { color: #95bf85; }
+body.vscode-dark .source-token--operator,
+body.vscode-high-contrast .source-token--operator { color: #89dceb; }
+body.vscode-dark .source-token--number,
+body.vscode-high-contrast .source-token--number { color: #b5cea8; }
+
+.source-pane__tools {
+  position: absolute;
+  inset: auto 0 28px;
+  display: flex;
+  height: 28px;
+  align-items: center;
+  padding-inline: 10px;
+  border-top: 1px solid var(--preview-border);
+  color: var(--preview-muted);
+  font-size: 10px;
+}
+
+.source-pane__tools > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#source-diagnostic {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  color: var(--vscode-errorForeground, #d13438);
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-editor__completions {
+  z-index: 2;
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  max-width: calc(100% - 16px);
+  max-height: min(220px, 65%);
+  overflow: auto;
+  border: 1px solid var(--vscode-editorSuggestWidget-border, var(--preview-border));
+  border-radius: 5px;
+  color: var(--vscode-editorSuggestWidget-foreground, var(--vscode-editor-foreground));
+  background: var(--vscode-editorSuggestWidget-background, var(--vscode-editor-background));
+  box-shadow: 0 3px 12px #0003;
+  font-size: 11px;
+}
+
+.source-editor__completions [role="option"] {
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.source-editor__completions [role="option"] span {
+  overflow: hidden;
+  opacity: .75;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-editor__completions [aria-selected="true"] {
+  color: var(--vscode-editorSuggestWidget-selectedForeground, var(--vscode-editor-foreground));
+  background: var(--vscode-editorSuggestWidget-selectedBackground, var(--preview-surface-hover));
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: -1px;
+}
+
 .source-editor__input:focus {
   box-shadow: inset 0 0 0 1px var(--vscode-focusBorder);
 }
 
 .source-editor__input::selection {
-  color: var(--vscode-editor-selectionForeground, inherit);
+  color: var(--vscode-editor-selectionForeground, var(--vscode-editor-foreground));
   background: var(--vscode-editor-selectionBackground);
 }
 

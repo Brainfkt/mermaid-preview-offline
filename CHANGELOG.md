@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.3.1
+
+- enriched the Beside/Above source editor with local lexical syntax coloring,
+  indentation, keyword and identifier suggestions, and source-linked render
+  errors while preserving conflict-safe editing, save, and the full-editor
+  handoff; large sources keep plain editing when highlighting is disabled;
+- added bounded semantic flowchart comparisons for node, group, and link
+  additions, removals, and modifications, with a clickable review list and
+  targeted highlighting; unsupported or ambiguous syntax explains its fallback
+  to rendered comparisons and source-line statistics;
+- prioritized visible and nearby documentation diagrams, rendered presentation
+  slides on demand, and retained rendered SVGs and unchanged viewport state;
+  documentation exports continue to include all blocks;
+- added personal and project template libraries, persistent favorites, origin
+  filters, refresh, and **Save Current Diagram as Template…**; project templates
+  use shareable `.mermaid-templates/*.json` files in trusted workspaces, and
+  supported local Mermaid images are embedded before template storage;
+- added opt-in CLI `--incremental` exports with input/output fingerprints and a
+  bounded persistent cache, plus `--watch` for source, local-image, and profile
+  changes, graceful shutdown, remote-image refresh, and JSON Lines events;
+- preserved existing exports when watched source files are deleted, and forced
+  fresh renders for metadata or date/time-dependent names on export passes;
+- rejected conflicting export paths before writing, including duplicate output
+  names and paths that overlap sources, profiles, images, or the export cache;
+- updated the roadmap, README, English and French guides, publishing examples,
+  and performance notes for 1.3.1 while retaining historical measurements.
+
 ## 1.3.0
 
 - kept diagram creation, editing, preview, and export account-free and fully

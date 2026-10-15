@@ -1,4 +1,4 @@
-# Mermaid Preview Offline 1.3.0 — User guide
+# Mermaid Preview Offline 1.3.1 — User guide
 
 [Lire ce guide en français](USER_GUIDE.fr.md).
 
@@ -7,11 +7,22 @@ project workspace for Mermaid diagrams. Rendering runs locally with the Mermaid
 engine and assets bundled in the extension. It does not require an account,
 cloud renderer, CDN, or telemetry service.
 
-This guide covers the complete 1.3.0 feature set. For exact Mermaid syntax and
+This guide covers the complete 1.3.1 feature set. For exact Mermaid syntax and
 stability, see the [44-example catalogue](../examples/README.md) and
 [compatibility matrix](../examples/COMPATIBILITY.md).
 
-## New in version 1.3.0
+## New in version 1.3.1
+
+- Beside and Above add local syntax coloring, indentation, keyword/identifier
+  completion, and source-linked render errors.
+- Visual Git comparisons list clickable node and link changes for supported
+  flowcharts, with an explicit explanation when semantic comparison is unavailable.
+- Documentation previews render visible and nearby blocks first; presentation
+  renders the active slide on demand.
+- Diagram Studio adds personal and project templates and favorites.
+- The CLI adds `--incremental` exports and `--watch` for automatic updates.
+
+### Earlier improvements
 
 Version 1.3.0 keeps the complete no-account, no-cloud, no-required-network
 workflow and adds explicit, machine-scoped options for exceptional resources:
@@ -110,12 +121,24 @@ editor group or alter unrelated tabs. Drag the internal separator to resize the
 pair; the ratio is restored with the file. Source only leaves the custom surface
 and opens VS Code's full text editor automatically.
 
-The source surface embedded in Beside and Above supports editing, line
-navigation, save, and conflict-safe synchronization. It is intentionally a
-lightweight textarea, so syntax coloring, completion, hover help, snippets,
-formatting, diagnostics, quick fixes, and rename remain in the full VS Code
-editor. Use **Source only** or **Full editor** whenever those features are
-needed.
+The source surface embedded in Beside and Above supports local syntax coloring,
+indentation, keyword and identifier suggestions, render-error navigation, line
+navigation, save, and conflict-safe synchronization. Use **Source only** or
+**Full editor** for VS Code's complete language tools, including hover help,
+snippets, formatting, quick fixes, and rename.
+
+- **Tab** adds two spaces of indentation; **Shift+Tab** removes indentation
+  from the current line or selection. **Enter** preserves indentation and adds
+  a level after supported declarations and block openers.
+- Suggestions appear while typing or with **Ctrl+Space**. Use the arrow keys,
+  then **Enter** or **Tab** to accept; **Escape** dismisses the list. Press
+  **Escape**, then **Tab** to move keyboard focus out of the source editor.
+- Render errors mark the source and gutter when Mermaid supplies a location.
+  Click the error message below the source, or press **F8**, to reach it.
+- Coloring is lexical, and completion uses bundled keywords and identifiers in
+  the current source. Above 150,000 characters, both are disabled to keep
+  editing responsive. This does not disable editing or the full VS Code editor.
+
 With the preview focused, press `P` repeatedly to cycle through Preview only,
 Beside, Above, and back to Preview only. From the Mermaid source editor, use
 `Alt+P` (`Option+P` on macOS) to enter or continue that cycle; plain `P` remains
@@ -518,6 +541,8 @@ mpo examples --output exported --format pdf --theme neutral --json
 | `--max-total-image-mib <n>` | Custom aggregate image budget, capped at 128 MiB. |
 | `--max-raster-megapixels <n>` | Custom raster/decode budget, capped at 64 megapixels. |
 | `--browser <path>` | Use a specific Chrome, Chromium, or Edge executable. |
+| `--incremental` | Reuse intact exports when inputs and rendering settings match. |
+| `--watch` | Watch sources, local images, and the JSON profile; implies `--incremental`. |
 | `--json` | Print machine-readable results. |
 | `-h, --help` | Show all options. |
 | `-v, --version` | Print the CLI version. |
@@ -525,6 +550,45 @@ mpo examples --output exported --format pdf --theme neutral --json
 For a folder input, the CLI recursively exports Mermaid files and preserves the
 source directory structure in the selected output folder. A non-zero exit code
 indicates argument, discovery, browser, render, or write failure.
+Duplicate output names and targets that overlap a source, profile, referenced
+image, or cache file are rejected before writing.
+
+### Incremental exports and watch mode
+
+```bash
+mpo examples --output build/diagrams --format svg --incremental
+mpo examples --output build/diagrams --profile export-profile.json --watch
+```
+
+`--incremental` records successful exports in `.mermaid-preview-cache.json`
+inside the output directory, or beside an explicitly named output file. A cached
+output is reused only if its contents are intact and its source, embedded
+images, export settings, font, resource policy, tool/bundle identity, and browser
+environment match. A missing or corrupt cache is rebuilt; deleting it does not
+delete source files or exports. Include this cache in your local ignore rules
+when the output directory is tracked.
+
+`--watch` implies incremental mode. It polls about once a second and combines
+nearby changes into one export pass. It follows added, changed, and removed
+Mermaid files, referenced local images, and the JSON profile. The profile is
+reloaded on change; explicit command-line flags still take precedence. A watched
+folder always writes to an output folder, defaulting to `<input>/exports`, even
+when the input is initially empty. Deleted sources are reported and removed
+from the cache, but their existing exports are preserved. An individual render
+failure does not stop other files; correcting the input triggers another attempt.
+Stop with **Ctrl+C**.
+
+Allowlisted remote images are refreshed on export passes; with
+`--allow-remote-base`, watch mode also checks them about every 30 seconds.
+`--metadata` and filename tokens `{date}` or `{time}` force a new render on each
+export pass. They do not cause a render on every watch poll.
+
+Without incremental mode, `--json` keeps its `{ "exported": [...] }` result.
+Incremental mode adds `skipped`. `--watch --json` emits JSON Lines: `cycle`
+events contain `exported`, `skipped`, `errors`, and `removed`; failures affecting
+a running watch cycle produce `error` events and graceful shutdown produces
+`stopped`. Startup failures, such as invalid arguments or an unreadable profile,
+are written to stderr and exit with a non-zero code.
 
 ## VS Code export tasks
 
@@ -600,6 +664,50 @@ The eight bundled templates are:
 
 ![Diagram Studio with eight customizable templates and a live entity-relationship preview](../media/screenshots/gallery-templates.png)
 
+### Personal and project templates
+
+Run **Mermaid Preview: Save Current Diagram as Template…** from a Mermaid file
+to save its current source, including unsaved edits. In Studio, **Save current
+diagram…** uses the current Mermaid document; **Save as template…** saves the
+source shown in the inspector. Enter a title and choose a destination:
+
+- **Personal library** stores templates in the extension's local storage and
+  makes them available across workspaces.
+- **Project · folder** stores `.mermaid-templates/<id>.json` in the selected
+  workspace folder. Add these files to Git to share them. Project template
+  loading and saving require a trusted workspace; the personal library remains
+  available in Restricted Mode.
+
+Use **All templates**, **Built-in**, **Personal**, **Project**, or **Favorites**
+to filter the gallery. The star on a card changes your local favorites without
+modifying project files. **Refresh** reloads files edited manually or updated
+through Git. Invalid files are skipped with a notice. If a title's identifier
+already exists, **Save copy** creates a suffixed identifier instead of replacing
+the template.
+
+Templates keep reusable Mermaid source without introducing parameter fields.
+When the source file is known, supported local Mermaid `img:` images are
+embedded under the active resource policy. Saving does not fetch remote images;
+external or unresolved references are rejected. HTML `<img>` images must already
+use embedded `data:image` URLs. Each library accepts up to 100 files and 10 MB,
+with up to 1 MB of UTF-8 source per template after image embedding. To create a
+project template manually, use the
+following structure in `.mermaid-templates/team-flow.json`:
+
+```json
+{
+  "version": 1,
+  "id": "team-flow",
+  "title": "Team flow",
+  "description": "Our standard review process",
+  "category": "Flowchart",
+  "fileName": "team-flow.mmd",
+  "source": "flowchart LR\n  Draft --> Review --> Publish\n"
+}
+```
+
+### Examples and generators
+
 Run **Mermaid Preview: Browse Example Gallery…** to search the 44 bundled
 examples, filter by category, inspect their rendered result, and create an
 editable workspace copy.
@@ -633,6 +741,27 @@ The visual diff supports:
 - a color-coded overlay for additions, changes, and removals;
 - source-line change counts;
 - synchronized zoom and navigation.
+
+For supported `flowchart`, `graph`, and `flowchart-elk` sources with an explicit
+direction, **Diagram changes** adds a clickable list of changed nodes, groups,
+and links. Green means added, amber modified, and red removed. Select an entry
+to highlight and locate it in the before/after diagrams. The list shows up to
+200 entries while the totals include all detected changes.
+
+Nodes are matched by identifier; label, classic shape, and subgraph membership
+changes count as modifications. A renamed identifier appears as a removal and
+an addition. Links use explicit edge identifiers when present, otherwise their
+source/target pair; labels, arrow types, and endpoints are compared. Parallel
+links need explicit identifiers. Comments, styles, layout directions,
+initialization settings, and frontmatter do not affect the structural counts.
+
+This is a bounded flowchart subset, not a complete Mermaid parser. Grouped
+endpoints (`&`), `@{...}` node properties, Markdown labels, ambiguous repeated
+declarations, and other unsupported forms disable semantic comparison for the
+whole pair. Inputs above 2 million characters or 20,000 entities also fall
+back. **Diagram changes unavailable** identifies the affected **Before** or
+**After** input and explains the reason; rendered views and source-line statistics
+remain available, with no partial structural result.
 
 If VS Code's text diff editor is already showing a Mermaid file, select
 **Mermaid Preview: Preview Diff Visually** from the editor title to reuse its
@@ -716,6 +845,13 @@ Each diagram keeps independent pointer-centered zoom, trackpad pinch, and
 restored viewport state. When resizing is enabled, drag its lower handle or
 focus it and use the arrow keys; `documentation.maxHeight` can cap its height.
 
+The document view renders visible blocks first, then nearby blocks as you scroll.
+Pending blocks keep their height and display **Loading diagram…**. Already
+rendered SVGs remain available when scrolled out of view, and unchanged blocks
+keep their zoom and position after source edits. Presentation renders only the
+active slide on demand; navigating to another slide triggers its render if
+needed.
+
 The icon-labelled **Present** button stays fixed at bottom right. Presentation
 inherits the complete workspace appearance; use the palette button at bottom
 left to change the shared theme, density, pattern, or canvas background. Its
@@ -732,6 +868,9 @@ block with a relative local image reference. Images are written to a dedicated
 `<document>.assets` directory beside the copy. PNG uses the configured export
 theme, DPI, scale, margin, and background. The source document is not
 overwritten.
+
+Export processes every block, including blocks that have not yet been rendered
+in the document view.
 
 ## Command reference
 
@@ -755,6 +894,7 @@ overwritten.
 | **Mermaid Preview: Export Diagram…** | Preview toolbar, editor title, Explorer, or Command Palette. |
 | **Mermaid Preview: Export Folder…** | Explorer folder context menu or Command Palette. |
 | **Mermaid Preview: New Diagram from Template…** | Open Diagram Studio for templates and custom generation. |
+| **Mermaid Preview: Save Current Diagram as Template…** | Save the current Mermaid source to a personal or project library. |
 | **Mermaid Preview: Browse Example Gallery…** | Open Diagram Studio with its gallery tab. |
 | **Mermaid Preview: Generate ERD from SQL Schema…** | Generate Mermaid ER source from a local SQL schema. |
 | **Mermaid Preview: Generate Dependency Graph from package.json…** | Generate Mermaid graph source from a local package manifest. |
@@ -959,6 +1099,5 @@ GitHub links naturally require connectivity.
 
 - [Example catalogue](../examples/README.md)
 - [Mermaid compatibility matrix](../examples/COMPATIBILITY.md)
-- [Screenshot plan for the README and user guide](SCREENSHOTS.md)
 - [Publishing guide](PUBLISHING.md)
 - [Project roadmap](../roadmap.md)

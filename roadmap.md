@@ -1,6 +1,19 @@
 # Roadmap — Mermaid Preview Offline
 
-## v1.3 — Ressources externes explicites et bornées
+## v1.3.1 — Édition, comparaison et documentation
+
+- [x] Enrichir l’éditeur intégré Beside/Above avec coloration, indentation,
+  complétion locale et affichage des erreurs.
+- [x] Comparer les nœuds et liens des flowcharts pris en charge, avec une liste
+  de changements cliquable et un repli explicite pour les syntaxes non analysées.
+- [x] Rendre les diagrammes documentaires visibles et proches en priorité,
+  conserver leur état et charger la diapositive active en présentation.
+- [x] Enregistrer et réutiliser des modèles personnels ou propres au projet,
+  partageables via Git, avec des favoris dans Diagram Studio.
+- [x] Ajouter les exports CLI incrémentaux et un mode `--watch`, en invalidant
+  les sorties lorsque leurs sources, ressources ou réglages changent.
+
+## v1.3.0 — Ressources externes explicites et bornées
 
 - [x] Conserver un parcours complet sans compte ni connexion obligatoire.
 - [x] Autoriser des racines locales supplémentaires dans les réglages machine.

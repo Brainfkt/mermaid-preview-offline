@@ -32,6 +32,11 @@ L’identifiant Marketplace est définitif après création. Le choisir avec soi
 Cette première publication manuelle évite de stocker un jeton avant que
 l’identité et la fiche Marketplace soient validées.
 
+`npm run test:visual` inclut les régressions de la bibliothèque de modèles et
+des exports CLI incrémentaux/watch. Pour vérifier uniquement ces derniers
+pendant le développement, utilisez `npm run test:cli` ; ce contrôle ciblé ne
+remplace pas la suite complète avant publication.
+
 ## Captures et README Marketplace
 
 Le README Marketplace utilise des URL HTTPS absolues vers
@@ -84,15 +89,17 @@ nécessaires.
 
 La version du tag doit correspondre exactement à `package.json` :
 
-Pour publier la v1.0.0 préparée dans le manifeste :
+Pour publier la v1.3.1 préparée dans le manifeste, une fois les validations et
+la revue du VSIX terminées :
 
 ```bash
-git tag v1.0.0
-git push origin main v1.0.0
+git tag v1.3.1
+git push origin main v1.3.1
 ```
 
-Pour les versions suivantes, mettre à jour `package.json`, `package-lock.json`
-et `CHANGELOG.md`, puis créer le tag correspondant. Le tag `vX.Y.Z` déclenche en
+Pour les versions suivantes, mettre à jour `package.json`, `package-lock.json`,
+`CHANGELOG.md`, la roadmap et les guides concernés, puis créer le tag
+correspondant. Le tag `vX.Y.Z` déclenche en
 parallèle les deux workflows protégés :
 
 - **GitHub Release** vérifie la version, génère le VSIX et crée la release avec

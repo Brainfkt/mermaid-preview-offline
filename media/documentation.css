@@ -94,6 +94,13 @@ button:focus-visible,
 }
 .documentation-diagram svg { display: block; max-width: none; height: auto; }
 
+.documentation-card[data-render-state="pending"] .documentation-diagram::after,
+.documentation-card[data-render-state="rendering"] .documentation-diagram::after {
+  content: 'Loading diagram…';
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .documentation-navigation-controls {
   z-index: 3;
   position: absolute;

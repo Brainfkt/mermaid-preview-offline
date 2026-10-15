@@ -10,6 +10,12 @@ npm run verify
 npm run test:visual
 ```
 
+`npm run test:visual` includes the rendered examples and interaction checks for
+the source editor, semantic diff, template library, documentation previews, and
+CLI. For a focused CLI change, `npm run test:cli` builds the extension and runs
+the incremental-export and watch regression scenarios separately. These checks
+use a locally installed Chromium-based browser.
+
 To debug the extension, open the repository in VS Code and launch
 **Run Mermaid Preview Offline** with `F5`.
 
@@ -27,3 +33,5 @@ To debug the extension, open the repository in VS Code and launch
 - Run `npm run verify` before submitting the pull request.
 - Run `npm run test:visual` when changing Mermaid, the preview UI, or rendering
   behavior. Review intentional changes before using `npm run test:visual:update`.
+- Run `npm run test:cli` for CLI export, cache, or watch changes; it also runs as
+  part of the complete `test:visual` suite used for CI and releases.

@@ -155,6 +155,12 @@ textarea:focus-visible {
 .search-field__icon { position: absolute; top: 7px; left: 10px; color: var(--muted); font-size: 15px; pointer-events: none; }
 .search-field input { width: 100%; height: 32px; padding: 5px 9px 5px 30px; }
 .catalog__count { flex: 0 0 auto; color: var(--muted); font-size: 10px; }
+.library-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 8px; margin-bottom: 14px; }
+.library-filter { flex: 1 1 125px; }
+.library-tools .button { font-size: 10px; }
+.library-notice { margin: 0 0 14px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+.template-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.template-actions [aria-pressed='true'] { color: var(--vscode-editor-foreground); border-color: var(--vscode-focusBorder); }
 
 .category-filter { display: flex; gap: 5px; margin: 12px 0 14px; overflow-x: auto; }
 .category-button {
@@ -251,7 +257,22 @@ body[data-canvas-pattern='grid'] .overlay-canvas { background-image: linear-grad
 .file-field { flex: 1 1 auto; }
 .create-row .button { flex: 0 0 auto; }
 
-.visual-diff { grid-template-rows: auto auto minmax(0, 1fr); }
+.visual-diff { grid-template-rows: auto auto auto minmax(0, 1fr); }
+.semantic-review { min-width: 0; max-height: 190px; overflow: auto; padding: 10px 20px; border-bottom: 1px solid var(--border); }
+.semantic-review summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+.semantic-review__note { margin: 7px 0; font-size: 11px; color: var(--muted); }
+.semantic-review__list { display: flex; flex-wrap: wrap; gap: 6px; }
+.semantic-review__change { max-width: 100%; padding: 4px 8px; text-align: left; overflow-wrap: anywhere; cursor: pointer; font-size: 11px; border-left: 3px solid var(--change-color); }
+.semantic-review__change[data-change-kind="added"], [data-semantic-change="added"] { --change-color: var(--vscode-gitDecoration-addedResourceForeground, #3fb950); }
+.semantic-review__change[data-change-kind="modified"], [data-semantic-change="modified"] { --change-color: var(--vscode-gitDecoration-modifiedResourceForeground, #d29922); }
+.semantic-review__change[data-change-kind="removed"], [data-semantic-change="removed"] { --change-color: var(--vscode-gitDecoration-deletedResourceForeground, #f85149); }
+.semantic-review__change[aria-pressed="true"] { outline: 2px solid var(--vscode-focusBorder); outline-offset: 1px; }
+[data-semantic-change].flowchart-link,
+[data-semantic-change] > :is(rect, polygon, circle, ellipse, path),
+[data-semantic-change] > .basic > :is(rect, polygon, circle, ellipse, path) { stroke: var(--change-color) !important; stroke-width: 3px !important; }
+[data-semantic-change="removed"].flowchart-link { stroke-dasharray: 6 3 !important; }
+.semantic-selected { filter: drop-shadow(0 0 4px var(--change-color)); }
+.semantic-selected.flowchart-link { stroke-width: 6px !important; }
 .diff-summary { display: flex; min-width: 0; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); padding: 8px 20px; }
 .diff-summary__item { font-size: 10px; }
 .diff-summary__item strong { margin-right: 3px; }

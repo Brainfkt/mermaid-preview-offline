@@ -4,5 +4,6 @@
 artifacts/
 dist/
 node_modules/
+.mermaid-preview-cache.json
 *.vsix
 docs/FEATURES_SURFACE_MATRIX.fr.md
